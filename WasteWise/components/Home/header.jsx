@@ -18,9 +18,9 @@ export default function Header() {
                 marginTop: 5
             }}>WasteWise</Text>
         </View>
-        <TouchableOpacity style={styles.list}>
+        {/*<TouchableOpacity style={styles.list}>
             <Ionicons name="list" size={24} color={colors.lime_green} />
-        </TouchableOpacity>
+        </TouchableOpacity>*/}
 
     </View>
   )

@@ -1,17 +1,16 @@
 import React from 'react';
-import { View, Text, Image, ImageBackground, TouchableOpacity, StyleSheet } from 'react-native';
+import {Text, Image, ImageBackground, TouchableOpacity, StyleSheet } from 'react-native';
 import Header from '../../components/Home/header';
 import colors from '../../constant/colors';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 
 const HomeScreen = ({ navigation }) => {
   const events = [
-    { title: "Event 1", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
-    { title: "Event 2", description: "Hellooooooooooooooooooooooooooooooo" },
-    { title: "Event 3", description: "Hellooooooooooooooooooooooooooooooo" },
-    { title: "Event 4", description: "Hellooooooooooooooooooooooooooooooo" },
-    { title: "Event 5", description: "Hellooooooooooooooooooooooooooooooo" }
-    // Add more if you want
+    { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
+    { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
+    { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
+    { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
+    { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." }
   ];
 
   return (
