@@ -1,0 +1,26 @@
+# React Native
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Android
+/android/build/
+/android/.gradle/
+/android/app/build/
+/android/local.properties
+/android/.idea/
+
+# iOS
+/ios/build/
+/ios/Pods/
+/ios/*.xcworkspace
+/ios/*.xcodeproj/xcuserdata
+/ios/*.xcodeproj/project.xcworkspace/xcuserdata
