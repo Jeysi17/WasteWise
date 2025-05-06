@@ -1,8 +1,9 @@
 import React from 'react';
-import {Text, Image, ImageBackground, TouchableOpacity, StyleSheet } from 'react-native';
+import {Text, Image, ImageBackground, TouchableOpacity, StyleSheet, View } from 'react-native';
 import Header from '../../components/Home/header';
 import colors from '../../constant/colors';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
+
 
 const HomeScreen = ({ navigation }) => {
   const events = [
@@ -34,19 +35,45 @@ const HomeScreen = ({ navigation }) => {
         </ImageBackground>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        {events.map((event, index) => (
-          <TouchableOpacity 
-            key={index}
-            style={styles.card}
-          >
-            <Image 
-              source={require('../../assets/images/bg-image.jpg')} 
-              style={styles.image} 
-            />
-            <Text style={styles.text}>{event.title}</Text>
-            <Text style={styles.details}>{event.description}</Text>
+          <ImageBackground source={require('../../assets/images/bg-image.jpg')} style={styles.infoThumbnail}>
+            <Text style={styles.vidDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          </ImageBackground>
+          <TouchableOpacity>
+              <Text style={styles.infoLink}>Click Here to Watch the Video</Text>
           </TouchableOpacity>
-        ))}
+          <View style={styles.articleContainer}>
+            <Image source={require('../../assets/images/cover1.jpeg')} style={styles.articleTThumbnail}></Image>
+            <Text style={styles.articleDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          </View>
+          <TouchableOpacity>
+              <Text style={styles.infoLink}>Click Here to Read the Article</Text>
+          </TouchableOpacity>
+          <ImageBackground source={require('../../assets/images/bg-image.jpg')} style={styles.infoThumbnail}>
+            <Text style={styles.vidDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          </ImageBackground>
+          <TouchableOpacity>
+              <Text style={styles.infoLink}>Click Here to Watch the Video</Text>
+          </TouchableOpacity>
+          <ImageBackground source={require('../../assets/images/bg-image.jpg')} style={styles.infoThumbnail}>
+            <Text style={styles.vidDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          </ImageBackground>
+          <TouchableOpacity>
+              <Text style={styles.infoLink}>Click Here to Watch the Video</Text>
+          </TouchableOpacity>
+          <View style={styles.articleContainer}>
+            <Image source={require('../../assets/images/cover1.jpeg')} style={styles.articleTThumbnail}></Image>
+            <Text style={styles.articleDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          </View>
+          <TouchableOpacity>
+              <Text style={styles.infoLink}>Click Here to Read the Article</Text>
+          </TouchableOpacity>
+          <View style={styles.articleContainer}>
+            <Image source={require('../../assets/images/cover1.jpeg')} style={styles.articleTThumbnail}></Image>
+            <Text style={styles.articleDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          </View>
+          <TouchableOpacity>
+              <Text style={styles.infoLink}>Click Here to Read the Article</Text>
+          </TouchableOpacity>
       </ScrollView>
     </GestureHandlerRootView>
   );
@@ -116,4 +143,52 @@ const styles = StyleSheet.create({
     marginRight: 20,
     fontSize: 10,
   },
+  infoThumbnail: {
+    flex: 1,
+    width: '95%',
+    height: 170,
+    margin: 20,
+    
+  },
+  infoLink: {
+    backgroundColor: colors.pale_green,
+    width: '90%',
+    alignSelf: 'center',
+    marginTop: -19,
+    padding: 10,
+    fontFamily: 'PSemi-Bold',
+    textAlign: 'center',
+  },
+  vidDetails: {
+    fontSize: 15,
+    fontFamily: 'PSemi-Bold',
+    color: colors.BG_color,
+    textAlign: 'center',
+    textShadowColor: "#000000",
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 10,
+    marginHorizontal: 30,
+    marginVertical: 50
+  },
+  articleContainer: {
+    backgroundColor: colors.pale_green,
+    width: '90%',
+    marginTop: 10,
+    margin: 20,
+    flexDirection: 'row'
+  },
+  articleTThumbnail: {
+    width: '30%',
+    height: 150,
+    marginLeft: 1,
+  },
+  articleDetails: {
+    fontFamily: 'PSemi-Bold',
+    fontSize: 13,
+    marginLeft: 20,
+    marginRight: 130,
+    marginTop: 30,
+    textAlign: 'center',
+    marginVertical: 15
+  }
 });
