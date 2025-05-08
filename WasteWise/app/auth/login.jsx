@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Image, Text, View, StyleSheet, ImageBackground, TouchableOpacity, TextInput, Pressable, Dimensions, KeyboardAvoidingView, Platform,
+import { Image,Keyboard, Text, View, StyleSheet,TouchableWithoutFeedback , ImageBackground, TouchableOpacity, TextInput, Pressable, Dimensions, KeyboardAvoidingView, Platform,
 } from "react-native";
 import colors from '../../constant/colors';
 import { useRouter } from 'expo-router';
@@ -13,6 +13,7 @@ export default function LogIn() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
         >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ImageBackground
             source={require('../../assets/images/trece.jpg')}
             style={styles.container}
@@ -56,6 +57,7 @@ export default function LogIn() {
             </Pressable>
             </View>
         </ImageBackground>
+        </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }

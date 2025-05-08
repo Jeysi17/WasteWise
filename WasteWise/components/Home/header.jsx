@@ -8,6 +8,8 @@ export default function Header() {
     <View style={{
         backgroundColor: colors.BG_color,
         padding: 10,
+        borderBottomWidth: 5,
+        borderBottomColor: colors.border_green,
     }}>
         <View>
             <Text style={{

@@ -1,5 +1,5 @@
 import React from 'react-native';
-import { View, Text, Image, ImageBackground, Button, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, Image, ImageBackground, Button, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native'
 import Header from '../../components/Home/header'
 import colors from '../../constant/colors'
 import { GestureHandlerRootView, NativeViewGestureHandler, TextInput } from 'react-native-gesture-handler';
@@ -47,6 +47,7 @@ const CreatePostScreen = (navigation) => {
                         borderRadius: 10
                     }}>
                         <GestureHandlerRootView>
+                            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                            
                                 <View style={{ flexDirection: 'column'}}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -102,7 +103,7 @@ const CreatePostScreen = (navigation) => {
                                     </TouchableOpacity>
                                 </View>
                                 </View>
-                           
+                                </TouchableWithoutFeedback>
                         </GestureHandlerRootView>
                     </View>
                 </View>    

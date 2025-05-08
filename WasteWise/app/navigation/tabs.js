@@ -1,5 +1,6 @@
 import React from 'react-native'
-import { Image, Text, View, StyleSheet, TouchableOpacity, ScrollView} from "react-native";
+import { useEffect, useState } from 'react';
+import { Image, Text, View, StyleSheet, TouchableOpacity, Keyboard} from "react-native";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import colors from '../../constant/colors';
 import HomeScreen from '../screens/HomeScreen';
@@ -29,11 +30,23 @@ const CustomTabBarButton = ({children, onPress}) => (
 
     );
 const Tabs = () => {
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+    useEffect(() => {
+        const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+        return () => {
+          showSub.remove();
+          hideSub.remove();
+        };
+      }, []);
+      
     return (
         <Tab.Navigator screenOptions={{
             tabBarShowLabel: false,
             headerShown: false,
-            tabBarStyle: {
+            tabBarStyle: isKeyboardVisible
+            ? { display: 'none' }
+            : {
                 position: 'absolute',
                 bottom: 15,
                 left: 15,

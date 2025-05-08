@@ -16,23 +16,6 @@ const EventScreen = ({ navigation }) => {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.lime_green }}>
         <Header />
-        
-        <ImageBackground
-          source={require('../../assets/images/bg-image.jpg')}
-          style={{
-            height: 200,
-            width: '100%',
-          }}
-        >
-          <Text style={styles.title}>Event Title</Text>
-          <Text style={styles.subtitle}>
-            Lorem ipsum is a placeholder text commonly used in publishing and graphic design.
-          </Text>
-          <TouchableOpacity style={styles.readMoreButton}>
-            <Text style={styles.readMoreText}>Read More</Text>
-          </TouchableOpacity>
-        </ImageBackground>
-
         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {events.map((event, index) => (
           <TouchableOpacity 
