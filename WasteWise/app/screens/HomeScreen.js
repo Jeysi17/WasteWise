@@ -3,6 +3,7 @@ import {Text, Image, ImageBackground, TouchableOpacity, StyleSheet, View } from 
 import Header from '../../components/Home/header';
 import colors from '../../constant/colors';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
+import VideoCard from '../../components/Home/videoCard';
 
 
 const HomeScreen = ({ navigation }) => {
@@ -15,16 +16,26 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.lime_green }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg_green }}>
         <Header />
-        
+         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         <ImageBackground
           source={require('../../assets/images/bg-image.jpg')}
           style={{
             height: 200,
             width: '100%',
+            backgroundColor: 'rgb(0, 0, 0)',
           }}
         >
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            borderBottomWidth: 6,
+            borderColor:  colors.border_green,
+
+          }}
+        />
           <Text style={styles.title}>Event Title</Text>
           <Text style={styles.subtitle}>
             Lorem ipsum is a placeholder text commonly used in publishing and graphic design.
@@ -34,13 +45,10 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </ImageBackground>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-          <ImageBackground source={require('../../assets/images/bg-image.jpg')} style={styles.infoThumbnail}>
-            <Text style={styles.vidDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
-          </ImageBackground>
-          <TouchableOpacity>
-              <Text style={styles.infoLink}>Click Here to Watch the Video</Text>
-          </TouchableOpacity>
+       
+          <View>
+            <VideoCard title="Card Title 1" content="This is the content of card 1." />
+          </View>
           <View style={styles.articleContainer}>
             <Image source={require('../../assets/images/cover1.jpeg')} style={styles.articleTThumbnail}></Image>
             <Text style={styles.articleDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
@@ -112,7 +120,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PSemi-Bold',
   },
   card: {
-    backgroundColor: colors.pale_green,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
     width: '90%',
     height: 150,
     marginTop: 20,

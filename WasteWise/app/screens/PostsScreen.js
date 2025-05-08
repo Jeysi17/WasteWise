@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
-import {Text, Image, ImageBackground, TouchableOpacity, StyleSheet, View } from 'react-native';
+import {Text, Image, ImageBackground, TouchableOpacity, StyleSheet, View, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import Header from '../../components/Home/header';
 import colors from '../../constant/colors';
-import { FlatList, GestureHandlerRootView, ScrollView, TextInput } from 'react-native-gesture-handler';
+import { FlatList, GestureHandlerRootView, TextInput } from 'react-native-gesture-handler';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const PostScreen = ({ navigation }) => {
   const posts = [
@@ -33,82 +34,94 @@ const PostScreen = ({ navigation }) => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.lime_green }}>
-      <Header />
-      
-      <ImageBackground
-        source={require('../../assets/images/bg-image.jpg')}
-        style={{
-          height: 200,
-          width: '100%',
-        }}
-      >
-        <Text style={styles.title}>Event Title</Text>
-        <Text style={styles.subtitle}>
-          Lorem ipsum is a placeholder text commonly used in publishing and graphic design.
-        </Text>
-        <TouchableOpacity style={styles.readMoreButton}>
-          <Text style={styles.readMoreText}>Read More</Text>
-        </TouchableOpacity>
-      </ImageBackground>
-
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        {posts.map((post) => (
-          <View 
-            key={post.id}
-            style={styles.card}
+        <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+        >
+          <Header />
+          
+          <ImageBackground
+            source={require('../../assets/images/bg-image.jpg')}
+            style={{
+              height: 200,
+              width: '100%',
+            }}
           >
-            <View style={{flexDirection: 'row', backgroundColor: colors.BG_color, width: '100%', height: 45}}>
-              <Text style={{fontFamily: 'PSemi-Bold', marginTop: 5, margin: 5}}>{post.name}</Text>
-              <Text style={{margin: 5, paddingLeft: 80, fontSize: 10, fontFamily: 'PSemi-Bold', marginTop: 5}}>Posted on: {post.date}</Text>
-            </View>
-            <Text style={{marginTop: -20, margin: 5, fontFamily: 'PSemi-Bold', fontSize: 10}}>{post.location}</Text>
-            
-            <Image source={require('../../assets/images/bg-image.jpg')} style={styles.image}/>
-            
-            <TouchableOpacity
-              onPress={() => toggleComments(post.id)}
-            >
-              <Text style={styles.commentButtonText}>
-                {activePostId === post.id ? 'Hide Comments' : 'Show Comments'}
-              </Text>
+            <Text style={styles.title}>Event Title</Text>
+            <Text style={styles.subtitle}>
+              Lorem ipsum is a placeholder text commonly used in publishing and graphic design.
+            </Text>
+            <TouchableOpacity style={styles.readMoreButton}>
+              <Text style={styles.readMoreText}>Read More</Text>
             </TouchableOpacity>
-
-            {activePostId === post.id && (
-              <View style={styles.commentsContainer}>
-                {comments[post.id]?.length > 0 ? (
-                  <FlatList
-                    data={comments[post.id]}
-                    scrollEnabled={false}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({item}) => (
-                      <View style={styles.commentItem}>
-                        <View style={{flexDirection: 'row'}}>
-                          <Text style={styles.commentAuthor}>{item.author}:</Text>
-                          <Text style={{...styles.commentAuthor, marginLeft: 45, marginTop: -1}}>{item.location}</Text>
-                        </View>
-                        <Text style={styles.commentText}>{item.comment}</Text>
-                      </View>
-                    )}
-                  />
-                ) : (
-                  <Text style={styles.noComments}>No comments yet</Text>
-                )}
-                <View style={{flexDirection: 'row'}}>
-                  <TextInput
-                    placeholder='Write a comment...'
-                    placeholderTextColor={'#000000'}
-                    style={styles.commentInput}
-                  ></TextInput>
-                  <TouchableOpacity>
-                  <Image source={require('../../assets/icons/submit.png')} style={styles.submitIcon}/>
-                  </TouchableOpacity>
-                  
+          </ImageBackground>
+        
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>    
+          <KeyboardAwareScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            enableOnAndroid={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            {posts.map((post) => (
+              <View 
+                key={post.id}
+                style={styles.card}
+              >
+                <View style={{flexDirection: 'row', backgroundColor: colors.BG_color, width: '100%', height: 45}}>
+                  <Text style={{fontFamily: 'PSemi-Bold', marginTop: 5, margin: 5}}>{post.name}</Text>
+                  <Text style={{margin: 5, paddingLeft: 80, fontSize: 10, fontFamily: 'PSemi-Bold', marginTop: 5}}>Posted on: {post.date}</Text>
                 </View>
+                <Text style={{marginTop: -20, margin: 5, fontFamily: 'PSemi-Bold', fontSize: 10}}>{post.location}</Text>
+                
+                <Image source={require('../../assets/images/bg-image.jpg')} style={styles.image}/>
+                
+                <TouchableOpacity
+                  onPress={() => toggleComments(post.id)}
+                >
+                  <Text style={styles.commentButtonText}>
+                    {activePostId === post.id ? 'Hide Comments' : 'Show Comments'}
+                  </Text>
+                </TouchableOpacity>
+                
+                {activePostId === post.id && (
+                  <View style={styles.commentsContainer}>
+                    {comments[post.id]?.length > 0 ? (
+                      <FlatList
+                        data={comments[post.id]}
+                        scrollEnabled={false}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({item}) => (
+                          <View style={styles.commentItem}>
+                            <View style={{flexDirection: 'row'}}>
+                              <Text style={styles.commentAuthor}>{item.author}:</Text>
+                              <Text style={{...styles.commentAuthor, marginLeft: 45, marginTop: -1}}>{item.location}</Text>
+                            </View>
+                            <Text style={styles.commentText}>{item.comment}</Text>
+                          </View>
+                        )}
+                      />
+                    ) : (
+                      <Text style={styles.noComments}>No comments yet</Text>
+                    )}
+                    <View style={{flexDirection: 'row'}}>
+                        <TextInput
+                        placeholder='Write a comment...'
+                        placeholderTextColor={'#000000'}
+                        style={styles.commentInput}
+                      ></TextInput>
+                      <TouchableOpacity>
+                      <Image source={require('../../assets/icons/submit.png')} style={styles.submitIcon}/>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                
               </View>
-            )}
-          </View>
-        ))}
-      </ScrollView>
+            ))}
+          </KeyboardAwareScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </GestureHandlerRootView>
   );
 };
