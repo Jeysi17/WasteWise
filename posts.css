@@ -1,0 +1,118 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.sidebar {
+    margin-top: 50px;
+    width: 150px;
+    background-color: #0a9b06;
+    color: white;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 1rem;
+    padding-left: 15px;
+}
+
+.sidebar button {
+    background: green;
+    color: white;
+    border: none;
+    padding: 10px;
+    width: 120px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: medium;
+    border-style: solid;
+    border-width: 2px;
+    text-align: center;
+}
+
+.header {
+    padding: 10px;
+    background-color: #e6ffe6;
+    text-align: center;
+    font-weight: bold;
+    color: #0a9b06;
+    font-size: 20px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0px 10px 15px lightgreen;
+}
+
+.main {
+    margin-left: 130px;
+    padding: 20px;
+    background-color: green;
+    width: auto;
+    height: 70px;
+    justify-content: center;
+    padding-left: 40px;
+    padding-bottom: auto;
+}
+
+.controls select,
+.controls button {
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+}
+
+.controls {
+    padding-bottom: 8px;
+    border-radius: 5px;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter select {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid green;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 12px;
+    border: 1px solid green;
+    text-align: center;
+}
+
+.approve-btn {
+    background-color: #00e600;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    cursor: pointer;
+}
+
+.decline-btn {
+    background-color: #ff5c33;
+    color: white;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
