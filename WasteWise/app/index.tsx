@@ -1,17 +1,39 @@
-import { Image, Text, View, StyleSheet, ImageBackground, TouchableOpacity, ScrollView} from "react-native";
+import { Image, Text, View, StyleSheet, ImageBackground, TouchableOpacity, Dimensions, Animated} from "react-native";
 import colors from '../constant/colors';
 import { useRouter } from "expo-router";
 import SplashScreen from '../app/screens/SplashScreenView'
 import { useEffect, useState } from "react";
 
+
 export default function Index() {
+  const [containerHeight] = useState(Dimensions.get('window').height);
   const router = useRouter();
   const [isShowSplash, setIsShowSplash] = useState(true);
+  const logoTranslateY = useState(new Animated.Value(containerHeight * .321))[0];
+  const panelTranslateY = useState(new Animated.Value(containerHeight * .7))[0];
+
   useEffect(() => {
     setTimeout(() => {
       setIsShowSplash(false);
+
+      Animated.parallel([
+        Animated.timing(logoTranslateY, {
+          toValue: 0,
+          duration: 700,
+          delay: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(panelTranslateY, {
+          toValue: 0,
+          duration: 700,
+          delay: 500,
+          useNativeDriver: true,
+        })
+
+      ]).start();
     }, 3000)
   })
+
 
   return (
     
@@ -24,17 +46,18 @@ export default function Index() {
       }}
       resizeMode="cover"
     >
-      <Image source={require('./../assets/images/logo-modified.png')}
+      <Animated.Image source={require('./../assets/images/logo-modified.png')}
       style={{
-        width: '75%',
-        height: 300,
-        marginLeft: 5,
+        height: containerHeight * 0.35,
+        width: containerHeight * 0.35,
+        resizeMode: 'contain',
+        alignSelf: 'center',
         marginTop: 10,
-        alignSelf: 'center'
-      }}
+        transform: [{ translateY: logoTranslateY}]
+        }}
       />
       
-      <View>
+      <Animated.View style={{ transform: [{ translateY: panelTranslateY }] }}>
             <View style={{
                 padding: 25,
                 marginTop: 10,
@@ -46,8 +69,9 @@ export default function Index() {
                 <Text style={{
                   fontSize: 35,
                   textAlign: 'center',
-                  fontFamily: 'PSemi-Bold'
-                  
+                  fontFamily: 'PSemi-Bold',
+                  letterSpacing: 4,
+                  color: colors.lime_green,
                 }}>Welcome to WasteWise!</Text>
 
                 <Text style={{
@@ -60,7 +84,7 @@ export default function Index() {
                 <TouchableOpacity style={styles.button}
                 onPress={()=>router.push('../auth/signup')}
                 >
-                  <Text style={styles.buttonText}>Get Started on WasteWise</Text>
+                  <Text style={[styles.buttonText, { color: 'rgb(255, 255, 255)'}]}>Get Started on WasteWise</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.button, {
@@ -70,7 +94,7 @@ export default function Index() {
                   <Text style={styles.buttonText}>Already have an account?</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </Animated.View>
     </ImageBackground>
     }</>
     </View>
