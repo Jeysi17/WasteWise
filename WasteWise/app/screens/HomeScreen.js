@@ -1,9 +1,9 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Text, Image, ImageBackground, TouchableOpacity, StyleSheet, View } from 'react-native';
-import Header from '../../components/Home/header';
 import colors from '../../constant/colors';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import VideoCard from '../../components/Home/videoCard';
+import ArticleCard from '../../components/Home/articleCard';
 
 
 const HomeScreen = ({ navigation }) => {
@@ -17,8 +17,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg_green }}>
-        <Header />
-         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: '38%' }}>
         <ImageBackground
           source={require('../../assets/images/bg-image.jpg')}
           style={{
@@ -45,43 +44,31 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </ImageBackground>
 
-       
+      
           <View>
             <VideoCard title="Card Title 1" content="This is the content of card 1." />
           </View>
-          <View style={styles.articleContainer}>
-            <Image source={require('../../assets/images/cover1.jpeg')} style={styles.articleTThumbnail}></Image>
-            <Text style={styles.articleDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          <View>
+            <ArticleCard title="Card Title 1" content="This is the content of card 1." />
           </View>
-          <TouchableOpacity>
-              <Text style={styles.infoLink}>Click Here to Read the Article</Text>
-          </TouchableOpacity>
-          <ImageBackground source={require('../../assets/images/bg-image.jpg')} style={styles.infoThumbnail}>
-            <Text style={styles.vidDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
-          </ImageBackground>
-          <TouchableOpacity>
-              <Text style={styles.infoLink}>Click Here to Watch the Video</Text>
-          </TouchableOpacity>
-          <ImageBackground source={require('../../assets/images/bg-image.jpg')} style={styles.infoThumbnail}>
-            <Text style={styles.vidDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
-          </ImageBackground>
-          <TouchableOpacity>
-              <Text style={styles.infoLink}>Click Here to Watch the Video</Text>
-          </TouchableOpacity>
-          <View style={styles.articleContainer}>
-            <Image source={require('../../assets/images/cover1.jpeg')} style={styles.articleTThumbnail}></Image>
-            <Text style={styles.articleDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          <View>
+            <VideoCard title="Card Title 1" content="This is the content of card 1." />
           </View>
-          <TouchableOpacity>
-              <Text style={styles.infoLink}>Click Here to Read the Article</Text>
-          </TouchableOpacity>
-          <View style={styles.articleContainer}>
-            <Image source={require('../../assets/images/cover1.jpeg')} style={styles.articleTThumbnail}></Image>
-            <Text style={styles.articleDetails}>Lorem ipsum is a placeholder text commonly used in publishing and graphic design.</Text>
+          <View>
+            <ArticleCard title="Card Title 1" content="This is the content of card 1." />
           </View>
-          <TouchableOpacity>
-              <Text style={styles.infoLink}>Click Here to Read the Article</Text>
-          </TouchableOpacity>
+          <View>
+            <VideoCard title="Card Title 1" content="This is the content of card 1." />
+          </View>
+          <View>
+            <ArticleCard title="Card Title 1" content="This is the content of card 1." />
+          </View>
+          <View>
+            <VideoCard title="Card Title 1" content="This is the content of card 1." />
+          </View>
+          <View>
+            <ArticleCard title="Card Title 1" content="This is the content of card 1." />
+          </View>
       </ScrollView>
     </GestureHandlerRootView>
   );
