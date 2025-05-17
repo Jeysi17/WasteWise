@@ -1,9 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import React from 'react'
 import colors from '../../constant/colors'
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-export default function Header() {
+export default function Header({ onMenuPress }) {
   return (
     <View style={{
         backgroundColor: colors.BG_color,
@@ -20,18 +19,25 @@ export default function Header() {
                 marginTop: 5
             }}>WasteWise</Text>
         </View>
-        {/*<TouchableOpacity style={styles.list}>
+        <TouchableOpacity style={styles.list} onPress={onMenuPress}>
             <Ionicons name="list" size={24} color={colors.lime_green} />
-        </TouchableOpacity>*/}
-
+        </TouchableOpacity>
     </View>
-  )
+  );
 }
+
 const styles = StyleSheet.create({
   list: {
     alignSelf: 'flex-end',
     position: 'absolute',
-    marginTop: 20,
-    paddingEnd: 10
+    marginTop: '5%',
+    marginRight: '3%',
+    paddingLeft: 4,
+    paddingRight: 4,
+    paddingBottom: 3,
+    paddingTop: 3, 
+    borderWidth: 2,
+    borderRadius: 10,
+    borderColor: colors.border_green,
   }
 })

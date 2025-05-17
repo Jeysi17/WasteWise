@@ -38,7 +38,6 @@ const PostScreen = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
         >
-          <Header />
           
           <ImageBackground
             source={require('../../assets/images/bg-image.jpg')}
