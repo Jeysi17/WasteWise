@@ -62,6 +62,7 @@ const ScheduleScreen = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1 }}>
+      <Header />
       <View style={{backgroundColor: colors.lime_green}}>
         <Text style={{
           fontFamily: 'PSemi-Bold',

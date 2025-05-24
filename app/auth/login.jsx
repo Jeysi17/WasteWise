@@ -1,13 +1,43 @@
 import React, { useState } from "react";
-import { Image,Keyboard, Text, View, StyleSheet,TouchableWithoutFeedback , ImageBackground, TouchableOpacity, TextInput, Pressable, Dimensions, KeyboardAvoidingView, Platform,
+import { Image,Keyboard, Text, View, StyleSheet,TouchableWithoutFeedback , ImageBackground, TouchableOpacity, TextInput, Pressable, Dimensions, KeyboardAvoidingView, Platform, ActivityIndicator, ToastAndroid,
 } from "react-native";
 import colors from '../../constant/colors';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
 
 export default function LogIn() {
     const [containerHeight, setContainerHeight] = useState(Dimensions.get('window').height);
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
+    const {session, signin} = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleSubmit = async () => {
+        if(!email || !password) {
+            ToastAndroid.show('Please enter email and password!', ToastAndroid.BOTTOM);
+        }
+        if (isLoading) return;
+        setIsLoading(true);
+        try {
+            const success = await signin({email, password});
+          
+            if (success) {
+                ToastAndroid.show('Login successful!', ToastAndroid.BOTTOM);
+                router.replace('/screens/HomeScreen');
+            }
+        } catch (error) {
+            if (error.message.includes('Rate limit')) {
+                ToastAndroid.show('Too many login attempts. Please wait a moment before trying again.', ToastAndroid.BOTTOM);
+            } else {
+                ToastAndroid.show('Login failed. Please check your credentials and try again.', ToastAndroid.BOTTOM);
+            }
+            ToastAndroid.show(error.message, ToastAndroid.BOTTOM);
+        } finally {
+            setIsLoading(false);
+        }
+    };
     return (
         <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -35,19 +65,28 @@ export default function LogIn() {
             placeholder="Enter Email"
             placeholderTextColor={colors.BG_color}
             style={styles.textInput}
+            value={email}
+            onChangeText={setEmail}
             />
             <TextInput
             placeholder="Enter Password"
             placeholderTextColor={colors.BG_color}
             secureTextEntry={true}
             style={styles.textInput}
+            value={password}
+            onChangeText={setPassword}
             />
 
             <TouchableOpacity
-            style={styles.loginButton}
-            onPress={() => router.push('home')}
+            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={isLoading}
             >
-            <Text style={{ fontFamily: 'PSemi-Bold' }}>Login</Text>
+            {isLoading ? (
+                <ActivityIndicator color={colors.BG_color} />
+            ) : (
+                <Text style={{ fontFamily: 'PSemi-Bold' }}>Login</Text>
+            )}
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -96,6 +135,9 @@ const styles = StyleSheet.create({
         width: '50%',
         alignItems: 'center',
         borderRadius: 10,
+    },
+    loginButtonDisabled: {
+        opacity: 0.7,
     },
     footer: {
         flexDirection: 'row',

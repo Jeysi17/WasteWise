@@ -4,7 +4,7 @@ import colors from '../../constant/colors';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import VideoCard from '../../components/Home/videoCard';
 import ArticleCard from '../../components/Home/articleCard';
-
+import Header from '../../components/Home/header';
 
 const HomeScreen = ({ navigation }) => {
   const events = [
@@ -17,6 +17,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg_green }}>
+      <Header />
         <ScrollView contentContainerStyle={{ paddingBottom: '38%' }}>
         <ImageBackground
           source={require('../../assets/images/bg-image.jpg')}
