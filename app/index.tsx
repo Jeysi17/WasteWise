@@ -3,7 +3,7 @@ import colors from '../constant/colors';
 import { useRouter } from "expo-router";
 import SplashScreen from '../app/screens/SplashScreenView'
 import { useEffect, useState } from "react";
-
+import React from "react";
 
 export default function Index() {
   const [containerHeight] = useState(Dimensions.get('window').height);
