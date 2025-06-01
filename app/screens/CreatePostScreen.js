@@ -14,9 +14,8 @@ const CreatePostScreen = (navigation) => {
     const {user} = useAuth();
     const categories = [
         {key: '0', value: 'None'},
-        {key:'1', value:'Mobiles'},
-        {key:'2', value:'Appliances'},
-        {key:'3', value:'Cameras'},
+        {key:'1', value:'Urgent'},
+        {key:'2', value:'Less Urgent'},
     ];
 
     const [title, setTitle] = useState('');
@@ -74,7 +73,6 @@ const CreatePostScreen = (navigation) => {
 
     const loadImageBase64 = async (uri) => {
         try {
-            // First check if file exists
             const fileInfo = await FileSystem.getInfoAsync(uri);
             if (!fileInfo.exists) {
             throw new Error('File does not exist');
@@ -96,6 +94,9 @@ const CreatePostScreen = (navigation) => {
             return;
         }
 
+        const now = new Date();
+        const timezoneOffset = now.getTimezoneOffset() * 60000; 
+        const localISOTime = new Date(now - timezoneOffset).toISOString().split('T')[0];
         try {
             const base64Image = await loadImageBase64(selectedImage);
             if (!base64Image) {
@@ -109,7 +110,8 @@ const CreatePostScreen = (navigation) => {
                 category,
                 imageUrl: base64Image,
                 location,
-                details
+                details,
+                date: localISOTime
             },
             {
                 headers: {

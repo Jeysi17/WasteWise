@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "app/index.jsx", "components/BottomSheet.tsx"  ]
+, "app/index.jsx", "components/BottomSheet.tsx", "app/(api)/posts+api.tsx"  ]
 }
