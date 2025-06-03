@@ -97,6 +97,7 @@ export default function SignUp() {
                 height: containerHeight * 0.3,
                 width: containerHeight * 0.25,
                 resizeMode: 'contain',
+                marginTop: -20
                 }}
             />
             )}
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
         textShadowRadius: 10,
     },
     title: {
-        marginTop: 10,
+        marginTop: -20,
         fontFamily: 'PSemi-Bold',
         fontSize: 25,
         color: colors.BG_color,
