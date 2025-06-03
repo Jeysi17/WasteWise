@@ -5,8 +5,10 @@ import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler
 import VideoCard from '../../components/Home/videoCard';
 import ArticleCard from '../../components/Home/articleCard';
 import Header from '../../components/Home/header';
-
+import {useAuth, AuthContext} from '../../context/AuthContext'
 const HomeScreen = ({ navigation }) => {
+
+  const {signout} = useAuth();
   const events = [
     { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
     { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
@@ -42,6 +44,9 @@ const HomeScreen = ({ navigation }) => {
           </Text>
           <TouchableOpacity style={styles.readMoreButton}>
             <Text style={styles.readMoreText}>Read More</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.readMoreButton} onPress={signout}>
+            <Text style={styles.readMoreText}>Sign Out</Text>
           </TouchableOpacity>
         </ImageBackground>
 
