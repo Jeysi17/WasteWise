@@ -1,11 +1,12 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, FlatList } from 'react-native';
 import Header from '../../components/Home/header';
 import colors from '../../constant/colors';
 import { Calendar } from 'react-native-calendars';
 import { SelectList } from 'react-native-dropdown-select-list';
-
+import axios from 'axios';
 const barangayEvents = {
+
   'Cabuco': {
     markedDates: {
       '2025-06-03': { marked: true, dotColor: colors.lime_green, selected: true, selectedColor: colors.lime_green },
@@ -45,6 +46,18 @@ const barangayEvents = {
 };
 
 const ScheduleScreen = ({ navigation }) => {
+  useEffect(() => {
+    GetSchedules();
+  }, [])
+  const GetSchedules = async () => {
+    try {
+      const response = await fetch(process.env.EXPO_PUBLIC_HOST_URL+'/schedule');
+      const data = await response.json();
+      console.log(data)
+    }catch(err){
+      console.error("Error fetching schedules", err);
+    }
+  }
   const [selectedBarangay, setSelectedBarangay] = useState(null);
   const categories = [
     { key: '1', value: 'Cabuco' },

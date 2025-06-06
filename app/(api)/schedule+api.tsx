@@ -9,9 +9,7 @@ export async function GET(request: Request) {
         // Get and validate orderField
         const orderField = new URL(request.url).searchParams.get('orderField');
         const query = `
-            SELECT approved_posts.name, image, approved_posts.location FROM approved_posts
-            INNER JOIN users ON approved_posts.name = users.name
-            ORDER BY ${orderField}
+           SELECT * FROM schedules;
         `;
 
         console.log('Executing query:', query);
@@ -20,9 +18,9 @@ export async function GET(request: Request) {
 
         return Response.json(result.rows);
     } catch (err) {
-        console.error('❌ Error fetching posts:', err);
+        console.error('❌ Error fetching schedules:', err);
         return Response.json(
-            { error: 'Failed to fetch posts' },
+            { error: 'Failed to fetch schedules' },
             { status: 500 }
         );
     } finally {
