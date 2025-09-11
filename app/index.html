@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 350px;
+    }
+    .loading {
+      font-size: 18px;
+      color: #444;
+    }
+    .success {
+      font-size: 20px;
+      color: green;
+    }
+    .error {
+      font-size: 20px;
+      color: red;
+    }
+    .note {
+      font-size: 14px;
+      color: #555;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="status-box">
+    <p class="loading">⏳ Verifying your email...</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+  <script>
+    // Initialize Appwrite client
+    const client = new Appwrite.Client()
+      .setEndpoint("https://cloud.appwrite.io/v1") // Appwrite endpoint
+      .setProject("6825889e00093cfa4330"); // 🔥 Replace with your Project ID
+
+    const account = new Appwrite.Account(client);
+
+    async function verifyEmail() {
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get("userId");
+      const secret = params.get("secret");
+      const statusBox = document.getElementById("status-box");
+
+      if (!userId || !secret) {
+        statusBox.innerHTML = "<p class='error'>⚠️ Invalid verification link</p>";
+        return;
+      }
+
+      try {
+        await account.updateVerification(userId, secret);
+        statusBox.innerHTML = `
+          <p class='success'>✅ Email verified successfully!</p>
+          <p class='note'>You can now go back to the application to log in.</p>
+        `;
+      } catch (err) {
+        console.error("Verification failed:", err);
+        statusBox.innerHTML = "<p class='error'>❌ Verification failed. Please try again.</p>";
+      }
+    }
+
+    verifyEmail();
+  </script>
+</body>
+</html>
