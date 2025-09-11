@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import colors from '../../constant/colors';
 import HomeScreen from '../screens/HomeScreen';
 import EventScreen from '../screens/EventScreen';
-import PostsScreen from '../screens/PostsScreen';
+import ChatbotScreen from '../screens/ChatbotScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import CreatePostScreen from '../screens/CreatePostScreen';
 
@@ -66,12 +66,12 @@ const Tabs = () => {
                         <Image source={require('../../assets/icons/home.png')}
                         resizeMode='contain'
                         style={{
-                            width: 25,
-                            height: 25,
+                            width: 45,
+                            height: 30,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 10, fontFamily: 'PSemi-Bold'}}>HOME</Text>
+                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold'}}>HOME</Text>
                     </View>
                 ),
             }}/>
@@ -82,11 +82,11 @@ const Tabs = () => {
                         resizeMode='contain'
                         style={{
                             width: 25,
-                            height: 25,
+                            height: 30,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 9, fontFamily: 'PSemi-Bold'}}>EVENT</Text>
+                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold'}}>EVENT</Text>
                     </View>
                     ),
             }}
@@ -107,34 +107,34 @@ const Tabs = () => {
                             <CustomTabBarButton {...props}/>
                         )
                 }}/>
-            <Tab.Screen name="Post" component={PostsScreen} options={{ 
+            <Tab.Screen name="Chatbot" component={ChatbotScreen} options={{ 
                  tabBarIcon: ({focused}) => (
-                    <View style={{alignItems:'center', justifyContent:'center', top: 24}}> 
-                        <Image source={require('../../assets/icons/posts.png')}
+                    <View style={{alignItems:'center', justifyContent:'center', top: 29}}> 
+                        <Image source={require('../../assets/icons/chatbot.png')}
                         resizeMode='contain'
                         style={{
-                            width: 25,
-                            height: 25,
+                            width: 45,
+                            height: 30,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 9, fontFamily: 'PSemi-Bold'}}>POST</Text>
+                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '100%'}}>CHATBOT</Text>
                     </View>
                     ),
             }}
             />
             <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ 
                   tabBarIcon: ({focused}) => (
-                    <View style={{alignItems:'center', justifyContent:'center', top: 25}}> 
+                    <View style={{alignItems:'center', justifyContent:'center', top: 29}}> 
                         <Image source={require('../../assets/icons/schedule.png')}
                         resizeMode='contain'
                         style={{
                             width: 25,
-                            height: 25,
+                            height: 30,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 10, fontFamily: 'PSemi-Bold', }}>SCHEDULE</Text>
+                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '100%'}}>SCHEDULE</Text>
                     </View>
                     ),
             }}/>

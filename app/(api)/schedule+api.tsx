@@ -12,9 +12,7 @@ export async function GET(request: Request) {
            SELECT * FROM schedules;
         `;
 
-        console.log('Executing query:', query);
         const result = await client.query(query);
-        console.log(`Query executed, ${result.rowCount} rows returned`);
 
         return Response.json(result.rows);
     } catch (err) {

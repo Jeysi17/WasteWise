@@ -88,6 +88,7 @@ export default function LogIn() {
                 <Text style={{ fontFamily: 'PSemi-Bold' }}>Login</Text>
             )}
             </TouchableOpacity>
+            
 
             <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account?</Text>

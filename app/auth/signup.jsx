@@ -4,7 +4,7 @@ import { SelectList } from 'react-native-dropdown-select-list'
 import colors from '../../constant/colors';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
-import { account } from '../../config/appwriteConfig';
+import { account, sendPing } from '../../config/appwriteConfig';
 import { ID } from 'react-native-appwrite';
 import axios from 'axios';
 
@@ -21,54 +21,81 @@ export default function SignUp() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showLocationError, setShowLocationError] = useState(false);
 
-   const handleSignup = async () => {
-    setIsLoading(true);  // Show loading indicator
-    
-    if(!username || !email || !password || !confirmPassword) {
-        ToastAndroid.show('Please fill all the fields!', ToastAndroid.BOTTOM);
-        setIsLoading(false);
-        return;
-    }
-    
-    if (location === "0") {
-        setShowLocationError(true);
-        ToastAndroid.show('Please select a location!', ToastAndroid.BOTTOM);
-        setIsLoading(false);
-        return;
-    } else {
-        setShowLocationError(false);
-    }
+    // Email validation function
+    const validateEmail = (email) => {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(String(email).toLowerCase());
+    };
 
-    if(password !== confirmPassword) {
-        ToastAndroid.show('Password and confirm password do not match!', ToastAndroid.BOTTOM);
-        setIsLoading(false);
-        return;
-    }
+    const handleSignup = async () => {
+        setIsLoading(true);
     
-    try {
-        // First save to your database
-        const result = await axios.post(process.env.EXPO_PUBLIC_HOST_URL+"/user", {
-            name: username,
-            email: email,
-            location: location,
-        });
-        
-        console.log(result);
-        
-        // Then create the Appwrite account
-        const success = await signup(ID.unique(), email, password, username, location);
-        
-        if(success) {
-            ToastAndroid.show('Account created successfully! Please check your email for verification.', ToastAndroid.BOTTOM);
-            router.replace('/(auth)/login');
+        // Validate fields
+        if (!username || !email || !password || !confirmPassword) {
+            ToastAndroid.show('Please fill all the fields!', ToastAndroid.BOTTOM);
+            setIsLoading(false);
+            return;
         }
-    } catch(error) {
-        console.error("Signup error:", error);
-        ToastAndroid.show(error.message, ToastAndroid.BOTTOM);
-    } finally {
-        setIsLoading(false);
-    }
-}
+    
+        if (!validateEmail(email)) {
+            ToastAndroid.show('Please enter a valid email address!', ToastAndroid.BOTTOM);
+            setIsLoading(false);
+            return;
+        }
+    
+        if (location === "0" || !location) {
+            setShowLocationError(true);
+            ToastAndroid.show('Please select a location!', ToastAndroid.BOTTOM);
+            setIsLoading(false);
+            return;
+        }
+    
+        if (password !== confirmPassword) {
+            ToastAndroid.show('Passwords do not match!', ToastAndroid.BOTTOM);
+            setIsLoading(false);
+            return;
+        }
+    
+        try {
+            // Create account in Appwrite
+            const success = await signup(
+                email,
+                password,
+                username,
+                { location }
+            );
+    
+            if (success) {
+                // Call your API route to save user in DB
+                await axios.post(
+                    `${process.env.EXPO_PUBLIC_HOST_URL}/(api)/user`,
+                    {
+                      name: username,
+                      email,
+                      location,
+                    }
+                  );
+                  
+    
+                ToastAndroid.show("Account created! Please verify your email.", ToastAndroid.BOTTOM);
+                router.replace('/auth/login');
+            }
+        } catch (error) {
+            console.error("Signup error:", error);
+            let errorMessage = "Signup failed. Please try again.";
+    
+            if (error.message.includes("email")) {
+                errorMessage = "Invalid email address. Please use a valid email.";
+            } else if (error.message.includes("already exists")) {
+                errorMessage = "An account with this email already exists.";
+            }
+    
+            ToastAndroid.show(errorMessage, ToastAndroid.BOTTOM);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
 
     const [barangay, setBarangay] = useState();
     const locations = [

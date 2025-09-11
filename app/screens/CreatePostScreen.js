@@ -1,4 +1,4 @@
-import React from 'react-native';
+import React from 'react';
 import { View, Text, Image, ImageBackground, Button, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native'
 import Header from '../../components/Home/header'
 import colors from '../../constant/colors'
@@ -144,7 +144,6 @@ const CreatePostScreen = (navigation) => {
     };
     return (
         <View>
-        <Header />
             <View style={{
                 backgroundColor: colors.lime_green
             }}>

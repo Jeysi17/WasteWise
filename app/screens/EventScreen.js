@@ -15,7 +15,6 @@ const EventScreen = ({ navigation }) => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.lime_green }}>
-      <Header />
         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {events.map((event, index) => (
           <TouchableOpacity 

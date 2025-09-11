@@ -1,11 +1,12 @@
 {
   "expo": {
     "name": "WasteWise",
-    "slug": "WasteWise",
+    "slug": "wastewise",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/app_icon.jpeg",
-    "scheme": "myapp",
+    "scheme": "wastewise",
+    "deepLinks": true,
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -16,16 +17,20 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.WasteWise",
-      "intentFilters" : [
+      "intentFilters": [
         {
           "action": "VIEW",
           "data": [
             {
               "scheme": "myapp",
-              "host": "verify"
+              "host": "myapp.com",
+              "pathPrefix": "/verify"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -36,6 +41,17 @@
     },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f"
+      }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      "expo-web-browser"
+    ],
+    "owner": "jeysi.zip"
   }
 }

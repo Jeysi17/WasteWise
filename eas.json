@@ -1,0 +1,41 @@
+{
+  "cli": {
+    "version": ">= 16.17.4",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NODE_VERSION": "20.19.4"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "NODE_VERSION": "20.19.4"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "NODE_VERSION": "20.19.4"
+      }
+    },
+    "custom": {
+      "env": {
+        "NODE_VERSION": "20.19.4"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

@@ -4,7 +4,7 @@ import colors from '../../constant/colors';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import VideoCard from '../../components/Home/videoCard';
 import ArticleCard from '../../components/Home/articleCard';
-import Header from '../../components/Home/header';
+import Header from '../../components/Home/header.jsx';
 import {useAuth, AuthContext} from '../../context/AuthContext'
 const HomeScreen = ({ navigation }) => {
 
@@ -16,10 +16,9 @@ const HomeScreen = ({ navigation }) => {
     { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." },
     { title: "Event Title", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s." }
   ];
-
+  const [isSideNavVisible, setIsSideNavVisible] = useState(false);
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg_green }}>
-      <Header />
         <ScrollView contentContainerStyle={{ paddingBottom: '38%' }}>
         <ImageBackground
           source={require('../../assets/images/bg-image.jpg')}
@@ -44,9 +43,6 @@ const HomeScreen = ({ navigation }) => {
           </Text>
           <TouchableOpacity style={styles.readMoreButton}>
             <Text style={styles.readMoreText}>Read More</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.readMoreButton} onPress={signout}>
-            <Text style={styles.readMoreText}>Sign Out</Text>
           </TouchableOpacity>
         </ImageBackground>
 
