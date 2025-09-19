@@ -1,5 +1,6 @@
 import { Client } from "node-postgres";
-export const client = new Client({
+import { Pool } from "pg";
+export const client = new Pool({
     user: process.env.EXPO_PUBLIC_DB_USERNAME,
     password: process.env.EXPO_PUBLIC_DB_PASSWORD,
     host: "us-west-2.db.thenile.dev",

@@ -67,33 +67,33 @@ const AuthProvider = ({ children }) => {
   const signup = async (email, password, username, location) => {
     setIsLoading(true);
     try {
-      // ✅ Auto-generate a safe userId
       const newUser = await account.create(ID.unique(), email, password, username);
-
-      // ✅ Create a temporary session (required to send verification email)
+  
+      // create a temp session (needed for verification)
       await account.createEmailPasswordSession(email, password);
-
-      // ✅ Send verification email with deep link redirect
+  
+      // send verification email
       await account.createVerification("https://melodic-lolly-0f1b14.netlify.app/");
-
-
-      // ✅ Log them out again (so they must verify before signing in)
+  
+      // log them out again
       await account.deleteSession("current");
-
+  
       ToastAndroid.show(
         "Signup successful! Please check your email to verify.",
         ToastAndroid.LONG
       );
-
-      return true;
+  
+      return newUser; // 👈 return the Appwrite user, not just `true`
     } catch (error) {
       console.error("Signup error:", error);
       ToastAndroid.show("Signup failed: " + error.message, ToastAndroid.LONG);
-      return false;
+      throw error; // 👈 important so signup.jsx can catch it
     } finally {
       setIsLoading(false);
     }
   };
+  
+  
 
   const verifyEmail = async (userId, secret) => {
     setIsLoading(true);

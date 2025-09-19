@@ -15,6 +15,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^6.1.2",
     "@expo/vector-icons": "^14.0.2",
     "@gorhom/bottom-sheet": "^5.1.2",
     "@react-native-firebase/app": "22.4.0",
@@ -23,53 +24,37 @@
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.8",
-    "@types/bcrypt": "^5.0.2",
-    "@types/pg": "^8.15.2",
-    "@types/react": "~19.0.10",
-    "@types/react-native-bcrypt": "^2.4.6",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
+    "dotenv": "^17.2.2",
     "expo": "^53.0.20",
     "expo-blur": "~14.1.5",
     "expo-constants": "^17.1.7",
     "expo-dev-client": "~5.2.4",
-    "expo-dev-launcher": "^5.1.16",
-    "expo-dev-menu": "^6.1.14",
     "expo-file-system": "^18.1.11",
     "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",
-    "expo-image-loader": "^5.1.0",
     "expo-image-picker": "^16.1.4",
-    "expo-json-utils": "^0.15.0",
     "expo-linear-gradient": "~14.1.5",
     "expo-linking": "~7.1.7",
-    "expo-manifests": "^0.16.6",
     "expo-notifications": "^0.31.4",
-    "expo-router": "^5.1.4",
+    "expo-router": "^6.0.3",
     "expo-splash-screen": "^0.30.10",
     "expo-status-bar": "^2.2.3",
-    "expo-symbols": "~0.4.5",
     "expo-system-ui": "^5.0.10",
     "expo-web-browser": "^14.2.0",
     "express": "^5.1.0",
-    "firebase": "^12.0.0",
     "firebase-admin": "^13.4.0",
-    "next": "^15.3.3",
-    "node-postgres": "^0.6.2",
-    "object-assign": "^4.1.1",
-    "onesignal-expo-plugin": "^2.0.3",
-    "patch-package": "^8.0.0",
     "pg": "^8.16.0",
     "react": "19.0.0",
+    "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-appwrite": "^0.11.0",
     "react-native-bcrypt": "^2.4.0",
     "react-native-calendars": "^1.1312.0",
     "react-native-dialogflow": "^3.2.2",
     "react-native-dropdown-picker": "^5.4.6",
-    "react-native-dropdown-select-list": "^2.0.5",
     "react-native-element-dropdown": "^2.12.4",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.24.0",
@@ -96,17 +81,5 @@
     "react-test-renderer": "18.3.1",
     "typescript": "~5.8.3"
   },
-  "private": true,
-  "resolutions": {
-    "@react-native-community/voice": "npm:@react-native-voice/voice@^3.2.4",
-    "@react-native-firebase/app": "22.4.0",
-    "@react-native-firebase/messaging": "22.4.0"
-  },
-  "react-native": {
-    "dependencies": {
-      "react-native-masked-view": {
-        "root": false
-      }
-    }
-  }
+  "private": true
 }

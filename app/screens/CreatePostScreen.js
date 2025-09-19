@@ -103,7 +103,7 @@ const CreatePostScreen = (navigation) => {
             throw new Error('Failed to process image');
             }
             const response = await axios.post(
-            `${process.env.EXPO_PUBLIC_HOST_URL}/(api)/pending`,
+            `${process.env.EXPO_PUBLIC_HOST_URL}/api/pending`,
             {
                 name: user.name,
                 title,

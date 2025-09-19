@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "WasteWise",
-    "slug": "wastewise",
+    "slug": "WasteWise",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/app_icon.jpeg",
@@ -17,6 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.WasteWise",
+      "googleServicesFile": "./google-services.json",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -27,10 +28,7 @@
               "pathPrefix": "/verify"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -44,13 +42,22 @@
     },
     "extra": {
       "eas": {
-        "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f"
+        "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f",
+        "apiUrl": "http://192.168.18.7:3000"
       }
     },
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icons/app_icon.jpeg",
+          "color": "#ffffff"
+        }
+      ],
+      "@react-native-firebase/app"
     ],
     "owner": "jeysi.zip"
   }

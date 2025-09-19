@@ -5,46 +5,55 @@ import SideNav from '../../components/Home/sideNav';
 import Header from '../../components/Home/header.jsx';
 import { initNotifications } from '../services/notification.js';
 import { useAuth } from '../../context/AuthContext';
-import {OneSignal, LogLevel} from 'react-native-onesignal';
-
 const AppContainer = () => {
   const { user, signout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  OneSignal.initialize(process.env.ONESIGNAL_APP_ID);
+  const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  OneSignal.Notifications.requestPermission(false);
-  useEffect(() => {
-          fetchLocation();
-      }, []);
   
-      const fetchLocation = async () => {
-          setLoading(true);
-          try {
-              const response = await fetch(
-                  `${process.env.EXPO_PUBLIC_HOST_URL}/location?userEmail=${encodeURIComponent(user.email)}`
-              );
-              const data = await response.json();
-              
-              if (data.error) {
-                  setError(data.error);
-              } else {
-                  setLocation(data.location); 
-              }
-          } catch (err) {
-              setError('Failed to fetch location');
-              console.error(err);
-          } finally {
-              setLoading(false);
-          }
-      };
+
+  // ✅ Fetch location after user loads
   useEffect(() => {
-    initNotifications(location);
-  }, []);
+    if (user?.email) {
+      fetchLocation();
+    }
+  }, [user]);
+
+  const fetchLocation = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_HOST_URL}/location?userEmail=${encodeURIComponent(user.email)}`
+      );
+      const data = await response.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setLocation(data.location);
+      }
+    } catch (err) {
+      setError('Failed to fetch location');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Pass location into your notifications setup
+  useEffect(() => {
+    if (location) {
+      initNotifications(location);
+    }
+  }, [location]);
+
   return (
     <View style={styles.container}>
-        <Header onMenuPress={() => setMenuOpen(true)} />
-        <Tabs/>
-        <SideNav visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <Header onMenuPress={() => setMenuOpen(true)} />
+      <Tabs />
+      <SideNav visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
   );
 };
