@@ -9,7 +9,7 @@
       "distribution": "internal",
       "env": {
         "NODE_VERSION": "20.19.4",
-        "GOOGLE_SERVICES_JSON": "GOOGLE_SERVICES_JSON"
+        "GOOGLE_SERVICES_JSON": "google-services.json"
       },
       "android": {
         "buildType": "apk"
@@ -25,7 +25,7 @@
       "autoIncrement": true,
       "env": {
         "NODE_VERSION": "20.19.4",
-        "GOOGLE_SERVICES_JSON": "GOOGLE_SERVICES_JSON"
+        "GOOGLE_SERVICES_JSON": "google-services.json"
       }
     },
     "custom": {
