@@ -60,3 +60,8 @@ export async function registerPushToken(userId, barangay) {
     console.error("❌ Error in registerPushToken:", err);
   }
 }
+
+// Default export for Expo Router compatibility
+export default function NotificationService() {
+  return null; // This is a service file, not a component
+}

@@ -26,11 +26,39 @@ const ProfileScreen = () => {
 
     const fetchLocation = async () => {
         setLoading(true);
+        setError(null);
+        
         try {
-            const response = await fetch(
-                `${process.env.EXPO_PUBLIC_HOST_URL}/location?userEmail=${encodeURIComponent(user.email)}`
-            );
+            // Debug: Log the URL being called
+            const apiUrl = process.env.EXPO_PUBLIC_HOST_URL || 'http://192.168.18.7:3000';
+            const fullUrl = `${apiUrl}/api/location?userEmail=${encodeURIComponent(user.email)}`;
+            console.log('🌐 Calling URL:', fullUrl);
+            console.log('🔧 EXPO_PUBLIC_HOST_URL:', process.env.EXPO_PUBLIC_HOST_URL);
+            console.log('🔧 Using fallback URL:', apiUrl);
+            
+            const response = await fetch(fullUrl);
+            
+            // Debug: Log response details
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response headers:', response.headers.get('content-type'));
+            
+            // Check if response is ok
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ HTTP Error:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            // Check content type
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('❌ Non-JSON response:', text);
+                throw new Error('Server returned non-JSON response');
+            }
+            
             const data = await response.json();
+            console.log('📊 Response data:', data);
             
             if (data.error) {
                 setError(data.error);
@@ -38,8 +66,9 @@ const ProfileScreen = () => {
                 setLocation(data.location); 
             }
         } catch (err) {
-            setError('Failed to fetch location');
-            console.error(err);
+            const errorMessage = `Failed to fetch location: ${err.message}`;
+            setError(errorMessage);
+            console.error('❌ Location fetch error:', err);
         } finally {
             setLoading(false);
         }

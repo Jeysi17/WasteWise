@@ -118,7 +118,7 @@ const Tabs = () => {
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '100%'}}>CHATBOT</Text>
+                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '85%'}}>CHATBOT</Text>
                     </View>
                     ),
             }}
@@ -134,7 +134,7 @@ const Tabs = () => {
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '100%'}}>SCHEDULE</Text>
+                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '85%'}}>SCHEDULE</Text>
                     </View>
                     ),
             }}/>

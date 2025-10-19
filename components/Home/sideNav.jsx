@@ -31,7 +31,7 @@ const SideNav = ({ visible, onClose }) => {
         <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
           <AntDesign name="right" size={15} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.navItem} onPress={() => router.push("../screens/ProfileScreen")}>Profile</Text>
+        <Text style={styles.navItem} onPress={() => router.navigate("../screens/ProfileScreen")}>Profile</Text>
         <Text style={styles.navItem}>Settings</Text>
         <Text style={styles.navItem}>About</Text>
         <Text style={styles.signOut} onPress={signout}>Sign Out</Text>

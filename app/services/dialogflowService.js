@@ -29,6 +29,11 @@ export const sendToDialogflow = async (text) => {
     return response.data.queryResult.fulfillmentText;
   } catch (error) {
     console.error('Dialogflow error:', error.response?.data || error.message);
-    return 'Sorry, I couldn’t understand that.';
+    return "Sorry, I couldn’t understand that.";
   }
 };
+
+// Default export for Expo Router compatibility
+export default function DialogflowService() {
+  return null; // This is a service file, not a component
+}

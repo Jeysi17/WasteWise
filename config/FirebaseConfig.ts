@@ -1,5 +1,6 @@
 // config/FirebaseConfig.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { Platform } from "react-native";
 
 // ✅ Your Firebase config
 const firebaseConfig = {
@@ -20,6 +21,12 @@ if (!getApps().length) {
 } else {
   app = getApp();
   console.log("ℹ️ Firebase already initialized:", app.name);
+}
+
+// ✅ Ensure Firebase is initialized for Android
+if (Platform.OS === 'android') {
+  // Firebase is automatically initialized on Android when google-services.json is present
+  console.log("🤖 Android Firebase initialization handled by google-services.json");
 }
 
 export { app };

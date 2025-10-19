@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, Platform } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -9,6 +9,9 @@ import SideNav from "../components/Home/sideNav";
 import { app } from "../config/FirebaseConfig";
 // ✅ import helper
 import { registerPushToken } from "./services/notification";
+
+// ✅ Initialize Firebase early
+console.log("🔥 Firebase app initialized:", app?.name || "Unknown");
 
 function RootLayoutNav() {
   const { isLoading, session, user } = useAuth();
@@ -33,6 +36,9 @@ function RootLayoutNav() {
     async function fetchBarangayAndRegister() {
       if (session && user?.$id) {
         try {
+          // ✅ Add delay to ensure Firebase is fully initialized
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           const url = `${process.env.EXPO_PUBLIC_HOST_URL}/api/users/${user.$id}`;
           console.log("🌍 Fetching barangay from:", url);
 

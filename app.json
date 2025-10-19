@@ -44,7 +44,8 @@
       "eas": {
         "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f",
         "apiUrl": "http://192.168.18.7:3000"
-      }
+      },
+      "EXPO_PUBLIC_HOST_URL": "http://localhost:3000"
     },
     "plugins": [
       "expo-font",
@@ -56,7 +57,15 @@
           "icon": "./assets/icons/app_icon.jpeg"
         }
       ],
-      "@react-native-firebase/app"
+      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/messaging",
+        {
+          "android": {
+            "requestPermission": true
+          }
+        }
+      ]
     ],
     "owner": "jeysi.zip"
   }

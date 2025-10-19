@@ -2,39 +2,61 @@ import { client } from "@/config/NilePostgresConfig";
 
 export async function GET(request: Request) {
     try {
-        await client.connect();
-        const userEmail = new URL(request.url).searchParams.get('userEmail');
-
+        console.log('📍 Location API endpoint called');
+        
+        // Get userEmail from query parameters
+        const url = new URL(request.url);
+        const userEmail = url.searchParams.get('userEmail');
+        
+        console.log('📧 User email:', userEmail);
+        
         // Validate email
         if (!userEmail) {
+            console.log('❌ No userEmail provided');
             return Response.json(
                 { error: 'userEmail is required' },
                 { status: 400 }
             );
         }
 
+        // Connect to database
+        console.log('🔌 Connecting to database...');
+        await client.connect();
+        console.log('✅ Database connected');
+
         // Use parameterized query to prevent SQL injection
         const query = `
-            SELECT location FROM users WHERE email = '${userEmail}';
+            SELECT location FROM users WHERE email = $1;
         `;
         
+        console.log('🔍 Executing query for email:', userEmail);
         const result = await client.query(query, [userEmail]);
+        console.log('📊 Query result:', result.rows);
 
         if (result.rows.length === 0) {
+            console.log('❌ User not found');
             return Response.json(
                 { error: 'User not found' },
                 { status: 404 }
             );
         }
 
-        return Response.json(result.rows[0]); // Return the first match
+        const location = result.rows[0].location;
+        console.log('📍 Found location:', location);
+
+        return Response.json({ location });
     } catch (err) {
         console.error('❌ Error fetching location:', err);
         return Response.json(
-            { error: 'Failed to fetch location' },
+            { error: 'Failed to fetch location', details: err },
             { status: 500 }
         );
     } finally {
-        await client.end();
+        try {
+            await client.end();
+            console.log('🔌 Database connection closed');
+        } catch (endErr) {
+            console.error('❌ Error closing connection:', endErr);
+        }
     }
 }
