@@ -176,13 +176,4 @@ dependencies {
     }
 }
 
-// Exclude old support libraries to prevent conflicts with AndroidX
-configurations.all {
-    exclude group: 'com.android.support', module: 'support-compat'
-    exclude group: 'com.android.support', module: 'support-media-compat'
-    exclude group: 'com.android.support', module: 'support-core-utils'
-    exclude group: 'com.android.support', module: 'support-core-ui'
-    exclude group: 'com.android.support', module: 'support-fragment'
-}
-
 apply plugin: 'com.google.gms.google-services'

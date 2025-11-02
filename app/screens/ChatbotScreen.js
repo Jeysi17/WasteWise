@@ -1,5 +1,4 @@
-// ChatbotScreen.js
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,64 +6,178 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import axios from "axios";
 import uuid from "react-native-uuid";
 import colors from "../../constant/colors";
-// Example colors (replace with your colors.js import if available)
-
 
 const ChatbotScreen = () => {
   const [messages, setMessages] = useState([
-    { id: "1", text: "Hi! How can I help you today? (kindly type 'Hi' or 'Hello' to start the conversation.)", sender: "bot" },
+    {
+      id: "1",
+      text: "Hi! I'm here to give you knowledge regarding waste management.",
+      sender: "bot",
+      buttons: [
+        "What is Waste Management?",
+        "What are the benefits of Waste Management?",
+        "Is Waste Management important?",
+        "Steps on how to recycle....",
+        "What are the proper ways of segregating...",
+      ],
+    },
   ]);
-  const [input, setInput] = useState("");
-  const [sessionId] = useState(uuid.v4()); // unique session per user
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const [input, setInput] = useState("");
+  const [sessionId] = useState(uuid.v4());
+  const [isLoading, setIsLoading] = useState(false);
+  const flatListRef = useRef(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (flatListRef.current && messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages]);
+
+  const sendMessage = async (text) => {
+    if (!text.trim() || isLoading) return;
 
     const userMessage = {
       id: Date.now().toString(),
-      text: input,
+      text,
       sender: "user",
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsLoading(true);
 
     try {
+      // Log the request details for debugging
+      console.log("📤 Sending request:", {
+        url: `${process.env.EXPO_PUBLIC_HOST_URL}/api/chat`,
+        message: text,
+        sessionId,
+      });
+
       const response = await axios.post(
         `${process.env.EXPO_PUBLIC_HOST_URL}/api/chat`,
         {
-          message: input,
+          message: text,
           sessionId,
+        },
+        {
+          timeout: 10000, // 10 second timeout
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
+      console.log("📥 Response received:", response.data);
+
+      const botReply =
+        response.data.reply || "⚠️ Sorry, I didn't understand that.";
+
+      // Extract buttons from backend payload
+      let buttons = [];
+      
+      if (response.data.payload?.buttons && Array.isArray(response.data.payload.buttons)) {
+        buttons = response.data.payload.buttons;
+        console.log('✅ Buttons received from backend:', buttons);
+      } else {
+        console.log('⚠️ No buttons in payload:', response.data.payload);
+      }
+
       const botMessage = {
-        id: Date.now().toString(),
-        text: response.data.reply || "⚠️ Sorry, I didn’t understand that.",
+        id: (Date.now() + 1).toString(),
+        text: botReply,
         sender: "bot",
+        buttons,
       };
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error("Chat error:", error.message);
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now().toString(), text: "❌ Server error", sender: "bot" },
-      ]);
+      console.error("❌ Chat error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+      });
+
+      let errorMessage = "❌ Unable to connect to the server";
+
+      if (error.response) {
+        // Server responded with an error
+        const status = error.response.status;
+        const details = error.response.data?.details || error.response.data?.error;
+
+        if (status === 403) {
+          errorMessage = "❌ Authentication error: Unable to access chatbot service";
+          
+          Alert.alert(
+            "Authentication Error",
+            "The chatbot service couldn't authenticate with Dialogflow.\n\nThis usually means:\n• Dialogflow credentials are missing or invalid\n• Service account key file is not properly configured\n• API permissions are not set correctly\n\nPlease contact the administrator.",
+            [{ text: "OK" }]
+          );
+        } else if (status === 500) {
+          errorMessage = `❌ Server error: ${details || "Something went wrong on the server"}`;
+          
+          Alert.alert(
+            "Server Error",
+            `The chatbot service encountered an error. Please try again.\n\nDetails: ${details || "Internal server error"}`,
+            [{ text: "OK" }]
+          );
+        } else if (status === 400) {
+          errorMessage = "❌ Invalid request. Please try again.";
+        } else if (status === 404) {
+          errorMessage = "❌ Chat service not found. Please check your connection.";
+        } else {
+          errorMessage = `❌ Error ${status}: ${details || "Please try again"}`;
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = "❌ No response from server. Check your internet connection.";
+        
+        Alert.alert(
+          "Connection Error",
+          "Unable to reach the server. Please check:\n• Your internet connection\n• Server URL in environment variables\n• Server is running",
+          [{ text: "OK" }]
+        );
+      } else if (error.code === "ECONNABORTED") {
+        // Timeout
+        errorMessage = "❌ Request timed out. Please try again.";
+      }
+
+      const errorBotMessage = {
+        id: (Date.now() + 1).toString(),
+        text: errorMessage,
+        sender: "bot",
+        buttons: ["Try again"],
+      };
+
+      setMessages((prev) => [...prev, errorBotMessage]);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleButtonPress = (text) => {
+    sendMessage(text);
   };
 
   return (
     <View style={styles.screen}>
-      {/* Chat container */}
       <View style={styles.chatContainer}>
         <FlatList
+          ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.flatListContent}
           renderItem={({ item }) => (
             <View
               style={[
@@ -75,20 +188,56 @@ const ChatbotScreen = () => {
               ]}
             >
               <Text style={styles.messageText}>{item.text}</Text>
+
+              {/* Show buttons if present */}
+              {item.sender === "bot" && item.buttons?.length > 0 && (
+                <View style={styles.buttonContainer}>
+                  {item.buttons.map((btnText, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.optionButton}
+                      onPress={() => handleButtonPress(btnText)}
+                      disabled={isLoading}
+                    >
+                      <Text style={styles.optionText}>{btnText}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           )}
         />
 
-        {/* Input box */}
+        {/* Loading indicator */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#32CD32" />
+            <Text style={styles.loadingText}>Thinking...</Text>
+          </View>
+        )}
+
+        {/* Input box at the bottom */}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Type your message..."
             value={input}
             onChangeText={setInput}
+            editable={!isLoading}
+            onSubmitEditing={() => sendMessage(input)}
+            returnKeyType="send"
           />
-          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-            <Text style={styles.sendButtonText}>Send</Text>
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (isLoading || !input.trim()) && styles.sendButtonDisabled,
+            ]}
+            onPress={() => sendMessage(input)}
+            disabled={isLoading || !input.trim()}
+          >
+            <Text style={styles.sendButtonText}>
+              {isLoading ? "..." : "Send"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -100,15 +249,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.lime_green,
-    paddingTop: 40, // adjust for header spacing
-  },
-  headerTitle: {
-    fontFamily: "PSemi-Bold",
-    fontSize: 30,
-    marginTop: 20,
-    marginBottom: 20,
-    textAlign: "center",
-    color: "#000",
+    paddingTop: 40,
   },
   chatContainer: {
     flex: 1,
@@ -119,21 +260,56 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     maxHeight: "79%",
   },
+  flatListContent: {
+    paddingBottom: 10,
+  },
   message: {
     marginVertical: 5,
     padding: 10,
     borderRadius: 8,
-    maxWidth: "70%",
+    maxWidth: "80%",
   },
   userMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#DCF8C6",
+    backgroundColor: "#32CD32",
   },
   botMessage: {
     alignSelf: "flex-start",
     backgroundColor: "#ECECEC",
   },
-  messageText: { color: "#000" },
+  messageText: {
+    color: "#000",
+  },
+  buttonContainer: {
+    marginTop: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  optionButton: {
+    borderColor: "#32CD32",
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    alignSelf: "flex-start",
+    marginTop: 6,
+  },
+  optionText: {
+    color: "#32CD32",
+    fontWeight: "500",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  loadingText: {
+    marginLeft: 8,
+    color: "#666",
+    fontStyle: "italic",
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -153,9 +329,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     justifyContent: "center",
     borderRadius: 10,
-    height: '40%'
+    height: 40,
   },
-  sendButtonText: { color: "#fff", fontWeight: "bold" },
+  sendButtonDisabled: {
+    backgroundColor: "#A0D6A0",
+    opacity: 0.5,
+  },
+  sendButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 });
 
 export default ChatbotScreen;

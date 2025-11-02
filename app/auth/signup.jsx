@@ -15,7 +15,6 @@ import {
   ActivityIndicator,
   Platform,
   Alert,
-  PermissionsAndroid
 } from "react-native";
 import { 
   request, 
@@ -24,7 +23,6 @@ import {
   RESULTS, 
   openSettings 
 } from "react-native-permissions";
-import DropDownPicker from "react-native-dropdown-picker";
 import colors from "../../constant/colors";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
@@ -59,138 +57,138 @@ export default function SignUp() {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [location, setLocation] = useState(null);
+  const [location, setLocation] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [detectedBarangay, setDetectedBarangay] = useState(null);
   const [coords, setCoords] = useState(null);
 
-  const [open, setOpen] = useState(false);
-  const [items, setItems] = useState(
-    allowedBarangays.map((b) => ({ label: b, value: b }))
-  );
-
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase());
- 
-  // ✅ Function to get live location and reverse geocode using OpenStreetMap
-  const getLiveLocation = async () => {
-    try {
-      setGettingLocation(true);
   
-      let permissionResult;
-  
-      if (Platform.OS === "android") {
-        permissionResult = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
-  
-        if (permissionResult === RESULTS.DENIED) {
-          // ✅ Show native popup asking the user
-          permissionResult = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
-        }
-  
-        if (permissionResult === RESULTS.BLOCKED) {
-          Alert.alert(
-            "Permission Required",
-            "Location access is required to detect your barangay. Please enable it in settings.",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Open Settings", onPress: () => openSettings() },
-            ]
-          );
-          setGettingLocation(false);
-          return;
-        }
-  
-        if (permissionResult !== RESULTS.GRANTED) {
+  // ✅ Single unified function to handle location detection
+const handleDetectBarangay = async () => {
+  try {
+    console.log("🔵 Starting location detection...");
+    setGettingLocation(true);
+
+    if (Platform.OS === "android") {
+      console.log("🔵 Checking permission status...");
+      
+      // Check current permission status
+      const checkResult = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      console.log("🔵 Permission check result:", checkResult);
+
+      if (checkResult === RESULTS.DENIED) {
+        console.log("🔵 Permission DENIED, requesting...");
+        const requestResult = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+        console.log("🔵 Permission request result:", requestResult);
+        
+        if (requestResult !== RESULTS.GRANTED) {
           ToastAndroid.show("Location permission denied!", ToastAndroid.BOTTOM);
           setGettingLocation(false);
           return;
         }
+      } else if (checkResult === RESULTS.BLOCKED) {
+        console.log("🔵 Permission BLOCKED");
+        Alert.alert(
+          "Permission Required",
+          "Location access is blocked. Please enable it in settings.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => openSettings() },
+          ]
+        );
+        setGettingLocation(false);
+        return;
+      } else if (checkResult === RESULTS.GRANTED) {
+        console.log("🔵 Permission already GRANTED");
+      } else if (checkResult === RESULTS.UNAVAILABLE) {
+        console.log("🔵 Permission UNAVAILABLE");
+        ToastAndroid.show("Location not available on this device", ToastAndroid.BOTTOM);
+        setGettingLocation(false);
+        return;
       }
-  
-      // ✅ Get location after permission granted
-      Geolocation.getCurrentPosition(
-        async (position) => {
+    }
+
+    console.log("🔵 Getting current position...");
+    Geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          console.log("✅ Position obtained:", position);
           const { latitude, longitude } = position.coords;
           setCoords({ latitude, longitude });
-  
-          // Reverse geocode using OpenStreetMap
+
+          console.log(`🔵 Fetching address for: ${latitude}, ${longitude}`);
+          
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            {
+              headers: {
+                'User-Agent': 'WasteWise App'
+              }
+            }
           );
+          
+          console.log("🔵 Response status:", res.status);
+          
           const data = await res.json();
-  
+          console.log("🔵 Geocoding data received:", JSON.stringify(data, null, 2));
+
+          // Try multiple possible fields for barangay
           const barangayName =
             data.address?.suburb ||
             data.address?.neighbourhood ||
             data.address?.village ||
             data.address?.city_district ||
+            data.address?.hamlet ||
+            data.address?.town ||
+            data.address?.municipality ||
             "Unknown";
-  
-          setDetectedBarangay(barangayName);
-  
-          const isAllowed = allowedBarangays.some(
-            (b) =>
-              b.toLowerCase().replace("brgy.", "barangay").trim() ===
-              barangayName.toLowerCase().replace("brgy.", "barangay").trim()
-          );
-  
-          if (isAllowed) {
-            setLocation(barangayName);
-            ToastAndroid.show(`Barangay detected: ${barangayName}`, ToastAndroid.BOTTOM);
-          } else {
-            ToastAndroid.show(
-              `You are outside the allowed barangays (${barangayName})`,
-              ToastAndroid.BOTTOM
-            );
-            setLocation(null);
-          }
-  
-          setGettingLocation(false);
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          ToastAndroid.show("Failed to get location.", ToastAndroid.BOTTOM);
-          setGettingLocation(false);
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-      );
-    } catch (err) {
-      console.error("Location error:", err);
-      ToastAndroid.show("Failed to get location.", ToastAndroid.BOTTOM);
-      setGettingLocation(false);
-    }
-  };
 
-  const handleDetectBarangay = async () => {
-    try {
-      // Ask for fine location permission
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: "Location Permission",
-          message: "WasteWise needs access to your location to detect your barangay.",
-          buttonNeutral: "Ask Me Later",
-          buttonNegative: "Cancel",
-          buttonPositive: "OK",
+          console.log("🔵 Extracted barangay name:", barangayName);
+          setDetectedBarangay(barangayName);
+
+          // Check if it's in the allowed list (case-insensitive)
+          const matchedBarangay = allowedBarangays.find(
+            (b) =>
+              b.toLowerCase().replace(/\s+/g, '').includes(barangayName.toLowerCase().replace(/\s+/g, '')) ||
+              barangayName.toLowerCase().replace(/\s+/g, '').includes(b.toLowerCase().replace(/\s+/g, ''))
+          );
+
+          console.log("🔵 Matched barangay:", matchedBarangay);
+
+          if (matchedBarangay) {
+            setLocation(matchedBarangay); // Use the official name from the list
+            ToastAndroid.show(`Barangay detected: ${matchedBarangay}`, ToastAndroid.BOTTOM);
+          } else {
+            // Show what was detected even if not in allowed list
+            ToastAndroid.show(
+              `Detected: ${barangayName} - Not in allowed barangays list`,
+              ToastAndroid.LONG
+            );
+            setLocation(""); // Clear the field if not allowed
+          }
+
+          setGettingLocation(false);
+        } catch (geocodingError) {
+          console.error("❌ Geocoding error:", geocodingError);
+          ToastAndroid.show("Failed to detect barangay: " + geocodingError.message, ToastAndroid.BOTTOM);
+          setGettingLocation(false);
         }
-      );
-  
-      console.log("Permission result:", granted);
-  
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        console.log("Location permission granted");
-        getLiveLocation(); // call your existing function
-      } else {
-        console.log("Location permission denied");
-        Alert.alert(
-          "Permission Denied",
-          "You need to allow location access to detect your barangay."
-        );
-      }
-    } catch (err) {
-      console.warn(err);
-    }
-  };
+      },
+      (error) => {
+        console.error("❌ Geolocation error:", error);
+        ToastAndroid.show("Failed to get location: " + error.message, ToastAndroid.BOTTOM);
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  } catch (err) {
+    console.error("❌ Location error:", err);
+    ToastAndroid.show("Failed to get location: " + err.message, ToastAndroid.BOTTOM);
+    setGettingLocation(false);
+  }
+};
 
   const handleSignup = async () => {
     setIsLoading(true);
@@ -208,7 +206,18 @@ export default function SignUp() {
     }
 
     if (!location) {
-      ToastAndroid.show("Please detect or select your location!", ToastAndroid.BOTTOM);
+      ToastAndroid.show("Please detect your location!", ToastAndroid.BOTTOM);
+      setIsLoading(false);
+      return;
+    }
+
+    // ✅ Validate that the entered barangay is in the allowed list
+    const isAllowed = allowedBarangays.some(
+      (b) => b.toLowerCase() === location.toLowerCase()
+    );
+
+    if (!isAllowed) {
+      ToastAndroid.show("Please enter a valid barangay from the allowed list!", ToastAndroid.BOTTOM);
       setIsLoading(false);
       return;
     }
@@ -282,44 +291,24 @@ export default function SignUp() {
             placeholderTextColor={colors.BG_color}
             style={styles.textInput}
             onChangeText={setUsername}
+            value={username}
           />
           <TextInput
             placeholder="Enter Email"
             placeholderTextColor={colors.BG_color}
             style={styles.textInput}
             onChangeText={setEmail}
+            value={email}
           />
 
-          <DropDownPicker
-            open={open}
+          {/* ✅ Replaced DropDownPicker with TextInput */}
+          <TextInput
+            placeholder="Enter Barangay or Detect Automatically"
+            placeholderTextColor={colors.BG_color}
+            style={styles.textInput}
+            onChangeText={setLocation}
             value={location}
-            items={items}
-            setOpen={setOpen}
-            setValue={(callback) => {
-              const val = callback(location);
-              setLocation(val);
-            }}
-            setItems={setItems}
-            placeholder="Select Location or Detect Automatically"
-            style={{
-              borderColor: colors.BG_color,
-              borderWidth: 2,
-              borderRadius: 10,
-              marginTop: 15,
-            }}
-            textStyle={{
-              fontFamily: "PSemi-Bold",
-            }}
-            labelStyle={{
-              fontFamily: "PSemi-Bold",
-            }}
-            dropDownContainerStyle={{
-              borderColor: colors.BG_color,
-              borderWidth: 2,
-              borderRadius: 10,
-              maxHeight: 200,
-            }}
-            listMode="SCROLLVIEW"
+            editable={!gettingLocation} // Disable while detecting
           />
 
           {/* Detect Location Button */}
@@ -350,6 +339,7 @@ export default function SignUp() {
             secureTextEntry={true}
             style={styles.textInput}
             onChangeText={setPassword}
+            value={password}
           />
           <TextInput
             placeholder="Confirm Password"
@@ -357,6 +347,7 @@ export default function SignUp() {
             secureTextEntry={true}
             style={styles.textInput}
             onChangeText={setConfirmPassword}
+            value={confirmPassword}
           />
 
           <TouchableOpacity

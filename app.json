@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icons/app_icon.jpeg",
     "scheme": "wastewise",
-    "deepLinks": true,
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -18,6 +17,10 @@
       },
       "package": "com.anonymous.WasteWise",
       "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -35,15 +38,16 @@
     "web": {
       "bundler": "metro",
       "output": "server",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.jpeg"
     },
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
+      "apiUrl": "http://192.168.18.5:3000",
       "eas": {
         "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f",
-        "apiUrl": "http://192.168.18.7:3000"
+        "apiUrl": "http://192.168.18.5:3000"
       },
       "EXPO_PUBLIC_HOST_URL": "http://localhost:3000"
     },
@@ -55,15 +59,6 @@
         "expo-notifications",
         {
           "icon": "./assets/icons/app_icon.jpeg"
-        }
-      ],
-      "@react-native-firebase/app",
-      [
-        "@react-native-firebase/messaging",
-        {
-          "android": {
-            "requestPermission": true
-          }
         }
       ]
     ],

@@ -81,3 +81,4 @@ yarn-error.*
 # @end expo-cli
 ./google-services.json
 /android
+.expo/

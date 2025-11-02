@@ -1,11 +1,30 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const { Pool } = require("pg");
-const dialogflow = require('@google-cloud/dialogflow');
+import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
+import cors from "cors";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { Pool } from "pg";
+import dialogflow from "@google-cloud/dialogflow";
+import { GoogleAuth } from "google-auth-library";
+import { fileURLToPath } from "url";
+import { SessionsClient } from '@google-cloud/dialogflow';
+// ✅ Recreate __dirname and __filename in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+const auth = new GoogleAuth({
+  keyFile: "./wastewise-gach-cc6d87ed1dd4.json",
+  scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+});
+
+async function getAccessToken() {
+  const client = await auth.getClient();
+  const tokenResponse = await client.getAccessToken();
+  return tokenResponse.token;
+}
 
 // ✅ Universal fetch import (works in Node 16 & 18+)
 const fetch = (...args) =>
@@ -48,15 +67,24 @@ try {
 }
 
 // ✅ Send message to Dialogflow using Google Cloud client
-async function sendToDialogflow(text, sessionId) {
-  if (!sessionClient) {
-    console.log('⚠️ Dialogflow client not available, using fallback responses');
-    return getFallbackResponse(text);
-  }
+import axios from "axios";
 
+// 🔧 FIX: Proper Dialogflow client initialization
+const sendToDialogflow = async (message, sessionId) => {
   try {
+    // Method 1: Using service account key file (RECOMMENDED)
+    const sessionClient = new SessionsClient({
+      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS, // Path to your JSON key file
+    });
+
+    // OR Method 2: Using credentials object directly
+    // const sessionClient = new SessionsClient({
+    //   credentials: JSON.parse(process.env.DIALOGFLOW_CREDENTIALS), // JSON key as string
+    // });
+
+    const projectId = process.env.DIALOGFLOW_PROJECT_ID;
     const sessionPath = sessionClient.projectAgentSessionPath(
-      DIALOGFLOW_PROJECT_ID,
+      projectId,
       sessionId
     );
 
@@ -64,22 +92,27 @@ async function sendToDialogflow(text, sessionId) {
       session: sessionPath,
       queryInput: {
         text: {
-          text: text,
-          languageCode: LANGUAGE_CODE,
+          text: message,
+          languageCode: 'en-US',
         },
       },
     };
 
-    const responses = await sessionClient.detectIntent(request);
-    const result = responses[0].queryResult;
-    
-    console.log('🤖 Dialogflow response:', result.fulfillmentText);
-    return result.fulfillmentText || 'Sorry, I couldn\'t understand that.';
+    console.log('🤖 Sending to Dialogflow:', { projectId, sessionId, message });
+
+    const [response] = await sessionClient.detectIntent(request);
+    console.log('✅ Dialogflow response received');
+
+    return response.queryResult;
   } catch (error) {
-    console.error('Dialogflow error:', error.message);
-    return getFallbackResponse(text);
+    console.error('❌ Dialogflow Error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+    throw error;
   }
-}
+};
 
 // ✅ Fallback responses when Dialogflow is not available
 function getFallbackResponse(text) {
@@ -212,26 +245,47 @@ app.post("/api/register-device", async (req, res) => {
   const { user_id, barangay, expo_push_token } = req.body;
   console.log("📥 Register request:", req.body);
 
+  // 🧩 Validate inputs
   if (!barangay || !expo_push_token) {
-    return res
-      .status(400)
-      .json({ error: "barangay and expo_push_token are required" });
+    return res.status(400).json({
+      error: "Missing required fields: barangay and expo_push_token",
+    });
   }
 
   try {
-    await pool.query(
-      `INSERT INTO user_devices (user_id, barangay, expo_push_token)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (user_id, expo_push_token) DO UPDATE 
-         SET barangay = EXCLUDED.barangay`,
-      [user_id || null, barangay, expo_push_token]
-    );
+    // 🧠 Confirm DB connection
+    if (!pool) {
+      console.error("❌ Database pool is not initialized!");
+      return res.status(500).json({ error: "Database not initialized" });
+    }
 
-    res.json({ message: "✅ Device registered successfully" });
+    // 🧾 Insert or update device
+    const query = `
+      INSERT INTO user_devices (user_id, barangay, expo_push_token)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, expo_push_token)
+      DO UPDATE SET barangay = EXCLUDED.barangay
+      RETURNING *;
+    `;
+
+    const values = [user_id || null, barangay, expo_push_token];
+
+    const result = await pool.query(query, values);
+
+    console.log("✅ Device registered or updated:", result.rows[0]);
+
+    res.json({
+      success: true,
+      message: "✅ Device registered successfully",
+      data: result.rows[0],
+    });
   } catch (err) {
-    handleError(res, "Failed to register device", err);
+    console.error("❌ Failed to register device:", err.message);
+    console.error("🔍 Full error object:", err);
+    res.status(500).json({ error: "Failed to register device" });
   }
 });
+
 
 // 🗑 Delete a schedule + notify
 app.delete("/api/schedules/:id", async (req, res) => {
@@ -293,17 +347,92 @@ app.post("/api/chat", async (req, res) => {
   const { message, sessionId } = req.body;
 
   if (!message || !sessionId) {
-    return res.status(400).json({ error: "Message and sessionId are required" });
+    return res
+      .status(400)
+      .json({ error: "Message and sessionId are required" });
   }
 
   try {
-    // Try Dialogflow first, fallback to keyword-based responses
-    const reply = await sendToDialogflow(message, sessionId);
-    res.json({ reply });
+    const result = await sendToDialogflow(message, sessionId);
+
+    // ✅ Get fulfillment messages
+    const fulfillmentMessages = result?.fulfillmentMessages || [];
+    const fulfillmentText =
+      result?.fulfillmentText ||
+      fulfillmentMessages.find((msg) => msg?.text?.text?.length > 0)?.text
+        ?.text?.[0] ||
+      "⚠️ Sorry, I didn't understand that.";
+
+    // ✅ Extract suggestion chips from richContent
+    let suggestionChips = [];
+
+    fulfillmentMessages.forEach((msg) => {
+      if (msg?.payload?.fields?.richContent) {
+        try {
+          const richContent = msg.payload.fields.richContent;
+          
+          // Navigate through the nested structure to find chips
+          const extractChipsFromStruct = (obj) => {
+            const chips = [];
+            
+            // Check if this level has listValue
+            if (obj.listValue?.values) {
+              obj.listValue.values.forEach(section => {
+                // Each section can have another listValue with items
+                if (section.listValue?.values) {
+                  section.listValue.values.forEach(item => {
+                    // Look for structValue with fields containing type and options
+                    if (item.structValue?.fields) {
+                      const fields = item.structValue.fields;
+                      
+                      // Check if this is a chips type
+                      if (fields.type?.stringValue === 'chips' && fields.options?.listValue?.values) {
+                        // Extract text from each option
+                        fields.options.listValue.values.forEach(option => {
+                          if (option.structValue?.fields?.text?.stringValue) {
+                            chips.push(option.structValue.fields.text.stringValue);
+                          }
+                        });
+                      }
+                    }
+                  });
+                }
+              });
+            }
+            
+            return chips;
+          };
+          
+          suggestionChips = extractChipsFromStruct(richContent);
+          console.log('✅ Successfully extracted chips:', suggestionChips);
+          
+        } catch (e) {
+          console.error('❌ Error parsing richContent:', e);
+        }
+      }
+    });
+
+    // Build payload with extracted chips
+    const payload = suggestionChips.length > 0 ? { buttons: suggestionChips } : {};
+
+    console.log('📤 Final response:', { 
+      reply: fulfillmentText, 
+      buttons: suggestionChips 
+    });
+
+    res.status(200).json({
+      reply: fulfillmentText,
+      payload: payload,
+    });
   } catch (err) {
-    handleError(res, "Failed to process chat message", err);
+    console.error("❌ Error in /api/chat:", err);
+
+    res.status(500).json({
+      error: "Failed to process chat message",
+      details: err.message || err,
+    });
   }
-});
+})
 
 app.get('/api/location', async (req, res) => {
   try {
