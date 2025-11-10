@@ -3,6 +3,8 @@ import { View, Text, Animated, TouchableOpacity, StyleSheet, Dimensions } from '
 import colors from '../../constant/colors';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import { navigationRef } from '../../app/navigation/RootNavigation';
 import { useAuth } from '../../context/AuthContext';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -10,6 +12,7 @@ const SideNav = ({ visible, onClose }) => {
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   const router = useRouter();
+  const navigation = useNavigation();
   const { signout } = useAuth();
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -31,7 +34,16 @@ const SideNav = ({ visible, onClose }) => {
         <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
           <AntDesign name="right" size={15} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.navItem} onPress={() => router.navigate("../screens/ProfileScreen")}>Profile</Text>
+        <Text style={styles.navItem} onPress={() => {
+          onClose();
+          if (navigationRef.isReady()) {
+            navigationRef.navigate('MainTabs', { screen: 'Profile' });
+          } else if (navigation && navigation.navigate) {
+            navigation.navigate('MainTabs', { screen: 'Profile' });
+          } else {
+            router.push('/home');
+          }
+        }}>Profile</Text>
         <Text style={styles.navItem}>Settings</Text>
         <Text style={styles.navItem}>About</Text>
         <Text style={styles.signOut} onPress={signout}>Sign Out</Text>

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, Platform } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
+import * as Notifications from "expo-notifications";
+import { NotificationBehavior } from "expo-notifications";
+import { getMessaging, onMessage } from '@react-native-firebase/messaging';
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import colors from "../constant/colors";
 import Header from "../components/Home/header";
@@ -13,11 +16,37 @@ import { registerPushToken } from "./services/notification";
 // ✅ Initialize Firebase early
 console.log("🔥 Firebase app initialized:", app?.name || "Unknown");
 
+// ✅ Configure notification channel with vibration for Android
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: 'Default Notifications',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    sound: 'default',
+    enableVibrate: true,
+    enableLights: true,
+    lightColor: '#FF0000',
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+  });
+}
+
+// ✅ Configure notification handler to show notifications in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async (): Promise<NotificationBehavior> => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowList: true,
+    shouldShowBanner: true
+  }),
+});
+
 function RootLayoutNav() {
   const { isLoading, session, user } = useAuth();
   const router = useRouter();
   const segments = useSegments();
   const [isSideNavOpen, setIsSideNavOpen] = useState(false);
+
   // ✅ Redirect user based on auth state
   useEffect(() => {
     if (!isLoading) {
@@ -62,6 +91,55 @@ function RootLayoutNav() {
 
     fetchBarangayAndRegister();
   }, [session, user]);
+
+  // ✅ Handle FCM foreground messages (using new modular API)
+  useEffect(() => {
+    const messaging = getMessaging();
+    
+    const unsubscribe = onMessage(messaging, async (remoteMessage) => {
+      console.log('📩 FCM message received in foreground:', remoteMessage);
+      
+      // Only schedule local notification if notification payload exists
+      // This prevents duplicate notifications
+      if (remoteMessage.notification) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: remoteMessage.notification.title || 'New Notification',
+            body: remoteMessage.notification.body || '',
+            data: remoteMessage.data || {},
+            sound: 'default',
+          },
+          trigger: null, // Show immediately
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // ✅ Handle notifications when app is in foreground
+  useEffect(() => {
+    // Listen for notifications received while app is open
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        console.log("📩 Notification received in foreground:", notification);
+      }
+    );
+
+    // Listen for when user taps on a notification
+    const responseListener = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        console.log("👆 User tapped notification:", response);
+        // You can add navigation logic here based on notification data
+      }
+    );
+
+    // Cleanup listeners on unmount
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }, []);
 
   if (isLoading) {
     return (

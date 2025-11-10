@@ -1,5 +1,17 @@
 import React, { useState } from "react";
-import { Image,Keyboard, Text, View, StyleSheet,TouchableWithoutFeedback , ImageBackground, TouchableOpacity, TextInput, Pressable, Dimensions, KeyboardAvoidingView, Platform, ActivityIndicator, ToastAndroid,
+import { Image,
+Keyboard, 
+Text, 
+View, 
+StyleSheet,
+TouchableWithoutFeedback , 
+ImageBackground, 
+TouchableOpacity, 
+TextInput, 
+Pressable, 
+Dimensions, 
+ActivityIndicator, 
+ToastAndroid,
 } from "react-native";
 import colors from '../../constant/colors';
 import { useRouter } from 'expo-router';
@@ -10,7 +22,6 @@ export default function LogIn() {
     const [containerHeight, setContainerHeight] = useState(Dimensions.get('window').height);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-
     const {session, signin} = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -44,7 +55,7 @@ export default function LogIn() {
           <KeyboardAwareScrollView
             contentContainerStyle={{ flexGrow: 1 }}
             enableOnAndroid={true}
-            extraScrollHeight={20} // 👈 pushes inputs above keyboard
+            extraScrollHeight={20} 
             keyboardShouldPersistTaps="handled"
           >
             <ImageBackground

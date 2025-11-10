@@ -1,14 +1,14 @@
-import { View, Text } from 'react-native'
 import React from 'react'
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native'
-import Tabs from './navigation/tabs'
+import AppNavigator from './navigation/AppNavigator'
+import { navigationRef } from './navigation/RootNavigation'
 
 const home = () => {
   return (
     <NavigationIndependentTree>
-        <NavigationContainer>
-            <Tabs />
-        </NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
+        <AppNavigator />
+      </NavigationContainer>
     </NavigationIndependentTree>
   )
 }

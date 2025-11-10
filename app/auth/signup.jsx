@@ -1,27 +1,27 @@
 import React, { useState } from "react";
 import {
-  Image,
-  Keyboard,
-  Text,
-  View,
-  StyleSheet,
-  TouchableWithoutFeedback,
-  ImageBackground,
-  TouchableOpacity,
-  TextInput,
-  Pressable,
-  Dimensions,
-  ToastAndroid,
-  ActivityIndicator,
-  Platform,
-  Alert,
+Image,
+Keyboard,
+Text,
+View,
+StyleSheet,
+TouchableWithoutFeedback,
+ImageBackground,
+TouchableOpacity,
+TextInput,
+Pressable,
+Dimensions,
+ToastAndroid,
+ActivityIndicator,
+Platform,
+Alert,
 } from "react-native";
 import { 
-  request, 
-  check, 
-  PERMISSIONS, 
-  RESULTS, 
-  openSettings 
+request, 
+check, 
+PERMISSIONS, 
+RESULTS, 
+openSettings 
 } from "react-native-permissions";
 import colors from "../../constant/colors";
 import { useRouter } from "expo-router";
@@ -30,7 +30,6 @@ import axios from "axios";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Geolocation from "react-native-geolocation-service";
 
-// ✅ Allowed barangay list
 const allowedBarangays = [
   "Aguado",
   "Cabezas",
@@ -45,16 +44,15 @@ const allowedBarangays = [
   "Luciano",
   "Osorio",
   "San Agustin",
+  "Buenavista I",
 ];
 
 export default function SignUp() {
   const [containerHeight, setContainerHeight] = useState(Dimensions.get("window").height);
   const [isLoading, setIsLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-
   const router = useRouter();
   const { signup } = useAuth();
-
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [location, setLocation] = useState("");
@@ -65,31 +63,21 @@ export default function SignUp() {
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase());
   
-  // ✅ Single unified function to handle location detection
 const handleDetectBarangay = async () => {
   try {
-    console.log("🔵 Starting location detection...");
+    console.log("Starting location detection...");
     setGettingLocation(true);
 
     if (Platform.OS === "android") {
-      console.log("🔵 Checking permission status...");
-      
-      // Check current permission status
       const checkResult = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
-      console.log("🔵 Permission check result:", checkResult);
-
       if (checkResult === RESULTS.DENIED) {
-        console.log("🔵 Permission DENIED, requesting...");
         const requestResult = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
-        console.log("🔵 Permission request result:", requestResult);
-        
         if (requestResult !== RESULTS.GRANTED) {
           ToastAndroid.show("Location permission denied!", ToastAndroid.BOTTOM);
           setGettingLocation(false);
           return;
         }
       } else if (checkResult === RESULTS.BLOCKED) {
-        console.log("🔵 Permission BLOCKED");
         Alert.alert(
           "Permission Required",
           "Location access is blocked. Please enable it in settings.",
@@ -101,25 +89,17 @@ const handleDetectBarangay = async () => {
         setGettingLocation(false);
         return;
       } else if (checkResult === RESULTS.GRANTED) {
-        console.log("🔵 Permission already GRANTED");
       } else if (checkResult === RESULTS.UNAVAILABLE) {
-        console.log("🔵 Permission UNAVAILABLE");
         ToastAndroid.show("Location not available on this device", ToastAndroid.BOTTOM);
         setGettingLocation(false);
         return;
       }
     }
-
-    console.log("🔵 Getting current position...");
     Geolocation.getCurrentPosition(
       async (position) => {
         try {
-          console.log("✅ Position obtained:", position);
           const { latitude, longitude } = position.coords;
           setCoords({ latitude, longitude });
-
-          console.log(`🔵 Fetching address for: ${latitude}, ${longitude}`);
-          
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
             {
@@ -128,63 +108,57 @@ const handleDetectBarangay = async () => {
               }
             }
           );
-          
-          console.log("🔵 Response status:", res.status);
-          
           const data = await res.json();
-          console.log("🔵 Geocoding data received:", JSON.stringify(data, null, 2));
+          console.log("Geocoding data received:", JSON.stringify(data, null, 2));
 
-          // Try multiple possible fields for barangay
           const barangayName =
+            data.address?.village ||
+            data.address?.quarter ||
             data.address?.suburb ||
             data.address?.neighbourhood ||
-            data.address?.village ||
             data.address?.city_district ||
             data.address?.hamlet ||
-            data.address?.town ||
-            data.address?.municipality ||
             "Unknown";
 
-          console.log("🔵 Extracted barangay name:", barangayName);
+          console.log("Extracted barangay name:", barangayName);
           setDetectedBarangay(barangayName);
 
-          // Check if it's in the allowed list (case-insensitive)
           const matchedBarangay = allowedBarangays.find(
             (b) =>
               b.toLowerCase().replace(/\s+/g, '').includes(barangayName.toLowerCase().replace(/\s+/g, '')) ||
               barangayName.toLowerCase().replace(/\s+/g, '').includes(b.toLowerCase().replace(/\s+/g, ''))
           );
 
-          console.log("🔵 Matched barangay:", matchedBarangay);
+          console.log("Matched barangay:", matchedBarangay);
 
           if (matchedBarangay) {
-            setLocation(matchedBarangay); // Use the official name from the list
+            setLocation(matchedBarangay); 
             ToastAndroid.show(`Barangay detected: ${matchedBarangay}`, ToastAndroid.BOTTOM);
           } else {
-            // Show what was detected even if not in allowed list
+        
             ToastAndroid.show(
               `Detected: ${barangayName} - Not in allowed barangays list`,
               ToastAndroid.LONG
             );
-            setLocation(""); // Clear the field if not allowed
+            setLocation(""); 
           }
 
           setGettingLocation(false);
         } catch (geocodingError) {
-          console.error("❌ Geocoding error:", geocodingError);
+          console.error("Geocoding error:", geocodingError);
           ToastAndroid.show("Failed to detect barangay: " + geocodingError.message, ToastAndroid.BOTTOM);
           setGettingLocation(false);
         }
       },
       (error) => {
-        console.error("❌ Geolocation error:", error);
+        console.error("Geolocation error:", error);
         ToastAndroid.show("Failed to get location: " + error.message, ToastAndroid.BOTTOM);
         setGettingLocation(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   } catch (err) {
-    console.error("❌ Location error:", err);
+    console.error("Location error:", err);
     ToastAndroid.show("Failed to get location: " + err.message, ToastAndroid.BOTTOM);
     setGettingLocation(false);
   }
@@ -211,7 +185,6 @@ const handleDetectBarangay = async () => {
       return;
     }
 
-    // ✅ Validate that the entered barangay is in the allowed list
     const isAllowed = allowedBarangays.some(
       (b) => b.toLowerCase() === location.toLowerCase()
     );
@@ -235,7 +208,7 @@ const handleDetectBarangay = async () => {
         throw new Error("Appwrite signup failed: no user returned");
       }
 
-      await axios.post(`${process.env.EXPO_PUBLIC_HOST_URL}/api/user`, {
+      await axios.post(`${process.env.EXPO_PUBLIC_HOST_URL}/api/users`, {
         name: username,
         email,
         location,
@@ -285,7 +258,6 @@ const handleDetectBarangay = async () => {
           )}
 
           <Text style={styles.title}>Sign up your Account</Text>
-
           <TextInput
             placeholder="Enter Username"
             placeholderTextColor={colors.BG_color}
@@ -301,17 +273,14 @@ const handleDetectBarangay = async () => {
             value={email}
           />
 
-          {/* ✅ Replaced DropDownPicker with TextInput */}
           <TextInput
-            placeholder="Enter Barangay or Detect Automatically"
+            placeholder="Click 'Detect My Barangay' button"
             placeholderTextColor={colors.BG_color}
             style={styles.textInput}
-            onChangeText={setLocation}
             value={location}
-            editable={!gettingLocation} // Disable while detecting
+            editable={false} // User cannot type
           />
 
-          {/* Detect Location Button */}
           <TouchableOpacity
             style={[styles.detectButton, gettingLocation && { opacity: 0.6 }]}
             onPress={handleDetectBarangay}
@@ -328,8 +297,8 @@ const handleDetectBarangay = async () => {
 
           {detectedBarangay && (
             <Text style={{ marginTop: 8, color: colors.BG_color }}>
-              📍 Detected Barangay:{" "}
-              <Text style={{ fontWeight: "bold" }}>{detectedBarangay}</Text>
+              Detected Barangay:{" "}
+              <Text style={{ fontWeight: "bold", fontFamily: "PSemi-Bold" }}>{detectedBarangay}</Text>
             </Text>
           )}
 

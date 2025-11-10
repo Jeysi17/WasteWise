@@ -1,120 +1,182 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  TouchableWithoutFeedback,
-  Keyboard,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
+View,
+Text,
+Image,
+TouchableOpacity,
+StyleSheet,
+TouchableWithoutFeedback,
+Keyboard,
+KeyboardAvoidingView,
+ScrollView,
+Platform,
+Modal,
+FlatList,
+Dimensions
 } from 'react-native';
 import { GestureHandlerRootView, TextInput } from 'react-native-gesture-handler';
-import { SelectList } from 'react-native-dropdown-select-list';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth} from '../../context/AuthContext';
 import colors from '../../constant/colors';
 
-const CreatePostScreen = ({ navigation }) => {
-  const { user } = useAuth();
-  const categories = [
-    { key: '0', value: 'None' },
-    { key: '1', value: 'Urgent' },
-    { key: '2', value: 'Less Urgent' },
-  ];
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+DropDownPicker.setListMode('SCROLLVIEW'); 
+
+const CreatePostScreen = ({ navigation }) => {
+  const { user, userLocation } = useAuth();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState(null);
   const [details, setDetails] = useState('');
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const barangays = [
+    'Aguado',
+    'Cabezas',
+    'Cabuco',
+    'Conchu',
+    'De Ocampo',
+    'Gregorio',
+    'Hugo Perez',
+    'Inocencio',
+    'Lallana',
+    'Lapidario',
+    'Luciano',
+    'Osorio',
+    'San Agustin',
+  ];
 
-  // Image picker
+  useEffect(() => {
+  if (userLocation) {
+    setLocation(userLocation);
+  }
+}, [userLocation]);
+
   const pickImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!');
+        alert('Permission required to access gallery!');
         return;
       }
 
-      let result = await ImagePicker.launchImageLibraryAsync({
+      const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 4],
         quality: 0.5,
       });
 
-      if (result.canceled || !result.assets?.length) return;
-      const firstAsset = result.assets[0];
-      if (!firstAsset.uri) return;
-
-      const permanentUri = `${FileSystem.cacheDirectory}${Date.now()}.jpg`;
-      await FileSystem.copyAsync({
-        from: firstAsset.uri,
-        to: permanentUri,
-      });
-
-      setSelectedImage(permanentUri);
+      if (!result.canceled && result.assets?.[0]) {
+        const image = result.assets[0];
+        const newPath = `${FileSystem.cacheDirectory}${Date.now()}.jpg`;
+        await FileSystem.copyAsync({ from: image.uri, to: newPath });
+        setSelectedImage(newPath);
+      }
     } catch (error) {
       console.error('Image picker error:', error);
-      alert('Failed to pick image. Please try again.');
     }
   };
+  const uploadToCloudinary = async (imageUri) => {
+    const data = new FormData();
+    data.append('file', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'upload.jpg',
+    });
+    data.append('upload_preset', 'complaint_images'); 
+    data.append('cloud_name', 'ddbnrxryn');
+  
+    try {
+      const res = await fetch('https://api.cloudinary.com/v1_1/ddbnrxryn/image/upload', {
+        method: 'POST',
+        body: data,
+      });
+      const result = await res.json();
+      return result.secure_url; 
+    } catch (error) {
+      console.error('Cloudinary upload error:', error);
+      throw error;
+    }
+  };
+  
 
   const handleSubmit = async () => {
     if (!selectedImage) {
       alert('Please select an image first');
       return;
     }
-
-    const now = new Date();
-    const timezoneOffset = now.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(now - timezoneOffset).toISOString().split('T')[0];
-
+  
+    // ✅ Add validation for user data
+    if (!user?.$id) {
+      alert('User information not found. Please log in again.');
+      return;
+    }
+  
+    if (!userLocation) {
+      alert('Location not available. Please wait or try again.');
+      return;
+    }
+  
     try {
-      const formData = new FormData();
-      formData.append('name', user.name);
-      formData.append('title', title);
-      formData.append('category', category);
-      formData.append('location', location);
-      formData.append('details', details);
-      formData.append('date', localISOTime);
-
-      formData.append('image', {
-        uri: selectedImage,
-        type: 'image/jpeg',
-        name: 'complaint.jpg',
-      });
-
-      const apiUrl = process.env.EXPO_PUBLIC_HOST_URL || 'http://192.168.18.87:3000';
-      console.log('🌍 Submitting complaint to:', `${apiUrl}/api/pending`);
-
-      const response = await axios.post(`${apiUrl}/api/pending`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      console.log('Post created:', response.data);
-      alert('Post created successfully!');
+      const now = new Date();
+      const date = now.toISOString();
+  
+      // 🔹 Upload image to Cloudinary
+      const imageUrl = await uploadToCloudinary(selectedImage);
+  
+      // 🔹 Prepare post data
+      const postData = {
+        user_id: user.$id,              // ✅ Appwrite user ID
+        name: user.name || user.email,  // ✅ User's display name
+        title,
+        location: userLocation,         // ✅ User's barangay from AuthContext
+        details,
+        date,
+        imageUrl,
+      };
+  
+      console.log('📤 Submitting complaint:', postData);
+  
+      const apiUrl = process.env.EXPO_PUBLIC_HOST_URL;
+      const response = await axios.post(`${apiUrl}/api/posts/pending`, postData);
+  
+      console.log('✅ Complaint submitted:', response.data);
+      alert('Complaint posted successfully!');
+  
+      // Reset form
+      setTitle('');
+      setDetails('');
+      if (selectedImage) {
+        await FileSystem.deleteAsync(selectedImage);
+        setSelectedImage(null);
+      }
+  
     } catch (error) {
-      console.error('Submission error:', error);
-      alert('Failed to create post. Please try again.');
+      console.error('❌ Error submitting complaint:', error);
+      if (error.response) {
+        console.error('Response error:', error.response.data);
+        alert(`Failed to submit complaint: ${error.response.data.error || 'Unknown error'}`);
+      } else {
+        alert('Failed to submit complaint. Please check your connection.');
+      }
     }
   };
 
   const handleCancel = async () => {
     setTitle('');
-    setLocation('');
+    setLocation(null);
     setDetails('');
     if (selectedImage) {
       try {
         await FileSystem.deleteAsync(selectedImage);
-      } catch (error) {
-        console.log('Error deleting temp image:', error);
+      } catch (err) {
+        console.error('Error deleting temp image:', err);
       }
       setSelectedImage(null);
     }
@@ -122,143 +184,67 @@ const CreatePostScreen = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.lime_green }}>
-      {/* Header */}
-      <View style={{ backgroundColor: colors.lime_green }}>
-        <Text style={styles.header}>Create Post</Text>
+      <View>
+        <Text style={styles.header}>Create Complaint</Text>
       </View>
 
-      {/* Form Container */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{
-          flex: 1,
-          backgroundColor: colors.lime_green,
-        }}
+        style={{ flex: 1 }}
       >
         <GestureHandlerRootView style={{ flex: 1 }}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ScrollView
-              contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
-              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+              showsVerticalScrollIndicator={false}
             >
-              <View
-                style={{
-                  backgroundColor: colors.BG_color,
-                  width: '95%',
-                  marginTop: 10,
-                  alignSelf: 'center',
-                  borderRadius: 10,
-                  padding: 15,
-                }}
-              >
-                {/* Title */}
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={[styles.formContainer, {height: '95%'}]}>
+                <View style={styles.inputRow}>
                   <Text style={styles.text}>Post Title:</Text>
                   <TextInput
-                    placeholder="Enter Post Title"
-                    placeholderTextColor="#000000"
+                    placeholder="Enter Complaint Title"
+                    placeholderTextColor="#000"
                     style={styles.input}
-                    onChangeText={setTitle}
                     value={title}
+                    onChangeText={setTitle}
                   />
                 </View>
 
-                {/* Category */}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'flex-start',
-                    zIndex: 1000,
-                    marginBottom: 20,
-                  }}
-                >
-                  <Text style={styles.text}>Category:</Text>
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <SelectList
-                      setSelected={(value) => {
-                        setCategory(value);
-                      }}
-                      data={categories}
-                      placeholder="Select Category"
-                      defaultOption={{ key: '0', value: 'None' }}
-                      boxStyles={styles.list}
-                      inputStyles={{ fontSize: 13 }}
-                      search={false}
-                      maxHeight={120}
-                      dropdownStyles={styles.dropdownList}
-                      fontFamily="PSemi-Bold"
-                      dropdownTextStyles={{ fontSize: 13 }}
-                      save="value"
-                    />
-                  </View>
-                </View>
-
-                {/* Image Upload */}
                 <View>
-                  <TouchableOpacity
-                    onPress={pickImage}
-                    style={{ flexDirection: 'row', justifyContent: 'center' }}
-                  >
-                    <Text style={{ ...styles.text, marginLeft: -30 }}>Upload Image:</Text>
-                    {selectedImage ? (
-                      <Image
-                        source={{ uri: selectedImage }}
-                        style={styles.image}
-                        onError={() => {
-                          console.log('Failed to load selected image');
-                          setSelectedImage(null);
-                        }}
-                      />
-                    ) : (
-                      <Image
-                        source={require('../../assets/images/image_bg.png')}
-                        style={styles.image}
-                      />
-                    )}
+                  <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center' }}>
+                    <Text style={[styles.text, { marginBottom: -10, marginLeft: -80, marginTop: 5 }]}>Upload Image:</Text>
+                    <Image
+                      source={
+                        selectedImage
+                          ? { uri: selectedImage }
+                          : require('../../assets/images/image_bg.png')
+                      }
+                      style={[styles.image, {marginTop: 10}]}
+                    />
                   </TouchableOpacity>
                 </View>
 
-                {/* Location */}
-                <View style={{ flexDirection: 'row', marginTop: -10 }}>
-                  <Text style={styles.text}>Location:</Text>
-                  <TextInput
-                    placeholder="Enter Location"
-                    placeholderTextColor="#000000"
-                    onChangeText={setLocation}
-                    style={styles.input}
-                    value={location}
-                  />
+                {/* Replace your entire TouchableOpacity + Modal block with this */}
+                <View style={styles.locationContainer}>
+                  <Text style={styles.locationText}>
+                    Location: {userLocation ? userLocation : 'Fetching location...'}
+                  </Text>
                 </View>
 
-                {/* Details */}
-                <View style={{ flexDirection: 'row', alignSelf: 'flex-start' }}>
-                  <TextInput
-                    placeholder="Enter Post Details..."
-                    placeholderTextColor="#000000"
-                    onChangeText={setDetails}
-                    style={{
-                      ...styles.input,
-                      width: '90%',
-                      height: 90,
-                      textAlignVertical: 'top',
-                    }}
-                    value={details}
-                    multiline
-                  />
-                </View>
+                <TextInput
+                  placeholder="Enter Post Details..."
+                  placeholderTextColor="#000"
+                  multiline
+                  style={styles.detailsInput}
+                  value={details}
+                  onChangeText={setDetails}
+                />
 
-                {/* Buttons */}
-                <View style={{ flexDirection: 'row' }}>
-                  <TouchableOpacity
-                    style={{ ...styles.cancelBtn, marginLeft: 20 }}
-                    onPress={handleCancel}
-                  >
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
                     <Text style={styles.btnText}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={{ ...styles.submitBtn, marginLeft: 220 }}
-                    onPress={handleSubmit}
-                  >
+                  <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
                     <Text style={styles.btnText}>Submit</Text>
                   </TouchableOpacity>
                 </View>
@@ -276,66 +262,148 @@ export default CreatePostScreen;
 const styles = StyleSheet.create({
   header: {
     fontFamily: 'PSemi-Bold',
-    fontSize: 20,
-    marginTop: 20,
+    fontSize: SCREEN_WIDTH * 0.06,
+    marginTop: SCREEN_HEIGHT * 0.025,
     textAlign: 'center',
+  },
+  formContainer: {
+    backgroundColor: colors.BG_color,
+    width: SCREEN_WIDTH * 0.95,
+    marginTop: SCREEN_HEIGHT * 0.012,
+    alignSelf: 'center',
+    borderRadius: 10,
+    padding: SCREEN_WIDTH * 0.04,
   },
   text: {
     fontFamily: 'PSemi-Bold',
-    fontSize: 15,
-    padding: 15,
-    marginTop: 10,
+    fontSize: SCREEN_WIDTH * 0.038,
+    paddingLeft: SCREEN_WIDTH * 0.025,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SCREEN_WIDTH * 0.01
   },
   input: {
-    marginLeft: 20,
+    marginLeft: SCREEN_WIDTH * 0.025,
     borderWidth: 1,
-    height: 40,
-    width: 200,
-    marginTop: 10,
     borderRadius: 10,
-    fontSize: 15,
+    fontSize: SCREEN_WIDTH * 0.038,
     fontFamily: 'PSemi-Bold',
-    paddingVertical: 4,
-    alignSelf: 'center',
+    paddingHorizontal: SCREEN_WIDTH * 0.025,
     backgroundColor: '#fff',
+    height: SCREEN_HEIGHT * 0.05,
+    flex: 1,
+  },
+  image: {
+    height: SCREEN_WIDTH * 0.5,
+    width: SCREEN_WIDTH * 0.5,
+    borderRadius: 10,
+    alignSelf: 'center',
+  },
+  detailsInput: {
+    marginTop: SCREEN_HEIGHT * 0.018,
+    borderWidth: 1,
+    borderRadius: 10,
+    fontSize: SCREEN_WIDTH * 0.038,
+    fontFamily: 'PSemi-Bold',
+    backgroundColor: '#fff',
+    textAlignVertical: 'top',
+    padding: SCREEN_WIDTH * 0.025,
+    height: SCREEN_HEIGHT * 0.12,
+    width: SCREEN_WIDTH * 0.9,
+    alignSelf: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: SCREEN_HEIGHT * 0.018,
+    paddingHorizontal: SCREEN_WIDTH * 0.075,
   },
   cancelBtn: {
     backgroundColor: 'red',
-    padding: 5,
-    marginTop: 5,
+    padding: SCREEN_HEIGHT * 0.01,
     borderRadius: 10,
+    width: SCREEN_WIDTH * 0.23,
+    alignItems: 'center',
   },
   submitBtn: {
     backgroundColor: colors.lime_green,
-    padding: 5,
-    marginTop: 5,
+    padding: SCREEN_HEIGHT * 0.01,
     borderRadius: 10,
+    width: SCREEN_WIDTH * 0.23,
+    alignItems: 'center',
   },
   btnText: {
-    fontSize: 15,
+    fontSize: SCREEN_WIDTH * 0.038,
     fontFamily: 'PSemi-Bold',
   },
-  list: {
+  dropdownButton: {
+    borderColor: colors.black,
     borderWidth: 1,
-    borderColor: '#000000',
-    width: '90%',
-    height: 45,
-    fontFamily: 'PSemi-Bold',
-    marginTop: 15,
+    borderRadius: 10,
+    padding: SCREEN_WIDTH * 0.03,
+    marginTop: SCREEN_HEIGHT * 0.006,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  dropdownList: {
-    position: 'absolute',
-    top: 50,
-    width: '90%',
-    borderWidth: 1,
-    borderColor: '#000000',
-    backgroundColor: '#fff',
-    zIndex: 1000,
+  dropdownText: {
+    fontFamily: 'PSemi-Bold',
+    fontSize: SCREEN_WIDTH * 0.035,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  modalContainer: {
+    backgroundColor: colors.BG_color,
+    borderRadius: 10,
+    width: SCREEN_WIDTH * 0.8,
+    maxHeight: SCREEN_HEIGHT * 0.6,
+    padding: SCREEN_WIDTH * 0.04,
     elevation: 5,
   },
-  image: {
-    height: 200,
-    width: 200,
-    borderRadius: 10,
+  modalTitle: {
+    fontFamily: 'PSemi-Bold',
+    fontSize: SCREEN_WIDTH * 0.045,
+    marginBottom: SCREEN_HEIGHT * 0.012,
+    textAlign: 'center',
   },
+  modalItem: {
+    paddingVertical: SCREEN_HEIGHT * 0.012,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalItemText: {
+    fontFamily: 'PSemi-Bold',
+    fontSize: SCREEN_WIDTH * 0.038,
+    textAlign: 'center',
+  },
+  modalItemSelected: {
+    backgroundColor: colors.lime_green,
+  },
+  closeButton: {
+    marginTop: SCREEN_HEIGHT * 0.012,
+    padding: SCREEN_HEIGHT * 0.01,
+    backgroundColor: colors.dark_green,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#FF0000',
+    fontFamily: 'PSemi-Bold',
+  },
+  label: {
+    fontFamily: 'PSemi-Bold',
+    fontSize: SCREEN_WIDTH * 0.038,
+  },
+  locationText: {
+  marginLeft: SCREEN_WIDTH * 0.02,
+  fontSize: SCREEN_WIDTH * 0.04,
+  fontFamily: 'PSemi-Bold',
+  color: colors.black,
+},
 });

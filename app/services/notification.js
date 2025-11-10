@@ -41,9 +41,10 @@ export async function registerPushToken(userId, barangay) {
     }
 
     console.log("🌍 Sending token to backend:", apiUrl);
+    console.log("📍 User barangay fetched:", barangay);
 
     // 🔹 Send token to backend
-    const response = await fetch(`${apiUrl}/api/register-device`, {
+    const response = await fetch(`${apiUrl}/api/notifications/register-device`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -53,11 +54,41 @@ export async function registerPushToken(userId, barangay) {
       }),
     });
 
-    const resData = await response.json();
-    console.log("📥 Backend response:", resData);
+    // ✅ Check response status first
+    if (!response.ok) {
+      console.error(`❌ HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error("❌ Error response:", errorText.substring(0, 200));
+      return;
+    }
+
+    // ✅ Get raw text first
+    const text = await response.text();
+    
+    // ✅ Check if it's HTML instead of JSON
+    if (text.trim().startsWith('<')) {
+      console.error("❌ Received HTML instead of JSON:", text.substring(0, 200));
+      return;
+    }
+
+    // ✅ Try to parse JSON
+    let resData;
+    try {
+      resData = JSON.parse(text);
+      console.log("📥 Backend response:", resData);
+    } catch (parseError) {
+      console.error("❌ Failed to parse response as JSON:", parseError);
+      console.error("❌ Response text:", text.substring(0, 200));
+      return;
+    }
 
   } catch (err) {
     console.error("❌ Error in registerPushToken:", err);
+    // Log more details about the error
+    if (err instanceof Error) {
+      console.error("❌ Error message:", err.message);
+      console.error("❌ Error stack:", err.stack);
+    }
   }
 }
 

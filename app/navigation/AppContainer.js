@@ -25,9 +25,9 @@ const AppContainer = () => {
     setLoading(true);
     try {
         const apiUrl = process.env.EXPO_PUBLIC_HOST_URL || 'http://192.168.18.7:3000';
-        console.log('🌐 AppContainer calling URL:', `${apiUrl}/api/location?userEmail=${encodeURIComponent(user.email)}`);
+        console.log('🌐 AppContainer calling URL:', `${apiUrl}/api/users/location?userEmail=${encodeURIComponent(user.email)}`);
         const response = await fetch(
-          `${apiUrl}/api/location?userEmail=${encodeURIComponent(user.email)}`
+          `${apiUrl}/api/users/location?userEmail=${encodeURIComponent(user.email)}`
         );
       const data = await response.json();
 

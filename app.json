@@ -49,7 +49,7 @@
         "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f",
         "apiUrl": "http://192.168.18.5:3000"
       },
-      "EXPO_PUBLIC_HOST_URL": "http://localhost:3000"
+      "EXPO_PUBLIC_HOST_URL": "http://192.168.18.5:3000"
     },
     "plugins": [
       "expo-font",

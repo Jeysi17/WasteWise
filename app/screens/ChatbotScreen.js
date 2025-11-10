@@ -8,10 +8,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from "react-native";
 import axios from "axios";
 import uuid from "react-native-uuid";
 import colors from "../../constant/colors";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const ChatbotScreen = () => {
   const [messages, setMessages] = useState([
@@ -172,6 +175,7 @@ const ChatbotScreen = () => {
 
   return (
     <View style={styles.screen}>
+      <Text style={styles.title}>WasteWise Chatbot</Text>
       <View style={styles.chatContainer}>
         <FlatList
           ref={flatListRef}
@@ -249,25 +253,25 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.lime_green,
-    paddingTop: 40,
+    paddingTop: SCREEN_HEIGHT * 0.05,
   },
   chatContainer: {
     flex: 1,
-    padding: 16,
-    backgroundColor: colors.BG_color,
-    width: "90%",
+    padding: SCREEN_WIDTH * 0.04,
+    backgroundColor: colors.pale_green,
+    width: SCREEN_WIDTH * 0.85,
     alignSelf: "center",
     borderRadius: 10,
-    maxHeight: "79%",
+    maxHeight: SCREEN_HEIGHT * 0.65,
   },
   flatListContent: {
-    paddingBottom: 10,
+    paddingBottom: SCREEN_HEIGHT * 0.012,
   },
   message: {
-    marginVertical: 5,
-    padding: 10,
+    marginVertical: SCREEN_HEIGHT * 0.006,
+    padding: SCREEN_WIDTH * 0.025,
     borderRadius: 8,
-    maxWidth: "80%",
+    maxWidth: SCREEN_WIDTH * 0.8,
   },
   userMessage: {
     alignSelf: "flex-end",
@@ -279,9 +283,10 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: "#000",
+    fontSize: SCREEN_WIDTH * 0.038,
   },
   buttonContainer: {
-    marginTop: 8,
+    marginTop: SCREEN_HEIGHT * 0.01,
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
@@ -290,46 +295,49 @@ const styles = StyleSheet.create({
     borderColor: "#32CD32",
     borderWidth: 1.5,
     borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingVertical: SCREEN_HEIGHT * 0.007,
+    paddingHorizontal: SCREEN_WIDTH * 0.035,
     alignSelf: "flex-start",
-    marginTop: 6,
+    marginTop: SCREEN_HEIGHT * 0.007,
   },
   optionText: {
     color: "#32CD32",
     fontWeight: "500",
+    fontSize: SCREEN_WIDTH * 0.033,
   },
   loadingContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: SCREEN_HEIGHT * 0.01,
   },
   loadingText: {
-    marginLeft: 8,
+    marginLeft: SCREEN_WIDTH * 0.02,
     color: "#666",
     fontStyle: "italic",
+    fontSize: SCREEN_WIDTH * 0.035,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: SCREEN_HEIGHT * 0.01,
   },
   input: {
     flex: 1,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 20,
-    padding: 8,
+    padding: SCREEN_WIDTH * 0.02,
     backgroundColor: "#fff",
+    fontSize: SCREEN_WIDTH * 0.038,
   },
   sendButton: {
     backgroundColor: "#32CD32",
-    marginLeft: 8,
-    paddingHorizontal: 16,
+    marginLeft: SCREEN_WIDTH * 0.02,
+    paddingHorizontal: SCREEN_WIDTH * 0.04,
     justifyContent: "center",
     borderRadius: 10,
-    height: 40,
+    height: SCREEN_HEIGHT * 0.05,
   },
   sendButtonDisabled: {
     backgroundColor: "#A0D6A0",
@@ -338,7 +346,15 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: SCREEN_WIDTH * 0.038,
   },
+  title: {
+    fontSize: SCREEN_WIDTH * 0.06,
+    fontFamily: 'PSemi-Bold',
+    textAlign: 'center',
+    marginTop: -SCREEN_HEIGHT * 0.025,
+    marginBottom: SCREEN_HEIGHT * 0.012
+  }
 });
 
 export default ChatbotScreen;

@@ -10,6 +10,9 @@ const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
+  // ✅ added: store user’s barangay/location
+  const [userLocation, setUserLocation] = useState(null);
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -21,6 +24,24 @@ const AuthProvider = ({ children }) => {
         setSession(responseSession);
         const responseUser = await account.get();
         setUser(responseUser);
+
+        // ✅ Fetch user’s barangay/location from your backend
+        if (responseUser.email) {
+          try {
+            const res = await fetch(
+              `${process.env.EXPO_PUBLIC_HOST_URL}/api/users/location?userEmail=${responseUser.email}`
+            );
+            const data = await res.json();
+            if (data?.location) {
+              setUserLocation(data.location);
+              console.log("📍 User barangay fetched:", data.location);
+            } else {
+              console.log("⚠️ No location returned for user:", responseUser.email);
+            }
+          } catch (fetchError) {
+            console.error("❌ Failed to fetch user location:", fetchError);
+          }
+        }
       }
     } catch (error) {
       setSession(null);
@@ -36,16 +57,51 @@ const AuthProvider = ({ children }) => {
       const responseSession = await account.createEmailPasswordSession(email, password);
       if (responseSession) {
         const responseUser = await account.get();
-
+  
         // ✅ block unverified users
         if (!responseUser.emailVerification) {
           await account.deleteSession("current");
           ToastAndroid.show("Please verify your email before signing in.", ToastAndroid.LONG);
           return false;
         }
-
+  
         setSession(responseSession);
         setUser(responseUser);
+  
+        // ✅ Fetch and store barangay/location after login
+        try {
+          // Fixed: Use the correct endpoint (added /users/)
+          const res = await fetch(
+            `${process.env.EXPO_PUBLIC_HOST_URL}/api/users/location?userEmail=${responseUser.email}`
+          );
+          
+          // ✅ Check response status
+          if (!res.ok) {
+            console.error(`❌ HTTP error! status: ${res.status}`);
+            return true; // Still allow login to succeed
+          }
+          
+          // ✅ Get raw text first
+          const text = await res.text();
+          
+          // ✅ Check for HTML
+          if (text.trim().startsWith('<')) {
+            console.error("❌ Received HTML instead of JSON");
+            return true; // Still allow login to succeed
+          }
+          
+          // ✅ Parse JSON safely
+          const data = JSON.parse(text);
+          
+          if (data?.location) {
+            setUserLocation(data.location);
+            console.log("📍 User barangay fetched after login:", data.location);
+          }
+        } catch (fetchError) {
+          console.error("❌ Failed to fetch user location after login:", fetchError);
+          // Don't throw - allow login to succeed even if location fetch fails
+        }
+  
         return true;
       }
     } catch (error) {
@@ -87,13 +143,11 @@ const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Signup error:", error);
       ToastAndroid.show("Signup failed: " + error.message, ToastAndroid.LONG);
-      throw error; // 👈 important so signup.jsx can catch it
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
-  
-  
 
   const verifyEmail = async (userId, secret) => {
     setIsLoading(true);
@@ -117,6 +171,7 @@ const AuthProvider = ({ children }) => {
       await account.deleteSession("current");
       setSession(null);
       setUser(null);
+      setUserLocation(null); // ✅ clear barangay on logout
     } catch (error) {
       Alert.alert(error.message);
     } finally {
@@ -124,9 +179,12 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ Include location in context data
   const contextData = {
     session,
     user,
+    userLocation,
+    setUserLocation,
     signin,
     signout,
     signup,

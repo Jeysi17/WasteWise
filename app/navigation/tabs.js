@@ -1,19 +1,22 @@
 import React from 'react-native'
 import { useEffect, useState } from 'react';
-import { Image, Text, View, StyleSheet, TouchableOpacity, Keyboard} from "react-native";
+import { Image, Text, View, StyleSheet, TouchableOpacity, Keyboard, Dimensions} from "react-native";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import colors from '../../constant/colors';
 import HomeScreen from '../screens/HomeScreen';
-import EventScreen from '../screens/EventScreen';
+import InfoScreen from '../screens/InfoScreen';
 import ChatbotScreen from '../screens/ChatbotScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import CreatePostScreen from '../screens/CreatePostScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const Tab = createBottomTabNavigator();
 const CustomTabBarButton = ({children, onPress}) => (
     <TouchableOpacity 
     style={{
-        top: -20,
+        top: -SCREEN_HEIGHT * 0.025,
         justifyContent: 'center',
         alignItems: 'center',
         ...styles.shadow
@@ -21,9 +24,9 @@ const CustomTabBarButton = ({children, onPress}) => (
          onPress={onPress}   
     >
         <View style={{
-            width: 70,
-            height: 70,
-            borderRadius: 35,
+            width: SCREEN_WIDTH * 0.18,
+            height: SCREEN_WIDTH * 0.18,
+            borderRadius: SCREEN_WIDTH * 0.09,
             backgroundColor: colors.lime_green,
         }}>{children}</View>
     </TouchableOpacity>
@@ -48,45 +51,57 @@ const Tabs = () => {
             ? { display: 'none' }
             : {
                 position: 'absolute',
-                bottom: 15,
-                left: 15,
-                right: 15,
+                bottom: SCREEN_HEIGHT * 0.018,
+                left: SCREEN_WIDTH * 0.04,
+                right: SCREEN_WIDTH * 0.04,
                 elevation: 1,
                 backgroundColor: colors.BG_color,
                 borderRadius: 15,
-                height: 90,
-                margin: 10,
+                height: SCREEN_HEIGHT * 0.11,
+                margin: SCREEN_WIDTH * 0.025,
                 zIndex: 1,
                 ...styles.shadow
             }
         }}>
             <Tab.Screen name="Home" component={HomeScreen} options={{
                 tabBarIcon: ({focused}) => (
-                    <View style={{alignItems:'center', justifyContent:'center', top: 25}}> 
+                    <View style={styles.tabIconContainer}> 
                         <Image source={require('../../assets/icons/home.png')}
                         resizeMode='contain'
                         style={{
-                            width: 45,
-                            height: 30,
+                            width: SCREEN_WIDTH * 0.11,
+                            height: SCREEN_HEIGHT * 0.037,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold'}}>HOME</Text>
+                        <Text 
+                          style={[styles.tabLabel, {color: focused ? 'black' : 'gray'}]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                        >
+                          HOME
+                        </Text>
                     </View>
                 ),
             }}/>
-            <Tab.Screen name="Event" component={EventScreen} options={{
+            <Tab.Screen name="Event" component={InfoScreen} options={{
                 tabBarIcon: ({focused}) => (
-                    <View style={{alignItems:'center', justifyContent:'center', top: 24}}> 
-                        <Image source={require('../../assets/icons/event.png')}
+                    <View style={styles.tabIconContainer}> 
+                        <Image source={require('../../assets/icons/info.png')}
                         resizeMode='contain'
                         style={{
-                            width: 25,
-                            height: 30,
+                            width: SCREEN_WIDTH * 0.062,
+                            height: SCREEN_HEIGHT * 0.037,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold'}}>EVENT</Text>
+                        <Text 
+                          style={[styles.tabLabel, {color: focused ? 'black' : 'gray'}]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                        >
+                          INFO
+                        </Text>
                     </View>
                     ),
             }}
@@ -96,10 +111,10 @@ const Tabs = () => {
                         <Image source={require('../../assets/icons/plus.png')}
                         resizeMode='contain'
                         style={{
-                            width: 50,
-                            height: 50,
-                            marginTop: 38,
-                            marginLeft: 38,
+                            width: SCREEN_WIDTH * 0.125,
+                            height: SCREEN_WIDTH * 0.125,
+                            marginTop: SCREEN_WIDTH * 0.115,
+                            marginLeft: SCREEN_WIDTH * 0.105,
                             tintColor: colors.BG_color,
                         }}/>
                     ), 
@@ -109,35 +124,57 @@ const Tabs = () => {
                 }}/>
             <Tab.Screen name="Chatbot" component={ChatbotScreen} options={{ 
                  tabBarIcon: ({focused}) => (
-                    <View style={{alignItems:'center', justifyContent:'center', top: 29}}> 
+                    <View style={styles.tabIconContainer}> 
                         <Image source={require('../../assets/icons/chatbot.png')}
                         resizeMode='contain'
                         style={{
-                            width: 45,
-                            height: 30,
+                            width: SCREEN_WIDTH * 0.11,
+                            height: SCREEN_HEIGHT * 0.037,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '85%'}}>CHATBOT</Text>
+                        <Text 
+                          style={[styles.tabLabel, {color: focused ? 'black' : 'gray'}]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.7}
+                        >
+                          CHATBOT
+                        </Text>
                     </View>
                     ),
             }}
             />
             <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ 
                   tabBarIcon: ({focused}) => (
-                    <View style={{alignItems:'center', justifyContent:'center', top: 29}}> 
+                    <View style={styles.tabIconContainer}> 
                         <Image source={require('../../assets/icons/schedule.png')}
                         resizeMode='contain'
                         style={{
-                            width: 25,
-                            height: 30,
+                            width: SCREEN_WIDTH * 0.062,
+                            height: SCREEN_HEIGHT * 0.037,
                             tintColor: focused ? 'black' : 'gray'
                         }}
                         />
-                        <Text style={{color: focused ? 'black' : 'gray', fontSize: 8, fontFamily: 'PSemi-Bold', width: '85%'}}>SCHEDULE</Text>
+                        <Text 
+                          style={[styles.tabLabel, {color: focused ? 'black' : 'gray'}]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.7}
+                        >
+                          SCHEDULE
+                        </Text>
                     </View>
                     ),
             }}/>
+            <Tab.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{
+                    tabBarButton: () => null,
+                    tabBarItemStyle: { display: 'none' },
+                }}
+            />
         </Tab.Navigator>
     );
 }
@@ -149,11 +186,26 @@ const styles = StyleSheet.create({
     shadowColor: 'black',
     shadowOffset: {
         width: 0,
-        height: 90
+        height: SCREEN_HEIGHT * 0.11
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.5,
     elevation: 1,
     zIndex: 1,
+  },
+  // ✅ NEW: Unified tab icon container
+  tabIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: SCREEN_HEIGHT * 0.025,
+    width: SCREEN_WIDTH * 0.15, // ✅ Fixed width container
+  },
+  // ✅ NEW: Responsive tab label
+  tabLabel: {
+    fontSize: SCREEN_WIDTH * 0.025, // ✅ Slightly larger base size
+    fontFamily: 'PSemi-Bold',
+    textAlign: 'center',
+    width: '100%', // ✅ Takes full container width
+    flexShrink: 1, // ✅ Allows text to shrink if needed
   }
 })

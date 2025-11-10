@@ -1,69 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, FlatList, Modal, TouchableOpacity } from 'react-native';
-import colors from '../../constant/colors';
+import { SafeAreaView, View, Text, StyleSheet, FlatList, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
+import colors from '../../constant/colors';
+import { useAuth } from '../../context/AuthContext';
 
-const ScheduleScreen = ({ navigation }) => {
-  const [selectedBarangay, setSelectedBarangay] = useState(null);
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const ScheduleScreen = () => {
+  const { userLocation } = useAuth();
   const [schedules, setSchedules] = useState([]);
   const [markedDates, setMarkedDates] = useState({});
-  const [open, setOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [items, setItems] = useState([
-    { label: 'Aguado', value: 'Aguado' },
-    { label: 'Cabezas', value: 'Cabezas' },
-    { label: 'Cabuco', value: 'Cabuco' },
-    { label: 'Conchu', value: 'Conchu' },
-    { label: 'De Ocampo', value: 'De Ocampo' },
-    { label: 'Gregorio', value: 'Gregorio' },
-    { label: 'Hugo Perez', value: 'Hugo Perez' },
-    { label: 'Inocencio', value: 'Inocencio' },
-    { label: 'Lallana', value: 'Lallana' },
-    { label: 'Lapidario', value: 'Lapidario' },
-    { label: 'Luciano', value: 'Luciano' },
-    { label: 'Osorio', value: 'Osorio' },
-    { label: 'San Agustin', value: 'San Agustin' }
-  ]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (userLocation) {
       GetSchedules();
-    }, 30000);
-
-    GetSchedules();
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (selectedBarangay) {
-      updateMarkedDates();
-    } else {
-      setMarkedDates({});
+      const interval = setInterval(() => GetSchedules(), 3000);
+      return () => clearInterval(interval);
     }
-  }, [selectedBarangay, schedules]);
+  }, [userLocation]);
 
-  const GetSchedules = async () => {
-    try {
-      const response = await fetch(process.env.EXPO_PUBLIC_HOST_URL + '/api/schedules');
-      const data = await response.json();
-      setSchedules(data);
-    } catch (err) {
-      console.error("Error fetching schedules", err);
-    }
-  };
-
+  // ✅ Parse different date formats safely
   const parseServerDate = (dateString) => {
     if (!dateString) return null;
 
+    // e.g. "2025-11-07"
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-');
+      return new Date(Number(year), Number(month) - 1, Number(day));
+    }
+
+    // e.g. "2025-11-07T00:00:00.000Z"
+    if (dateString.includes('T')) {
+      const date = new Date(dateString);
+      return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    }
+
+    // e.g. "11/07/2025"
     if (dateString.includes('/')) {
       const [month, day, year] = dateString.split('/');
       return new Date(year, month - 1, day);
-    } else if (dateString.includes('T')) {
-      return new Date(dateString);
     }
+
     return null;
   };
 
@@ -75,50 +54,65 @@ const ScheduleScreen = ({ navigation }) => {
     return `${year}-${month}-${day}`;
   };
 
-  const updateMarkedDates = () => {
-    const dates = {};
+  // ✅ Fetch schedules and mark correct barangay dates
+  const GetSchedules = async () => {
+    try {
+      const response = await fetch(process.env.EXPO_PUBLIC_HOST_URL + '/api/schedules');
+      const data = await response.json();
+      console.log('🧾 Raw Schedules:', data); // Debug log
 
-    schedules
-      .filter(item => item.barangay === selectedBarangay)
-      .forEach(item => {
+      setSchedules(data);
+
+      const barangaySchedules = data.filter(
+        (item) =>
+          item.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim()
+      );
+
+      const dates = {};
+      barangaySchedules.forEach((item) => {
         const date = parseServerDate(item.schedule_date);
         if (!date) return;
 
         const dateStr = formatCalendarDate(date);
-        if (!dateStr) return;
-
         dates[dateStr] = {
           marked: true,
           dotColor: colors.lime_green,
           selected: true,
-          selectedColor: colors.lime_green
+          selectedColor: colors.lime_green,
         };
       });
 
-    setMarkedDates(dates);
+      setMarkedDates(dates);
+      console.log('📅 Marked Dates:', dates);
+    } catch (err) {
+      console.error('❌ Error fetching schedules:', err);
+    }
   };
 
   const getFilteredSchedules = () => {
-    if (!selectedBarangay) return [];
+    if (!userLocation) return [];
 
     return schedules
-      .filter(item => item.barangay === selectedBarangay)
-      .map(item => {
+      .filter(
+        (item) =>
+          item.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim()
+      )
+      .map((item) => {
         const date = parseServerDate(item.schedule_date);
         if (!date) return null;
 
         return {
-          id: item._id,
+          id: item._id || item.id,
           date: date.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
-            year: 'numeric'
+            year: 'numeric',
           }),
           title: 'Waste Collection',
-          description: `${item.waste_type || 'Waste'} collection scheduled`
+          description: `${item.waste_type || 'Waste'} collection scheduled`,
         };
       })
-      .filter(item => item !== null);
+      .filter((item) => item !== null);
   };
 
   const renderEventItem = ({ item }) => (
@@ -132,61 +126,21 @@ const ScheduleScreen = ({ navigation }) => {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ backgroundColor: colors.lime_green }}>
-        <Text style={{
-          fontFamily: 'PSemi-Bold',
-          fontSize: 20,
-          marginTop: 10,
-          textAlign: 'center'
-        }}>Waste Collection Schedule</Text>
+        <Text
+          style={{
+            fontFamily: 'PSemi-Bold',
+            fontSize: SCREEN_WIDTH * 0.06,
+            marginTop: SCREEN_HEIGHT * 0.012,
+            textAlign: 'center',
+            paddingHorizontal: SCREEN_WIDTH * 0.05,
+          }}
+        >
+          Waste Collection Schedule for {userLocation}
+        </Text>
       </View>
 
       <View style={styles.contentContainer}>
         <SafeAreaView style={styles.container}>
-          {/* ✅ Dropdown styled same as SignUp */}
-          <DropDownPicker
-          open={open}
-          value={selectedBarangay}
-          items={items}
-          setOpen={setOpen}
-          setValue={(callback) => {
-            const val = callback(selectedBarangay);
-            setSelectedBarangay(val);
-          }}
-          setItems={setItems}
-          placeholder="Select Barangay"
-          style={{
-            borderColor: colors.BG_color,
-            borderWidth: 2,
-            borderRadius: 10,
-            marginHorizontal: 10,
-            marginTop: 15,
-            backgroundColor: colors.BG_color,
-            height: 50,
-            width: '95%',
-            zIndex: 3000,      // 👈 ensure dropdown is above other components
-            elevation: 3,
-          }}
-          textStyle={{
-            fontFamily: "PSemi-Bold",
-          }}
-          labelStyle={{
-            fontFamily: "PSemi-Bold",
-          }}
-          dropDownContainerStyle={{
-            borderColor: colors.BG_color,
-            borderWidth: 2,
-            borderRadius: 10,
-            marginHorizontal: 10,
-            marginTop: 19,
-            backgroundColor: colors.BG_color,
-            width: '95%',
-            maxHeight: 200,
-            zIndex: 4000,      // 👈 keep dropdown list on top
-            elevation: 4,
-          }}
-          dropDownDirection="BOTTOM"   // 👈 dropdown list opens above
-          listMode="SCROLLVIEW"
-        />
 
           <View style={styles.calendarContainer}>
             <Calendar
@@ -199,33 +153,6 @@ const ScheduleScreen = ({ navigation }) => {
               }}
             />
           </View>
-          <Modal
-            visible={showModal}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={() => setShowModal(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Schedule Details</Text>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setShowModal(false)}
-                  >
-                    <Ionicons name="close" size={24} color={colors.black} />
-                  </TouchableOpacity>
-                </View>
-
-                <FlatList
-                  data={getFilteredSchedules()}
-                  renderItem={renderEventItem}
-                  keyExtractor={item => item.id}
-                  contentContainerStyle={styles.modalListContent}
-                />
-              </View>
-            </View>
-          </Modal>
         </SafeAreaView>
       </View>
     </View>
@@ -233,31 +160,33 @@ const ScheduleScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  subtitle: {
+    fontFamily: 'PSemi-Bold',
+    textAlign: 'center',
+    fontSize: SCREEN_WIDTH * 0.04,
+    marginTop: SCREEN_HEIGHT * 0.012,
   },
   contentContainer: {
     backgroundColor: colors.lime_green,
     flex: 1,
-    paddingBottom: 10,
+    paddingBottom: SCREEN_HEIGHT * 0.012,
   },
   calendarContainer: {
-    backgroundColor: colors.BG_color,
-    margin: 10,
+    backgroundColor: colors.pale_green,
+    margin: SCREEN_WIDTH * 0.025,
     borderRadius: 10,
     elevation: 4,
-    paddingBottom: 10,
-    marginTop: 10,
+    paddingBottom: SCREEN_HEIGHT * 0.012,
+    marginTop: SCREEN_HEIGHT * 0.012,
   },
-  calendar: {
-    borderRadius: 10,
-  },
+  calendar: { borderRadius: 10 },
   viewScheduleButton: {
     backgroundColor: colors.BG_color,
-    padding: 15,
+    padding: SCREEN_WIDTH * 0.04,
     borderRadius: 10,
-    marginHorizontal: 10,
-    marginTop: 10,
+    marginHorizontal: SCREEN_WIDTH * 0.025,
+    marginTop: SCREEN_HEIGHT * 0.012,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 3,
@@ -265,7 +194,7 @@ const styles = StyleSheet.create({
   viewScheduleButtonText: {
     fontFamily: 'PSemi-Bold',
     color: colors.white,
-    fontSize: 16,
+    fontSize: SCREEN_WIDTH * 0.04,
   },
   modalContainer: {
     flex: 1,
@@ -276,47 +205,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.BG_color,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '70%',
+    padding: SCREEN_WIDTH * 0.05,
+    maxHeight: SCREEN_HEIGHT * 0.7,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: SCREEN_HEIGHT * 0.018,
   },
   modalTitle: {
     fontFamily: 'PSemi-Bold',
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH * 0.05,
     color: colors.black,
   },
-  closeButton: {
-    padding: 5,
-  },
-  modalListContent: {
-    paddingBottom: 20,
-  },
+  closeButton: { padding: SCREEN_HEIGHT * 0.006 },
+  modalListContent: { paddingBottom: SCREEN_HEIGHT * 0.025 },
   eventItem: {
     backgroundColor: colors.light_gray,
-    padding: 15,
+    padding: SCREEN_WIDTH * 0.04,
     borderRadius: 10,
-    marginBottom: 10,
-    marginHorizontal: 5,
+    marginBottom: SCREEN_HEIGHT * 0.012,
+    marginHorizontal: SCREEN_WIDTH * 0.012,
   },
   eventDate: {
     fontFamily: 'PSemi-Bold',
     color: colors.lime_green,
-    fontSize: 12,
+    fontSize: SCREEN_WIDTH * 0.03,
   },
   eventTitle: {
     fontFamily: 'PSemi-Bold',
-    fontSize: 16,
-    marginTop: 5,
+    fontSize: SCREEN_WIDTH * 0.04,
+    marginTop: SCREEN_HEIGHT * 0.006,
   },
   eventDescription: {
     fontFamily: 'PRegular',
-    fontSize: 14,
-    marginTop: 5,
+    fontSize: SCREEN_WIDTH * 0.035,
+    marginTop: SCREEN_HEIGHT * 0.006,
     color: colors.black,
   },
 });
