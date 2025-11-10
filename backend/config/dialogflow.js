@@ -1,7 +1,7 @@
 import { SessionsClient } from "@google-cloud/dialogflow";
 
 // Convert JSON string from env variable to object
-const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 export const sendToDialogflow = async (message, sessionId) => {
   // Initialize SessionsClient with credentials object
