@@ -1,25 +1,27 @@
 import React, { useState } from "react";
-import { Image,
-Keyboard, 
-Text, 
-View, 
-StyleSheet,
-TouchableWithoutFeedback , 
-ImageBackground, 
-TouchableOpacity, 
-TextInput, 
-Pressable, 
-Dimensions, 
-ActivityIndicator, 
-ToastAndroid,
+import { 
+  Image,
+  Keyboard, 
+  Text, 
+  View, 
+  StyleSheet,
+  TouchableWithoutFeedback, 
+  ImageBackground, 
+  TouchableOpacity, 
+  TextInput, 
+  Pressable, 
+  Dimensions, 
+  ActivityIndicator, 
+  ToastAndroid,
 } from "react-native";
 import colors from '../../constant/colors';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view"; 
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
 export default function LogIn() {
-    const [containerHeight, setContainerHeight] = useState(Dimensions.get('window').height);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const {session, signin} = useAuth();
@@ -29,6 +31,7 @@ export default function LogIn() {
     const handleSubmit = async () => {
         if(!email || !password) {
             ToastAndroid.show('Please enter email and password!', ToastAndroid.BOTTOM);
+            return;
         }
         if (isLoading) return;
         setIsLoading(true);
@@ -45,11 +48,11 @@ export default function LogIn() {
             } else {
                 ToastAndroid.show('Login failed. Please check your credentials and try again.', ToastAndroid.BOTTOM);
             }
-            ToastAndroid.show(error.message, ToastAndroid.BOTTOM);
         } finally {
             setIsLoading(false);
         }
     };
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <KeyboardAwareScrollView
@@ -62,16 +65,10 @@ export default function LogIn() {
               source={require("../../assets/images/trece.jpg")}
               style={styles.container}
             >
-              {containerHeight > 0 && (
-                <Image
-                  source={require("../../assets/images/logo-modified.png")}
-                  style={{
-                    height: containerHeight * 0.3,
-                    width: containerHeight * 0.25,
-                    resizeMode: "contain",
-                  }}
-                />
-              )}
+              <Image
+                source={require("../../assets/images/logo-modified.png")}
+                style={styles.logo}
+              />
     
               <Text style={styles.title}>Login Your Account</Text>
     
@@ -81,7 +78,10 @@ export default function LogIn() {
                 style={styles.textInput}
                 value={email}
                 onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
               />
+              
               <TextInput
                 placeholder="Enter Password"
                 placeholderTextColor={colors.BG_color}
@@ -99,7 +99,7 @@ export default function LogIn() {
                 {isLoading ? (
                   <ActivityIndicator color={colors.BG_color} />
                 ) : (
-                  <Text style={{ fontFamily: "PSemi-Bold" }}>Login</Text>
+                  <Text style={styles.buttonText}>Login</Text>
                 )}
               </TouchableOpacity>
     
@@ -112,65 +112,86 @@ export default function LogIn() {
             </ImageBackground>
           </KeyboardAwareScrollView>
         </TouchableWithoutFeedback>
-      );
-    }
+    );
+}
 
-    const styles = StyleSheet.create({
-        container: {
-          flex: 1,
-          alignItems: "center",
-          paddingTop: 100,
-          padding: 25,
-          height: Dimensions.get("window").height,
-        },
-        textInput: {
-          borderColor: colors.BG_color,
-          borderWidth: 2,
-          marginTop: 15,
-          width: "100%",
-          borderRadius: 10,
-          fontFamily: "PSemi-Bold",
-          fontSize: 15,
-          color: colors.BG_color,
-          padding: 10,
-        },
-        title: {
-          marginTop: 10,
-          fontFamily: "PSemi-Bold",
-          fontSize: 25,
-          color: colors.BG_color,
-          textShadowColor: "black",
-          textShadowOffset: { width: 1, height: 1 },
-          textShadowRadius: 10,
-        },
-        loginButton: {
-          marginTop: 15,
-          padding: 15,
-          backgroundColor: colors.pale_green,
-          width: "50%",
-          alignItems: "center",
-          borderRadius: 10,
-        },
-        loginButtonDisabled: {
-          opacity: 0.7,
-        },
-        footer: {
-          flexDirection: "row",
-          gap: 3,
-          marginTop: 10,
-        },
-        footerText: {
-          fontFamily: "PSemi-Bold",
-          color: colors.BG_color,
-          textShadowColor: "black",
-          textShadowOffset: { width: 1, height: 1 },
-          textShadowRadius: 10,
-        },
-        signUpText: {
-          fontFamily: "PSemi-Bold",
-          color: colors.pale_green,
-          textShadowColor: "black",
-          textShadowOffset: { width: 1, height: 1 },
-          textShadowRadius: 10,
-        },
-      });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    paddingTop: SCREEN_HEIGHT * 0.1,
+    paddingHorizontal: SCREEN_WIDTH * 0.06,
+    minHeight: SCREEN_HEIGHT,
+  },
+  logo: {
+    height: SCREEN_HEIGHT * 0.25,
+    width: SCREEN_WIDTH * 0.5,
+    resizeMode: "contain",
+    marginBottom: SCREEN_HEIGHT * 0.02,
+  },
+  title: {
+    marginBottom: SCREEN_HEIGHT * 0.03,
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.065,
+    color: colors.BG_color,
+    textShadowColor: "black",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 10,
+  },
+  textInput: {
+    borderColor: colors.BG_color,
+    borderWidth: 2,
+    marginTop: SCREEN_HEIGHT * 0.018,
+    width: "100%",
+    borderRadius: 10,
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.04,
+    color: colors.BG_color,
+    textShadowColor: "black",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 10,
+    paddingVertical: SCREEN_HEIGHT * 0.015,
+    paddingHorizontal: SCREEN_WIDTH * 0.04,
+    textAlignVertical: 'center',
+  },
+  loginButton: {
+    marginTop: SCREEN_HEIGHT * 0.025,
+    paddingVertical: SCREEN_HEIGHT * 0.018,
+    backgroundColor: colors.pale_green,
+    width: "55%",
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.04,
+    color: "#000000",
+  },
+  footer: {
+    flexDirection: "row",
+    gap: SCREEN_WIDTH * 0.01,
+    marginTop: SCREEN_HEIGHT * 0.025,
+    marginBottom: SCREEN_HEIGHT * 0.03,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  footerText: {
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.038,
+    color: colors.BG_color,
+    textShadowColor: "black",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 10,
+  },
+  signUpText: {
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.038,
+    color: colors.pale_green,
+    textShadowColor: "black",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 10,
+  },
+});

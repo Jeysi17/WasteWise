@@ -54,25 +54,27 @@ const ScheduleScreen = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // ✅ Fetch schedules and mark correct barangay dates
   const GetSchedules = async () => {
     try {
       const response = await fetch(process.env.EXPO_PUBLIC_HOST_URL + '/api/schedules');
       const data = await response.json();
       console.log('🧾 Raw Schedules:', data); // Debug log
-
-      setSchedules(data);
-
-      const barangaySchedules = data.filter(
+  
+      // ✅ Filter schedules by user's barangay and only pending ones
+      const pendingSchedules = data.filter(
         (item) =>
-          item.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim()
+          item.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim() &&
+          item.completed === false // Only pending schedules
       );
-
+  
+      setSchedules(pendingSchedules);
+  
+      // ✅ Mark calendar dates
       const dates = {};
-      barangaySchedules.forEach((item) => {
+      pendingSchedules.forEach((item) => {
         const date = parseServerDate(item.schedule_date);
         if (!date) return;
-
+  
         const dateStr = formatCalendarDate(date);
         dates[dateStr] = {
           marked: true,
@@ -81,28 +83,31 @@ const ScheduleScreen = () => {
           selectedColor: colors.lime_green,
         };
       });
-
+  
       setMarkedDates(dates);
       console.log('📅 Marked Dates:', dates);
     } catch (err) {
       console.error('❌ Error fetching schedules:', err);
     }
   };
+  
+  
 
   const getFilteredSchedules = () => {
     if (!userLocation) return [];
-
+  
     return schedules
       .filter(
         (item) =>
-          item.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim()
+          item.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim() &&
+          item.completed === false // Only pending
       )
       .map((item) => {
         const date = parseServerDate(item.schedule_date);
         if (!date) return null;
-
+  
         return {
-          id: item._id || item.id,
+          id: item.id,
           date: date.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -114,6 +119,7 @@ const ScheduleScreen = () => {
       })
       .filter((item) => item !== null);
   };
+  
 
   const renderEventItem = ({ item }) => (
     <View style={styles.eventItem}>

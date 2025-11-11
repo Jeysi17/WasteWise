@@ -212,7 +212,7 @@ const CreatePostScreen = ({ navigation }) => {
 
                 <View>
                   <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center' }}>
-                    <Text style={[styles.text, { marginBottom: -10, marginLeft: -80, marginTop: 5 }]}>Upload Image:</Text>
+                    <Text style={[styles.text, { marginBottom: -10, marginLeft: -70, marginTop: 5 }]}>Upload Image:</Text>
                     <Image
                       source={
                         selectedImage
@@ -294,6 +294,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     height: SCREEN_HEIGHT * 0.05,
     flex: 1,
+    textAlignVertical: 'center',
+    paddingTop: 2,
   },
   image: {
     height: SCREEN_WIDTH * 0.5,

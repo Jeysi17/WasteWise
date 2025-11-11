@@ -44,12 +44,12 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://wastewise-hd3m.onrender.com",
+      "apiUrl": "https://wastewise-da5j.onrender.com",
       "eas": {
         "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f",
-        "apiUrl": "https://wastewise-hd3m.onrender.com"
+        "apiUrl": "https://wastewise-da5j.onrender.com"
       },
-      "EXPO_PUBLIC_HOST_URL": "https://wastewise-hd3m.onrender.com"
+      "EXPO_PUBLIC_HOST_URL": "https://wastewise-da5j.onrender.com"
     },
     "plugins": [
       "expo-font",

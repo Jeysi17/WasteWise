@@ -30,6 +30,8 @@ import axios from "axios";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Geolocation from "react-native-geolocation-service";
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
 const allowedBarangays = [
   "Aguado",
   "Cabezas",
@@ -48,7 +50,6 @@ const allowedBarangays = [
 ];
 
 export default function SignUp() {
-  const [containerHeight, setContainerHeight] = useState(Dimensions.get("window").height);
   const [isLoading, setIsLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const router = useRouter();
@@ -245,19 +246,13 @@ const handleDetectBarangay = async () => {
           source={require("../../assets/images/trece.jpg")}
           style={styles.container}
         >
-          {containerHeight > 0 && (
-            <Image
-              source={require("../../assets/images/logo-modified.png")}
-              style={{
-                height: containerHeight * 0.3,
-                width: containerHeight * 0.25,
-                resizeMode: "contain",
-                marginTop: -20,
-              }}
-            />
-          )}
+          <Image
+            source={require("../../assets/images/logo-modified.png")}
+            style={styles.logo}
+          />
 
           <Text style={styles.title}>Sign up your Account</Text>
+          
           <TextInput
             placeholder="Enter Username"
             placeholderTextColor={colors.BG_color}
@@ -265,12 +260,15 @@ const handleDetectBarangay = async () => {
             onChangeText={setUsername}
             value={username}
           />
+          
           <TextInput
             placeholder="Enter Email"
             placeholderTextColor={colors.BG_color}
             style={styles.textInput}
             onChangeText={setEmail}
             value={email}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
 
           <TextInput
@@ -278,7 +276,7 @@ const handleDetectBarangay = async () => {
             placeholderTextColor={colors.BG_color}
             style={styles.textInput}
             value={location}
-            editable={false} // User cannot type
+            editable={false}
           />
 
           <TouchableOpacity
@@ -289,16 +287,16 @@ const handleDetectBarangay = async () => {
             {gettingLocation ? (
               <ActivityIndicator color="#000" />
             ) : (
-              <Text style={{ fontFamily: "PSemi-Bold", color: "#000" }}>
+              <Text style={styles.buttonText}>
                 Detect My Barangay
               </Text>
             )}
           </TouchableOpacity>
 
           {detectedBarangay && (
-            <Text style={{ marginTop: 8, color: colors.BG_color }}>
+            <Text style={styles.detectedText}>
               Detected Barangay:{" "}
-              <Text style={{ fontWeight: "bold", fontFamily: "PSemi-Bold" }}>{detectedBarangay}</Text>
+              <Text style={styles.detectedBarangayText}>{detectedBarangay}</Text>
             </Text>
           )}
 
@@ -310,6 +308,7 @@ const handleDetectBarangay = async () => {
             onChangeText={setPassword}
             value={password}
           />
+          
           <TextInput
             placeholder="Confirm Password"
             placeholderTextColor={colors.BG_color}
@@ -327,7 +326,7 @@ const handleDetectBarangay = async () => {
             {isLoading ? (
               <ActivityIndicator color={colors.BG_color} />
             ) : (
-              <Text style={{ fontFamily: "PSemi-Bold", color: "#000000" }}>Sign Up</Text>
+              <Text style={styles.buttonText}>Sign Up</Text>
             )}
           </TouchableOpacity>
 
@@ -347,56 +346,83 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    paddingTop: 100,
-    padding: 25,
-    height: Dimensions.get("window").height,
+    paddingTop: SCREEN_HEIGHT * 0.08,
+    paddingHorizontal: SCREEN_WIDTH * 0.06,
+    minHeight: SCREEN_HEIGHT,
+  },
+  logo: {
+    height: SCREEN_HEIGHT * 0.2,
+    width: SCREEN_WIDTH * 0.4,
+    resizeMode: "contain",
+    marginBottom: SCREEN_HEIGHT * 0.01,
+  },
+  title: {
+    marginBottom: SCREEN_HEIGHT * 0.02,
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.065,
+    color: colors.BG_color,
+    textShadowColor: "black",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 10,
   },
   textInput: {
     borderColor: colors.BG_color,
     borderWidth: 2,
-    marginTop: 15,
+    marginTop: SCREEN_HEIGHT * 0.015,
     width: "100%",
     borderRadius: 10,
     fontFamily: "PSemi-Bold",
-    fontSize: 15,
+    fontSize: SCREEN_WIDTH * 0.04,
     color: colors.BG_color,
     textShadowColor: "black",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 10,
-    padding: 10,
-  },
-  title: {
-    marginTop: -20,
-    fontFamily: "PSemi-Bold",
-    fontSize: 25,
-    color: colors.BG_color,
-    textShadowColor: "black",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 10,
-  },
-  loginButton: {
-    marginTop: 15,
-    padding: 15,
-    backgroundColor: colors.pale_green,
-    width: "50%",
-    alignItems: "center",
-    borderRadius: 10,
+    paddingVertical: SCREEN_HEIGHT * 0.015,
+    paddingHorizontal: SCREEN_WIDTH * 0.04,
+    textAlignVertical: 'center',
   },
   detectButton: {
-    marginTop: 10,
-    padding: 10,
+    marginTop: SCREEN_HEIGHT * 0.015,
+    paddingVertical: SCREEN_HEIGHT * 0.015,
     backgroundColor: colors.pale_green,
     borderRadius: 10,
-    width: "60%",
+    width: "65%",
     alignItems: "center",
+  },
+  loginButton: {
+    marginTop: SCREEN_HEIGHT * 0.02,
+    paddingVertical: SCREEN_HEIGHT * 0.018,
+    backgroundColor: colors.pale_green,
+    width: "55%",
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  buttonText: {
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.04,
+    color: "#000000",
+  },
+  detectedText: {
+    marginTop: SCREEN_HEIGHT * 0.012,
+    color: colors.BG_color,
+    fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.035,
+  },
+  detectedBarangayText: {
+    fontWeight: "bold",
+    fontFamily: "PSemi-Bold",
   },
   footer: {
     flexDirection: "row",
-    gap: 3,
-    marginTop: 10,
+    gap: SCREEN_WIDTH * 0.01,
+    marginTop: SCREEN_HEIGHT * 0.02,
+    marginBottom: SCREEN_HEIGHT * 0.03,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   footerText: {
     fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.038,
     color: colors.BG_color,
     textShadowColor: "black",
     textShadowOffset: { width: 1, height: 1 },
@@ -404,6 +430,7 @@ const styles = StyleSheet.create({
   },
   signUpText: {
     fontFamily: "PSemi-Bold",
+    fontSize: SCREEN_WIDTH * 0.038,
     color: colors.pale_green,
     textShadowColor: "black",
     textShadowOffset: { width: 1, height: 1 },
