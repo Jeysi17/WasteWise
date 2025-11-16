@@ -44,7 +44,16 @@ const SideNav = ({ visible, onClose }) => {
             router.push('/home');
           }
         }}>Profile</Text>
-        <Text style={styles.navItem}>Settings</Text>
+        <Text style={styles.navItem} onPress={() => {
+          onClose();
+          if (navigationRef.isReady()) {
+            navigationRef.navigate('MainTabs', { screen: 'Notifications' });
+          } else if (navigation && navigation.navigate) {
+            navigation.navigate('MainTabs', { screen: 'Notifications' });
+          } else {
+            router.push('/home');
+          }
+        }}>Notification Log</Text>
         <Text style={styles.navItem}>About</Text>
         <Text style={styles.signOut} onPress={signout}>Sign Out</Text>
       </Animated.View>

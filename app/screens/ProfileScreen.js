@@ -29,6 +29,26 @@ const ProfileScreen = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+  // 🧠 Function to format date in words
+  const formatDateInWords = (dateString) => {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    
+    const options = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    
+    return date.toLocaleDateString('en-US', options);
+  };
+
   useEffect(() => {
     // Fetch location once
     fetchLocation();
@@ -201,7 +221,7 @@ const ProfileScreen = () => {
                 <Text style={styles.listItemDetails}>
                   {/* Changed from item.category to item.location */}
                   {item.location} |{' '}
-                  {item.post_date ? new Date(item.post_date).toLocaleDateString() : ''}
+                  {formatDateInWords(item.post_date)}
                 </Text>
                 {/* Added status display */}
                 <Text style={styles.listItemStatus}>{item.status}</Text>
@@ -237,7 +257,7 @@ const ProfileScreen = () => {
                 {selectedPost.status === 'Pending' && (
                   <>
                     <Text style={styles.modalText}>
-                      Posted on: {selectedPost.post_date ? new Date(selectedPost.post_date).toLocaleDateString() : 'N/A'}
+                      Posted on: {formatDateInWords(selectedPost.post_date)}
                     </Text>
                   </>
                 )}
@@ -245,10 +265,10 @@ const ProfileScreen = () => {
                 {selectedPost.status === `Forwarded to Cenro by ${selectedPost.location}` && (
                   <>
                     <Text style={styles.modalText}>
-                      Posted on: {selectedPost.post_date ? new Date(selectedPost.post_date).toLocaleDateString() : 'N/A'}
+                      Posted on: {formatDateInWords(selectedPost.post_date)}
                     </Text>
                     <Text style={styles.modalText}>
-                      Forwarded on: {selectedPost.approved_at ? new Date(selectedPost.approved_at).toLocaleDateString() : 'N/A'}
+                      Forwarded on: {formatDateInWords(selectedPost.approved_at)}
                     </Text>
                   </>
                 )}
@@ -256,10 +276,10 @@ const ProfileScreen = () => {
                 {(selectedPost.status === `Solved by ${selectedPost.location}` || selectedPost.status === 'Solved by CENRO') && (
                   <>
                     <Text style={styles.modalText}>
-                      Posted on: {selectedPost.post_date ? new Date(selectedPost.post_date).toLocaleDateString() : 'N/A'}
+                      Posted on: {formatDateInWords(selectedPost.post_date)}
                     </Text>
                     <Text style={styles.modalText}>
-                      Solved on: {selectedPost.solved_at ? new Date(selectedPost.solved_at).toLocaleDateString() : 'N/A'}
+                      Solved on: {formatDateInWords(selectedPost.solved_at)}
                     </Text>
                   </>
                 )}

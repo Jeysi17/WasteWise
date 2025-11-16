@@ -12,7 +12,8 @@ ScrollView,
 Platform,
 Modal,
 FlatList,
-Dimensions
+Dimensions,
+ActivityIndicator
 } from 'react-native';
 import { GestureHandlerRootView, TextInput } from 'react-native-gesture-handler';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -25,37 +26,33 @@ import colors from '../../constant/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-DropDownPicker.setListMode('SCROLLVIEW'); 
+DropDownPicker.setListMode('SCROLLVIEW');
 
 const CreatePostScreen = ({ navigation }) => {
   const { user, userLocation } = useAuth();
+
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [location, setLocation] = useState(null);
   const [details, setDetails] = useState('');
+
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ADDED — Confirmation Modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   const barangays = [
-    'Aguado',
-    'Cabezas',
-    'Cabuco',
-    'Conchu',
-    'De Ocampo',
-    'Gregorio',
-    'Hugo Perez',
-    'Inocencio',
-    'Lallana',
-    'Lapidario',
-    'Luciano',
-    'Osorio',
-    'San Agustin',
+    'Aguado','Cabezas','Cabuco','Conchu','De Ocampo','Gregorio','Hugo Perez',
+    'Inocencio','Lallana','Lapidario','Luciano','Osorio','San Agustin',
   ];
 
   useEffect(() => {
-  if (userLocation) {
-    setLocation(userLocation);
-  }
-}, [userLocation]);
+    if (userLocation) {
+      setLocation(userLocation);
+    }
+  }, [userLocation]);
 
   const pickImage = async () => {
     try {
@@ -82,6 +79,7 @@ const CreatePostScreen = ({ navigation }) => {
       console.error('Image picker error:', error);
     }
   };
+
   const uploadToCloudinary = async (imageUri) => {
     const data = new FormData();
     data.append('file', {
@@ -89,7 +87,7 @@ const CreatePostScreen = ({ navigation }) => {
       type: 'image/jpeg',
       name: 'upload.jpg',
     });
-    data.append('upload_preset', 'complaint_images'); 
+    data.append('upload_preset', 'complaint_images');
     data.append('cloud_name', 'ddbnrxryn');
   
     try {
@@ -98,73 +96,63 @@ const CreatePostScreen = ({ navigation }) => {
         body: data,
       });
       const result = await res.json();
-      return result.secure_url; 
+      return result.secure_url;
     } catch (error) {
       console.error('Cloudinary upload error:', error);
       throw error;
     }
   };
-  
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     if (!selectedImage) {
       alert('Please select an image first');
       return;
     }
-  
-    // ✅ Add validation for user data
+
     if (!user?.$id) {
       alert('User information not found. Please log in again.');
       return;
     }
-  
+
     if (!userLocation) {
       alert('Location not available. Please wait or try again.');
       return;
     }
-  
+
     try {
+      setIsSubmitting(true);
+
       const now = new Date();
       const date = now.toISOString();
-  
-      // 🔹 Upload image to Cloudinary
+
       const imageUrl = await uploadToCloudinary(selectedImage);
-  
-      // 🔹 Prepare post data
+
       const postData = {
-        user_id: user.$id,              // ✅ Appwrite user ID
-        name: user.name || user.email,  // ✅ User's display name
+        user_id: user.$id,
+        name: user.name || user.email,
         title,
-        location: userLocation,         // ✅ User's barangay from AuthContext
+        location: userLocation,
         details,
         date,
         imageUrl,
       };
-  
-      console.log('📤 Submitting complaint:', postData);
-  
+
       const apiUrl = process.env.EXPO_PUBLIC_HOST_URL;
       const response = await axios.post(`${apiUrl}/api/posts/pending`, postData);
-  
-      console.log('✅ Complaint submitted:', response.data);
+
       alert('Complaint posted successfully!');
-  
-      // Reset form
-      setTitle('');
-      setDetails('');
-      if (selectedImage) {
-        await FileSystem.deleteAsync(selectedImage);
-        setSelectedImage(null);
-      }
-  
+      handleCancel();
     } catch (error) {
       console.error('❌ Error submitting complaint:', error);
       if (error.response) {
-        console.error('Response error:', error.response.data);
         alert(`Failed to submit complaint: ${error.response.data.error || 'Unknown error'}`);
       } else {
         alert('Failed to submit complaint. Please check your connection.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -172,6 +160,7 @@ const CreatePostScreen = ({ navigation }) => {
     setTitle('');
     setLocation(null);
     setDetails('');
+
     if (selectedImage) {
       try {
         await FileSystem.deleteAsync(selectedImage);
@@ -180,6 +169,17 @@ const CreatePostScreen = ({ navigation }) => {
       }
       setSelectedImage(null);
     }
+  };
+
+  // ADDED — Confirmation Modal Actions
+  const handleConfirmYes = () => {
+    setShowConfirmModal(false);
+    handleSubmit();
+  };
+
+  const handleConfirmNo = () => {
+    setShowConfirmModal(false);
+    handleCancel();
   };
 
   return (
@@ -199,6 +199,7 @@ const CreatePostScreen = ({ navigation }) => {
               showsVerticalScrollIndicator={false}
             >
               <View style={[styles.formContainer, {height: '95%'}]}>
+
                 <View style={styles.inputRow}>
                   <Text style={styles.text}>Post Title:</Text>
                   <TextInput
@@ -212,7 +213,10 @@ const CreatePostScreen = ({ navigation }) => {
 
                 <View>
                   <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center' }}>
-                    <Text style={[styles.text, { marginBottom: -10, marginLeft: -70, marginTop: 5 }]}>Upload Image:</Text>
+                    <Text style={[styles.text, { marginBottom: -10, marginLeft: -70, marginTop: 5 }]}>
+                      Upload Image:
+                    </Text>
+
                     <Image
                       source={
                         selectedImage
@@ -224,7 +228,6 @@ const CreatePostScreen = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Replace your entire TouchableOpacity + Modal block with this */}
                 <View style={styles.locationContainer}>
                   <Text style={styles.locationText}>
                     Location: {userLocation ? userLocation : 'Fetching location...'}
@@ -244,8 +247,17 @@ const CreatePostScreen = ({ navigation }) => {
                   <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
                     <Text style={styles.btnText}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-                    <Text style={styles.btnText}>Submit</Text>
+
+                  <TouchableOpacity
+                    style={[styles.submitBtn, isSubmitting && { opacity: 0.7 }]}
+                    onPress={() => setShowConfirmModal(true)} // ADDED
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.btnText}>Submit</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -253,6 +265,25 @@ const CreatePostScreen = ({ navigation }) => {
           </TouchableWithoutFeedback>
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
+
+      {/* ADDED CONFIRMATION MODAL */}
+      <Modal visible={showConfirmModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmModal}>
+            <Text style={styles.confirmTitle}>Do you want to post this complaint?</Text>
+
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity style={styles.noBtn} onPress={handleConfirmNo}>
+                <Text style={styles.confirmBtnText}>No</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.yesBtn} onPress={handleConfirmYes}>
+                <Text style={styles.confirmBtnText}>Yes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -282,7 +313,7 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SCREEN_WIDTH * 0.01
+    marginTop: SCREEN_WIDTH * 0.01,
   },
   input: {
     marginLeft: SCREEN_WIDTH * 0.025,
@@ -340,72 +371,57 @@ const styles = StyleSheet.create({
     fontSize: SCREEN_WIDTH * 0.038,
     fontFamily: 'PSemi-Bold',
   },
-  dropdownButton: {
-    borderColor: colors.black,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: SCREEN_WIDTH * 0.03,
-    marginTop: SCREEN_HEIGHT * 0.006,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dropdownText: {
-    fontFamily: 'PSemi-Bold',
-    fontSize: SCREEN_WIDTH * 0.035,
-  },
+
+  // Confirmation Modal Styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  modalContainer: {
-    backgroundColor: colors.BG_color,
-    borderRadius: 10,
+  confirmModal: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
     width: SCREEN_WIDTH * 0.8,
-    maxHeight: SCREEN_HEIGHT * 0.6,
-    padding: SCREEN_WIDTH * 0.04,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontFamily: 'PSemi-Bold',
-    fontSize: SCREEN_WIDTH * 0.045,
-    marginBottom: SCREEN_HEIGHT * 0.012,
-    textAlign: 'center',
-  },
-  modalItem: {
-    paddingVertical: SCREEN_HEIGHT * 0.012,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalItemText: {
-    fontFamily: 'PSemi-Bold',
-    fontSize: SCREEN_WIDTH * 0.038,
-    textAlign: 'center',
-  },
-  modalItemSelected: {
-    backgroundColor: colors.lime_green,
-  },
-  closeButton: {
-    marginTop: SCREEN_HEIGHT * 0.012,
-    padding: SCREEN_HEIGHT * 0.01,
-    backgroundColor: colors.dark_green,
-    borderRadius: 8,
     alignItems: 'center',
   },
-  closeButtonText: {
-    color: '#FF0000',
+  confirmTitle: {
     fontFamily: 'PSemi-Bold',
+    fontSize: SCREEN_WIDTH * 0.045,
+    marginBottom: 20,
+    textAlign: 'center',
   },
-  label: {
+  confirmButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
+  },
+  noBtn: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 10,
+    width: '45%',
+    alignItems: 'center',
+  },
+  yesBtn: {
+    backgroundColor: colors.lime_green,
+    padding: 10,
+    borderRadius: 10,
+    width: '45%',
+    alignItems: 'center',
+  },
+  confirmBtnText: {
     fontFamily: 'PSemi-Bold',
-    fontSize: SCREEN_WIDTH * 0.038,
+    color: '#fff',
+    fontSize: SCREEN_WIDTH * 0.04,
   },
+
   locationText: {
-  marginLeft: SCREEN_WIDTH * 0.02,
-  fontSize: SCREEN_WIDTH * 0.04,
-  fontFamily: 'PSemi-Bold',
-  color: colors.black,
-},
+    marginLeft: SCREEN_WIDTH * 0.02,
+    fontSize: SCREEN_WIDTH * 0.04,
+    fontFamily: 'PSemi-Bold',
+    color: colors.black,
+  },
 });

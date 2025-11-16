@@ -14,6 +14,24 @@ const HomeScreen = ({ navigation }) => {
 
   const apiUrl = process.env.EXPO_PUBLIC_HOST_URL;
 
+  // 🧠 Function to format date in words
+  const formatDateInWords = (dateString) => {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    
+    const options = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    
+    return date.toLocaleDateString('en-US', options);
+  };
+
   // 📰 Local list of articles (no DB)
   const articles = [
     {
@@ -106,14 +124,22 @@ const HomeScreen = ({ navigation }) => {
         const schedules = await schedRes.json();
   
         const userSchedules = schedules
-          .filter(s => s.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim())
-          .sort((a, b) => new Date(b.schedule_date) - new Date(a.schedule_date));
-  
-        const nextSchedule = userSchedules.length > 0 ? userSchedules[0] : null;
-        setSchedule(nextSchedule);
-  
+        // only schedules in the same barangay
+        .filter(s => 
+          s.barangay?.toLowerCase().trim() === userLocation?.toLowerCase().trim() &&
+          s.completed === false
+        )        
+        // sort newest first
+        .sort((a, b) => new Date(b.schedule_date) - new Date(a.schedule_date));
+
+        // pick the most recent one that's not completed
+        const latestNotCompleted = userSchedules.length > 0 ? userSchedules[0] : null;
+        setSchedule(latestNotCompleted);
+
+        console.log('📅 Latest Not Completed Schedule:', latestNotCompleted);
+    
         console.log('🗺 UserLocation:', userLocation);
-        console.log('📅 Latest Schedule:', nextSchedule);
+        console.log('📅 Latest Schedule:', latestNotCompleted);
       }
     } catch (err) {
       console.error('❌ Error fetching home data:', err.message);
@@ -248,7 +274,9 @@ const HomeScreen = ({ navigation }) => {
           {schedule ? (
             <>
               <Text style={styles.cardSubtitle}>{schedule.barangay}</Text>
-              <Text style={styles.cardDate}>{schedule.schedule_date}</Text>
+              <Text style={styles.cardDate}>
+                {formatDateInWords(schedule.schedule_date)}
+              </Text>
             </>
           ) : (
             <Text>No upcoming schedules.</Text>

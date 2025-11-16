@@ -44,12 +44,12 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://wastewise-da5j.onrender.com",
+      "apiUrl": "http://192.168.18.87:3000",
       "eas": {
         "projectId": "52809b90-3f4a-4509-b1be-6341ddde5c5f",
-        "apiUrl": "https://wastewise-da5j.onrender.com"
+        "apiUrl": "http://192.168.18.87:3000"
       },
-      "EXPO_PUBLIC_HOST_URL": "https://wastewise-da5j.onrender.com"
+      "EXPO_PUBLIC_HOST_URL": "http://192.168.18.87:3000"
     },
     "plugins": [
       "expo-font",

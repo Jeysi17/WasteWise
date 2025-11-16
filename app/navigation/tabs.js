@@ -9,6 +9,7 @@ import ChatbotScreen from '../screens/ChatbotScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import CreatePostScreen from '../screens/CreatePostScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import NotificationLogScreen from '../screens/NotificationLogScreen';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -175,6 +176,14 @@ const Tabs = () => {
                     tabBarItemStyle: { display: 'none' },
                 }}
             />
+            <Tab.Screen
+                name="Notifications"
+                component={NotificationLogScreen}
+                options={{
+                    tabBarButton: () => null,
+                    tabBarItemStyle: { display: 'none' },
+                }}
+            />
         </Tab.Navigator>
     );
 }
@@ -202,7 +211,7 @@ const styles = StyleSheet.create({
   },
   // ✅ NEW: Responsive tab label
   tabLabel: {
-    fontSize: SCREEN_WIDTH * 0.025, // ✅ Slightly larger base size
+    fontSize: SCREEN_WIDTH * 0.040, // ✅ Slightly larger base size
     fontFamily: 'PSemi-Bold',
     textAlign: 'center',
     width: '100%', // ✅ Takes full container width
