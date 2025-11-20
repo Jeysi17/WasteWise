@@ -40,6 +40,19 @@
     .close:hover {
       color: #000;
     }
+    .export-btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .export-pdf { background-color: #e74c3c; }
+    .export-excel { background-color: #27ae60; }
   </style>
 </head>
 <body>
@@ -68,24 +81,24 @@
       </select>
     </div>
     <div class="ms-auto">
-      <button class="btn btn-primary" onclick="showExportModal()">Export Report</button>
+      <button class="btn btn-primary" id="exportReportBtn">Export Report</button>
     </div>
 
     <div id="exporterNameModal" class="modal">
       <div class="modal-content1" style="max-width: 400px;">
-        <span class="close" onclick="closeExportModals()">&times;</span>
+        <span class="close" id="closeNameModal">&times;</span>
         <h5>Please Enter Your Name</h5>
         <p style="font-size: 0.6em; color: #666;">Your name is required and will be included in the report.</p>
         <input type="text" id="exporterNameInput" placeholder="Enter your full name" class="form-control">
-        <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="submitExporterName()">Continue</button>
+        <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" id="submitExporterNameBtn">Continue</button>
       </div>
     </div>
 
     <div id="exportFormatModal" class="modal">
       <div class="modal-content">
-        <span class="close" onclick="closeExportModals()">&times;</span>
-        <button class="export-btn export-pdf" onclick="exportToPDF()">PDF</button>
-        <button class="export-btn export-excel" onclick="exportToExcel()">Excel</button>
+        <span class="close" id="closeFormatModal">&times;</span>
+        <button class="export-btn export-pdf" id="exportPdfBtn">PDF</button>
+        <button class="export-btn export-excel" id="exportExcelBtn">Excel</button>
       </div>
     </div>
   </div>
@@ -135,6 +148,34 @@ import { authFetch, logout } from './auth.js';
 let loggedInBarangay = '';
 let currentData = null;
 let exporterName = '';
+
+// Define centerTextPlugin globally so it's accessible everywhere
+const centerTextPlugin = {
+  id: 'centerText',
+  afterDraw(chart, args, options) {
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    
+    const centerX = (chartArea.left + chartArea.right) / 2;
+    const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Main text (total weight)
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#333';
+    ctx.fillText(options.text || '', centerX, centerY - 10);
+    
+    // Subtext label
+    ctx.font = '12px Arial';
+    ctx.fillStyle = '#666';
+    ctx.fillText('Total Kilograms', centerX, centerY + 10);
+    
+    ctx.restore();
+  }
+};
 
 // --- DEBUG Authentication Guard ---
 (async function() {
@@ -206,6 +247,9 @@ function initializeApp() {
     await logout();
   });
 
+  // Setup export functionality
+  setupExportHandlers();
+
   // Initialize charts and load data
   setupCharts();
   loadAnalytics();
@@ -215,33 +259,31 @@ function initializeApp() {
   document.getElementById('weekSelect').addEventListener('change', loadAnalytics);
 }
 
-function setupCharts() {
-  // FIXED: Use proper Chart.js v4 plugin registration
-  const centerTextPlugin = {
-    id: 'centerText',
-    afterDraw(chart, args, options) {
-      const { ctx, chartArea: { left, right, top, bottom } } = chart;
-      const centerX = (left + right) / 2;
-      const centerY = (top + bottom) / 2;
+function setupExportHandlers() {
+  // Export report button
+  document.getElementById('exportReportBtn').addEventListener('click', showExportModal);
+  
+  // Name modal handlers
+  document.getElementById('closeNameModal').addEventListener('click', closeExportModals);
+  document.getElementById('submitExporterNameBtn').addEventListener('click', submitExporterName);
+  
+  // Format modal handlers
+  document.getElementById('closeFormatModal').addEventListener('click', closeExportModals);
+  document.getElementById('exportPdfBtn').addEventListener('click', exportToPDF);
+  document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+  
+  // Close modals when clicking outside
+  window.addEventListener('click', function (event) {
+    const nameModal = document.getElementById('exporterNameModal');
+    const formatModal = document.getElementById('exportFormatModal');
 
-      ctx.save();
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // Main text (total weight)
-      ctx.font = 'bold 24px Arial';
-      ctx.fillStyle = '#333';
-      ctx.fillText(options.text || '', centerX, centerY - 10);
-      
-      // Subtext label
-      ctx.font = '12px Arial';
-      ctx.fillStyle = '#666';
-      ctx.fillText('Total Kilograms', centerX, centerY + 10);
-      
-      ctx.restore();
+    if (event.target === nameModal || event.target === formatModal) {
+      closeExportModals();
     }
-  };
+  });
+}
 
+function setupCharts() {
   // Register the plugin globally
   Chart.register(centerTextPlugin);
 
@@ -267,7 +309,6 @@ function donut(el, labels, values, colors, centerText) {
       cutout: '70%', 
       plugins: { 
         legend: { display: false },
-        // FIXED: Use the registered plugin correctly
         centerText: {
           text: centerText
         },
@@ -281,7 +322,6 @@ function donut(el, labels, values, colors, centerText) {
         }
       } 
     },
-    // FIXED: Add plugins configuration at the chart level
     plugins: [centerTextPlugin]
   });
 }
@@ -462,15 +502,6 @@ function closeExportModals() {
   document.getElementById('exporterNameInput').value = '';
   exporterName = '';
 }
-
-window.onclick = function (event) {
-  const nameModal = document.getElementById('exporterNameModal');
-  const formatModal = document.getElementById('exportFormatModal');
-
-  if (event.target === nameModal || event.target === formatModal) {
-    closeExportModals();
-  }
-};
 
 async function exportToPDF() {
   try {

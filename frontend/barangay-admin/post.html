@@ -10,7 +10,8 @@
     href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"
     crossorigin="anonymous"
   />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" 
+        crossorigin="anonymous" />
   <title>WasteWiseBRGYAdmin — Posts</title>
 
   <style>
@@ -19,6 +20,30 @@
     }
     .enhanced-table tbody tr:hover {
       background-color: #f8f9fa;
+    }
+    .redirect-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      font-family: Arial, sans-serif;
+    }
+    .redirect-countdown {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .redirect-message {
+      font-size: 18px;
+      text-align: center;
+      max-width: 80%;
     }
   </style>
 </head>
@@ -156,11 +181,16 @@
   </div>
 </div>
 
-<script src="auth.js"></script>
-<script>
+<script type="module">
+  import { authFetch } from './auth.js';
+  
+  // Make authFetch globally available for your existing code
+  window.authFetch = authFetch;
   
   const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
-  function formatReadableDate(dateString) {
+  
+  // Your existing functions
+  window.formatReadableDate = function(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     const options = {
@@ -173,9 +203,9 @@
       hour12: true 
     };
     return new Intl.DateTimeFormat('en-US', options).format(date);
-  }
+  };
 
-  function showCustomAlert(title, message) {
+  window.showCustomAlert = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
     document.getElementById('customModalMessage').textContent = message;
@@ -199,9 +229,9 @@
         okBtn.addEventListener('click', onOkClick, { once: true });
       }, 50); 
     });
-  }
+  };
 
-  function showCustomPrompt(title, message) {
+  window.showCustomPrompt = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
     document.getElementById('customModalMessage').textContent = message;
@@ -246,9 +276,9 @@
         cancelBtn.addEventListener('click', onCancelClick, { once: true });
       }, 50);
     });
-  }
+  };
 
-  function showCustomConfirm(title, message) {
+  window.showCustomConfirm = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
     document.getElementById('customModalMessage').textContent = message;
@@ -288,25 +318,106 @@
         cancelBtn.addEventListener('click', onCancelClick, { once: true });
       }, 50);
     });
-  }
+  };
 
   let allPosts = [];
   let allSolvedPosts = [];
   let currentView = 'pending';
   let currentBarangay = '';
 
-  (async function guard(){
-    const r = await authFetch('/api/brgy/auth/me');
-    if (!r.ok) { location.href='index.html'; return; }
-    const me = await r.json();
-    currentBarangay = me.barangay;
-    document.getElementById('hdrBrand').insertAdjacentText('beforeend', ` — ${me.barangay}`);
+  // --- DEBUG Authentication Guard (using the same logic as brgy-analytics.html) ---
+  (async function() {
+    const token = localStorage.getItem('wastewise_brgy_token');
+    const userData = localStorage.getItem('wastewise_brgy_user');
     
-    fetchPosts();
-    fetchSolvedPosts();
+    console.log('🔄 DEBUG: Starting authentication check...');
+    console.log('🔑 Token exists:', !!token);
+    console.log('👤 User data exists:', !!userData);
+    
+    // Add a delay so we can see console messages
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Immediate redirect if no tokens
+    if (!token || !userData) {
+      console.log('❌ No authentication tokens found, redirecting to login...');
+      window.location.href = 'index.html';
+      return;
+    }
+
+    try {
+      // Get barangay name from saved user data (from login response)
+      const user = JSON.parse(userData);
+      currentBarangay = user.barangay;
+      console.log('🏠 Barangay from user data:', currentBarangay);
+      
+      // Test token with a working endpoint instead of the broken /auth/me
+      console.log('🧪 Testing token validity with posts endpoint...');
+      
+      // Use a simpler test without authFetch to isolate the issue
+      const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/pendings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 Test response status:', testResponse.status, testResponse.statusText);
+      
+      if (!testResponse.ok) {
+        const errorText = await testResponse.text();
+        console.error('❌ Token test failed:', errorText);
+        throw new Error(`Token validation failed: ${testResponse.status} ${testResponse.statusText}`);
+      }
+
+      console.log('✅ Token is valid, initializing app...');
+      document.getElementById('hdrBrand').textContent += ` — ${currentBarangay}`;
+      
+      // Initialize the rest of the app
+      initializeApp();
+    } catch (err) {
+      console.error('💥 Authentication failed:', err);
+      console.error('💥 Full error details:', err.message);
+      
+      // Add delay before redirect so we can see the error
+      console.log('🔄 Redirecting to login in 3 seconds...');
+      
+      // Create overlay to show countdown
+      const overlay = document.createElement('div');
+      overlay.className = 'redirect-overlay';
+      overlay.innerHTML = `
+        <div class="redirect-countdown" id="countdown">Redirecting in 3 seconds...</div>
+        <div class="redirect-message">
+          <p>Authentication error: ${err.message}</p>
+          <p>Check the browser console for detailed logs.</p>
+          <p>You will be redirected to the login page shortly.</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      
+      // Countdown timer
+      let seconds = 3;
+      const countdownElement = document.getElementById('countdown');
+      const countdownInterval = setInterval(() => {
+        seconds--;
+        countdownElement.textContent = `Redirecting in ${seconds} seconds...`;
+        if (seconds <= 0) {
+          clearInterval(countdownInterval);
+          console.log('🔄 Redirecting to login page now...');
+          localStorage.removeItem('wastewise_brgy_token');
+          localStorage.removeItem('wastewise_brgy_user');
+          window.location.href = 'index.html';
+        }
+      }, 1000);
+    }
   })();
 
-  function renderPosts(posts) {
+  function initializeApp() {
+    // Load posts data
+    fetchPosts();
+    fetchSolvedPosts();
+  }
+
+  window.renderPosts = function(posts) {
     const table = document.getElementById('postsTable');
     table.innerHTML = '';
 
@@ -360,9 +471,9 @@
       `;
       table.appendChild(row);
     });
-  }
+  };
 
-  function renderSolvedPosts(posts) {
+  window.renderSolvedPosts = function(posts) {
     const table = document.getElementById('solvedPostsTable');
     table.innerHTML = '';
 
@@ -406,9 +517,9 @@
       `;
       table.appendChild(row);
     });
-  }
+  };
 
-  async function fetchPosts() {
+  window.fetchPosts = async function() {
     try {
       const response = await authFetch('/api/pendings');
       if (!response.ok) throw new Error('Failed to fetch data');
@@ -422,9 +533,9 @@
         <tr><td colspan="7" class="empty-state"><h3>Failed to Load Posts</h3></td></tr>
       `;
     }
-  }
+  };
 
-  async function fetchSolvedPosts() {
+  window.fetchSolvedPosts = async function() {
     try {
       const response = await authFetch('/api/brgy/solved-posts');
       if (!response.ok) throw new Error('Failed to fetch solved posts');
@@ -437,9 +548,9 @@
         <tr><td colspan="9" class="empty-state"><h3>Failed to Load Solved Posts</h3></td></tr>
       `;
     }
-  }
+  };
 
-  function applyDateFilter() {
+  window.applyDateFilter = function() {
     const fromDate = document.getElementById('fromDate').value;
     const toDate = document.getElementById('toDate').value;
 
@@ -469,15 +580,15 @@
       }
       renderSolvedPosts(filtered);
     }
-  }
+  };
 
-  function clearDateFilters() {
+  window.clearDateFilters = function() {
     document.getElementById('fromDate').value = '';
     document.getElementById('toDate').value = '';
     applyDateFilter(); 
-  }
+  };
 
-  async function approvePost(id) {
+  window.approvePost = async function(id) {
     const didConfirm = await showCustomConfirm(
       'Forward to CENRO', 
       'Are you sure you want to forward this post to CENRO?'
@@ -496,9 +607,9 @@
       console.error('Error forwarding post to CENRO:', error);
       await showCustomAlert('Error', 'Error forwarding post: ' + error.message);
     }
-  }
+  };
 
-  async function solvePost(id) {
+  window.solvePost = async function(id) {
     const remarks = await showCustomPrompt(
       "Mark this post as solved.",
       "Please enter your remarks below:"
@@ -526,9 +637,9 @@
       console.error("Error marking post as solved:", error);
       await showCustomAlert("Error", "Error: " + error.message);
     }
-  }
+  };
 
-  function showPendingPostModal(postId) {
+  window.showPendingPostModal = function(postId) {
     const post = allPosts.find(p => p.id == postId);
     if (!post) {
       console.error("Could not find pending post with ID:", postId);
@@ -550,9 +661,9 @@
 
     document.getElementById("imageDetailModal").style.display = "block";
     document.body.style.overflow = "hidden";
-  }
+  };
 
-  function showBrgySolvedPostModal(postId) {
+  window.showBrgySolvedPostModal = function(postId) {
     const post = allSolvedPosts.find(p => p.id == postId);
     if (!post) {
       console.error("Could not find solved post with ID:", postId);
@@ -579,21 +690,21 @@
 
     document.getElementById("imageDetailModal").style.display = "block";
     document.body.style.overflow = "hidden";
-  }
+  };
 
-  function closeImageDetailModal() {
+  window.closeImageDetailModal = function() {
     document.getElementById("imageDetailModal").style.display = "none";
     document.body.style.overflow = "";
-  }
+  };
 
   window.onclick = function(event) {
     const modal = document.getElementById("imageDetailModal");
     if (event.target === modal) {
       closeImageDetailModal();
     }
-  }
+  };
 
-  function switchView(viewName) {
+  window.switchView = function(viewName) {
     currentView = viewName;
     
     const pendingView = document.getElementById('pending-view');
@@ -618,11 +729,10 @@
     }
     
     applyDateFilter();
-  }
+  };
 
   window.onload = () => {
-    fetchPosts();
-    fetchSolvedPosts();
+    // This will be handled by the initializeApp function now
   };
 </script>
 

@@ -34,6 +34,7 @@ body { display:flex; min-height:100vh; align-items:center; justify-content:cente
       </div>
     </div>
     <button class="btn btn-success btn-block" type="submit">Login</button>
+    <button class="btn btn-link btn-block" type="button" onclick="location.href='brgy-register.html'">Create account</button>
   </form>
 </div>
 
@@ -74,9 +75,8 @@ async function checkExistingAuth() {
       if (isValid) {
         console.log('🔄 Redirecting to analytics in 2 seconds...');
         // Add delay so you can see the console messages
-        setTimeout(() => {
           location.href = 'brgy-analytics.html';
-        }, 2000);
+        
         return;
       }
     } catch (error) {
@@ -140,15 +140,32 @@ form.addEventListener('submit', async (e) => {
     
     if (token && userData) {
       console.log('✅ Tokens saved successfully, redirecting in 2 seconds...');
-      setTimeout(() => {
         location.href = 'brgy-analytics.html';
-      }, 2000);
     } else {
       throw new Error('Failed to save authentication data');
     }
   } catch (err) {
     console.error('❌ Login error:', err);
-    showError(err.message || 'Login failed. Check your credentials.');
+    
+    // Custom error messages based on the error
+    let userFriendlyMessage = 'Login failed. Please check your credentials.';
+    
+    if (err.message.includes('401') || err.message.includes('Unauthorized') || 
+        err.message.includes('invalid') || err.message.includes('Invalid credentials')) {
+      userFriendlyMessage = 'Incorrect username or password. Please try again.';
+    } else if (err.message.includes('Network') || err.message.includes('Failed to fetch')) {
+      userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
+    } else if (err.message.includes('404') || err.message.includes('Not Found')) {
+      userFriendlyMessage = 'Server unavailable. Please try again later.';
+    } else if (err.message.includes('500') || err.message.includes('Internal Server Error')) {
+      userFriendlyMessage = 'Server error. Please try again later.';
+    }
+    
+    showError(userFriendlyMessage);
+    
+    // Clear password field on error for security
+    document.getElementById('password').value = '';
+    document.getElementById('password').focus();
   } finally {
     // Reset button state
     submitBtn.textContent = originalText;
@@ -159,6 +176,11 @@ form.addEventListener('submit', async (e) => {
 function showError(message) {
   msg.style.display = 'block';
   msg.textContent = message;
+  
+  // Auto-hide error after 5 seconds
+  setTimeout(() => {
+    msg.style.display = 'none';
+  }, 5000);
 }
 
 // Debug: Log storage state on load

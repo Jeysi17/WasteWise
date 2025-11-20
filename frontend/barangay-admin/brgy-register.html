@@ -10,7 +10,7 @@
   <style>
     body { display:flex; min-height:100vh; align-items:center; justify-content:center; background:#f7fff8; }
     .card { width: 380px; }
-        .password-wrapper {
+    .password-wrapper {
       position: relative;
     }
     .toggle-btn {
@@ -67,8 +67,44 @@
     </form>
   </div>
 
-  <script src="auth.js"></script>
   <script>
+    // Backend URL configuration
+    const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+    
+    // Token management functions (copied from auth.js since we're not importing it)
+    const TOKEN_KEY = 'wastewise_brgy_token';
+    const USER_KEY = 'wastewise_brgy_user';
+
+    function setToken(token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    }
+
+    function setUser(user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY);
+    }
+
+    // Check if user is already authenticated
+    async function checkAuth() {
+      const token = getToken();
+      if (!token) return false;
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/brgy/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        return res.ok;
+      } catch (err) {
+        return false;
+      }
+    }
+
     // If already logged in as brgy admin, go to dashboard
     (async function() {
       if (await checkAuth()) {
@@ -82,29 +118,78 @@
       const password = document.getElementById('password').value;
       const barangay = document.getElementById('barangay').value;
 
+      // Basic validation
+      if (!username || !password || !barangay) {
+        showMessage('Please fill in all fields');
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage('Password must be at least 6 characters long');
+        return;
+      }
+
       try {
-        const res = await fetch('/api/brgy/auth/register', {
+        console.log('📝 Attempting registration...');
+        const res = await fetch(`${BACKEND_URL}/api/brgy/auth/register`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({ username, password, barangay })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Registration failed');
 
-        // Store token if provided (auto-login after registration)
-        if (data.token) {
+        console.log('📡 Registration response status:', res.status);
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
+          throw new Error(errorData.error || `Registration failed: ${res.status} ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        console.log('✅ Registration successful:', data);
+
+        // Store token and user data if provided (auto-login after registration)
+        if (data.token && data.user) {
           setToken(data.token);
-          window.location.href = 'brgy-analytics.html';
+          setUser(data.user);
+          showMessage('Account created successfully! Redirecting...', 'success');
+          setTimeout(() => {
+            window.location.href = 'brgy-analytics.html';
+          }, 1500);
         } else {
           // After registering, send them to login
-          alert('Account created successfully! Please log in.');
-          window.location.href = 'index.html';
+          showMessage('Account created successfully! Please log in.', 'success');
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 2000);
         }
       } catch (err) {
-        const msg = document.getElementById('msg');
-        msg.style.display = 'block';
-        msg.textContent = err.message;
+        console.error('❌ Registration error:', err);
+        showMessage(err.message);
       }
+    });
+
+    function showMessage(message, type = 'error') {
+      const msg = document.getElementById('msg');
+      msg.style.display = 'block';
+      msg.textContent = message;
+      msg.className = type === 'success' ? 'text-success mb-2' : 'text-danger mb-2';
+      
+      // Auto-hide success messages
+      if (type === 'success') {
+        setTimeout(() => {
+          msg.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    // Enhanced password toggle
+    document.querySelector('.toggle-btn').addEventListener('click', function() {
+      const passwordInput = document.getElementById('password');
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      this.textContent = isPassword ? 'Hide' : 'Show';
     });
   </script>
 </body>

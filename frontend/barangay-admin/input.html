@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="enhanced-tables.css" />
   <title>WasteWiseBRGY — Data Input</title>
   <style>
-    .wrap { max-width: 1000px; margin: 40px auto; }
+    .wrap { max-width: 1000px; margin: 40px auto; padding: 20px; }
     .card { background:#fff; border-radius:16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); padding:24px; margin-bottom:18px; border:1px solid #cfe9d5; }
     .sheet { width:100%; border-collapse: collapse; margin-top: 20px; }
     .sheet th, .sheet td { border:1px solid #cfe9d5; padding:12px; font-size:14px; vertical-align: middle; }
@@ -24,6 +24,119 @@
     .filter-group { display: flex; flex-direction: column; }
     .filter-group label { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #495057; }
     .filter-group select { padding: 6px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; }
+
+    /* Toast Notification Styles */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      max-width: 350px;
+    }
+
+    .toast {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-left: 4px solid;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 4s ease-out;
+      transition: all 20s ease-out;
+    }
+
+    .toast.success {
+      border-left-color: #78C2AD;
+      background: #f8fffd;
+    }
+
+    .toast.error {
+      border-left-color: #e74c3c;
+      background: #fff8f8;
+    }
+
+    .toast.hiding {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .toast.success .toast-icon {
+      color: #78C2AD;
+    }
+
+    .toast.error .toast-icon {
+      color: #e74c3c;
+    }
+
+    .toast-content {
+      flex-grow: 1;
+    }
+
+    .toast-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .toast.success .toast-title {
+      color: #2d6a4f;
+    }
+
+    .toast.error .toast-title {
+      color: #c0392b;
+    }
+
+    .toast-message {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.4;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .saving-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #78C2AD;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -32,7 +145,7 @@
       <h4>Data Input <span id="barangayPill" class="pill"></span></h4>
       <div>
         <a class="btn btn-outline-secondary btn-sm" href="brgy-analytics.html">Back to Analytics</a>
-        <button class="btn btn-outline-danger btn-sm" onclick="logout()">Log out</button>
+        <button class="btn btn-outline-danger btn-sm" id="logoutBtn">Log out</button>
       </div>
     </div>
 
@@ -43,7 +156,7 @@
         <div class="filter-group">
           <label for="purokSelect">Select Purok:</label>
           <select id="purokSelect" class="form-control form-control-sm">
-            <option value="">Purok</option>
+            <option value="">Select Purok</option>
           </select>
         </div>
         <div class="filter-group">
@@ -90,154 +203,21 @@
       </table>
 
       <div class="text-right mt-3">
-        <button class="btn btn-primary" onclick="saveWasteData()">Save</button>
+        <button class="btn btn-primary" id="saveBtn">Save Waste Data</button>
       </div>
     </div>
   </div>
 
-<div id="customModalBackdrop" class="custom-modal-backdrop" style="display: none;">
-  <div id="customModal" class="custom-modal">
-    <h4 id="customModalTitle">Modal Title</h4>
-    <p id="customModalMessage">Modal message goes here.</p>
-    <input type="text" id="customModalInput" class="custom-modal-input" style="display: none;" />
-    <div id="customModalActions" class="custom-modal-actions">
-      <button id="customModalBtnCancel" class="btn btn-secondary">Cancel</button>
-      <button id="customModalBtnOk" class="btn btn-primary">OK</button>
-    </div>
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Saving Overlay -->
+  <div class="saving-overlay" id="savingOverlay">
+    <div class="spinner"></div>
   </div>
-</div>
 
-<script src="auth.js"></script>
-<script>
-  // --- ADDED: Modal Functions (with ghost-click fix) ---
-  
-  const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
-  /**
-   * Shows a custom, promise-based alert.
-   */
-  function showCustomAlert(title, message) {
-    const backdrop = document.getElementById('customModalBackdrop');
-    document.getElementById('customModalTitle').textContent = title;
-    document.getElementById('customModalMessage').textContent = message;
-    document.getElementById('customModalInput').style.display = 'none';
-    document.getElementById('customModalBtnCancel').style.display = 'none';
-    
-    const okBtn = document.getElementById('customModalBtnOk');
-    okBtn.style.display = 'inline-block'; 
-    okBtn.textContent = 'OK';
-    
-    backdrop.classList.add('visible');
-    backdrop.style.display = 'flex';
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          resolve(true);
-        };
-        okBtn.addEventListener('click', onOkClick, { once: true });
-      }, 50); 
-    });
-  }
-
-  /**
-   * Shows a custom, promise-based prompt.
-   */
-  function showCustomPrompt(title, message) {
-    const backdrop = document.getElementById('customModalBackdrop');
-    document.getElementById('customModalTitle').textContent = title;
-    document.getElementById('customModalMessage').textContent = message;
-    
-    const input = document.getElementById('customModalInput');
-    input.style.display = 'block';
-    input.value = ''; 
-    
-    const okBtn = document.getElementById('customModalBtnOk');
-    const cancelBtn = document.getElementById('customModalBtnCancel');
-    okBtn.style.display = 'inline-block';
-    cancelBtn.style.display = 'inline-block';
-    okBtn.textContent = 'OK';
-    
-    backdrop.classList.add('visible');
-    backdrop.style.display = 'flex';
-    input.focus();
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          const value = input.value;
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(value); 
-        };
-        
-        const onCancelClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(null); 
-        };
-
-        const cleanup = () => {
-          okBtn.removeEventListener('click', onOkClick);
-          cancelBtn.removeEventListener('click', onCancelClick);
-        };
-        
-        okBtn.addEventListener('click', onOkClick, { once: true });
-        cancelBtn.addEventListener('click', onCancelClick, { once: true });
-      }, 50);
-    });
-  }
-
-  /**
-   * Shows a custom, promise-based confirm dialog.
-   */
-  function showCustomConfirm(title, message) {
-    const backdrop = document.getElementById('customModalBackdrop');
-    document.getElementById('customModalTitle').textContent = title;
-    document.getElementById('customModalMessage').textContent = message;
-    document.getElementById('customModalInput').style.display = 'none'; 
-
-    const okBtn = document.getElementById('customModalBtnOk');
-    const cancelBtn = document.getElementById('customModalBtnCancel');
-    okBtn.style.display = 'inline-block'; 
-    cancelBtn.style.display = 'inline-block';
-    okBtn.textContent = 'OK';
-
-    backdrop.classList.add('visible');
-    backdrop.style.display = 'flex';
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(true);
-        };
-
-        const onCancelClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(false);
-        };
-
-        const cleanup = () => {
-          okBtn.removeEventListener('click', onOkClick);
-          cancelBtn.removeEventListener('click', onCancelClick);
-        };
-
-        okBtn.addEventListener('click', onOkClick, { once: true });
-        cancelBtn.addEventListener('click', onCancelClick, { once: true });
-      }, 50);
-    });
-  }
-  
-  // --- End of Modal Functions ---
-
+<script type="module">
+  import { authFetch, logout } from './auth.js';
 
   // --- Configuration: Puroks per Barangay ---
   const PUROKS_BY_BRGY = {
@@ -247,43 +227,192 @@
   let BARANGAY = null;
   let PUROK_COUNT = PUROKS_BY_BRGY.DEFAULT;
 
-  // Must be logged in as BRGY admin
-  (async function guard() {
-    const r = await authFetch('/api/brgy/auth/me');
-    if (!r.ok) { location.href = 'index.html'; return; }
-    const me = await r.json();
-    BARANGAY = me.barangay;
-    document.getElementById('barangayPill').textContent = BARANGAY;
+  // Initialize the application
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM loaded, initializing app...');
+    initializeApp();
+  });
 
-    // set purok count for this barangay (fallback to DEFAULT)
-    PUROK_COUNT = PUROKS_BY_BRGY[BARANGAY] || PUROKS_BY_BRGY.DEFAULT;
-
-    // Populate purok dropdown
+  async function initializeApp() {
+    await checkAuthentication();
     populatePurokDropdown();
-  })();
+    setupEventListeners();
+    console.log('✅ App initialized successfully');
+  }
+
+  async function checkAuthentication() {
+    const token = localStorage.getItem('wastewise_brgy_token');
+    const userData = localStorage.getItem('wastewise_brgy_user');
+    
+    console.log('🔐 Authentication check...');
+
+    // Immediate redirect if no tokens
+    if (!token || !userData) {
+      console.log('❌ No authentication tokens found, redirecting to login...');
+      window.location.href = 'index.html';
+      return;
+    }
+
+    try {
+      // Get barangay name from saved user data
+      const user = JSON.parse(userData);
+      BARANGAY = user.barangay;
+      console.log('🏠 Barangay:', BARANGAY);
+      
+      // Test token with a working endpoint
+      const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/brgy/analytics/summary?month=2024-11', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!testResponse.ok) {
+        throw new Error(`Token validation failed: ${testResponse.status}`);
+      }
+
+      console.log('✅ Token is valid');
+      document.getElementById('barangayPill').textContent = BARANGAY;
+      PUROK_COUNT = PUROKS_BY_BRGY[BARANGAY] || PUROKS_BY_BRGY.DEFAULT;
+
+    } catch (err) {
+      console.error('💥 Authentication failed:', err);
+      localStorage.removeItem('wastewise_brgy_token');
+      localStorage.removeItem('wastewise_brgy_user');
+      window.location.href = 'index.html';
+    }
+  }
+
+  function setupEventListeners() {
+    console.log('🔧 Setting up event listeners...');
+    
+    // Setup logout button
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      console.log('🚪 Logging out...');
+      await logout();
+    });
+
+    // Setup save button
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.addEventListener('click', saveWasteData);
+    console.log('💾 Save button event listener added');
+
+    console.log('✅ All event listeners set up');
+  }
 
   function populatePurokDropdown() {
     const select = document.getElementById('purokSelect');
+    // Clear existing options except the first one
+    while (select.children.length > 1) {
+      select.removeChild(select.lastChild);
+    }
+    
     for (let i = 1; i <= PUROK_COUNT; i++) {
       const option = document.createElement('option');
       option.value = i;
       option.textContent = `Purok ${i}`;
       select.appendChild(option);
     }
+    console.log(`📋 Populated ${PUROK_COUNT} puroks in dropdown`);
+  }
+
+  /**
+   * Shows a toast notification
+   */
+  function showToast(type, title, message, duration = 15000) { // 15 seconds for errors
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '✓' : '⚠️';
+    
+    toast.innerHTML = `
+      <div class="toast-icon">${icon}</div>
+      <div class="toast-content">
+        <div class="toast-title">${title}</div>
+        <div class="toast-message">${message}</div>
+      </div>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    // Auto remove after duration (15 seconds for errors, 20 for success)
+    const removeTimeout = setTimeout(() => {
+      hideToast(toast);
+    }, duration);
+
+    // Store timeout ID so we can clear it if user clicks
+    toast._timeoutId = removeTimeout;
+
+    // Also allow click to dismiss
+    toast.addEventListener('click', () => {
+      clearTimeout(toast._timeoutId);
+      hideToast(toast);
+    });
+  }
+
+  /**
+   * Hides a toast with animation
+   */
+  function hideToast(toast) {
+    toast.classList.add('hiding');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 1000); // Wait for animation to complete (1 second)
+  }
+
+  /**
+   * Shows loading overlay
+   */
+  function showLoading() {
+    document.getElementById('savingOverlay').style.display = 'flex';
+  }
+
+  /**
+   * Hides loading overlay
+   */
+  function hideLoading() {
+    document.getElementById('savingOverlay').style.display = 'none';
+  }
+
+  /**
+   * Resets all form fields
+   */
+  function resetFormFields() {
+    console.log('🔄 Resetting form fields');
+    // Reset kilogram inputs
+    document.getElementById('kg_nabubulok').value = '';
+    document.getElementById('kg_panapon').value = '';
+    document.getElementById('kg_kalakal').value = '';
+    document.getElementById('kg_delikado').value = '';
+    
+    // Reset dropdowns to default values
+    document.getElementById('purokSelect').selectedIndex = 0;
+    document.getElementById('weekSelect').selectedIndex = 0;
+    console.log('✅ Form fields reset');
   }
 
   async function saveWasteData() {
+    console.log('💾 Save button clicked - starting save process');
+    
     // Get selected purok and week
     const purok = document.getElementById('purokSelect').value;
     const week = document.getElementById('weekSelect').value;
 
+    console.log('📋 Form data - Purok:', purok, 'Week:', week);
+
+    // Validation
     if (!purok) {
-      await showCustomAlert('Error', 'Please select a Purok');
+      console.log('❌ No purok selected');
+      showToast('error', 'Error', 'Please select a Purok');
       return;
     }
 
     if (!week) {
-      await showCustomAlert('Error', 'Please select a Week');
+      console.log('❌ No week selected');
+      showToast('error', 'Error', 'Please select a Week');
       return;
     }
 
@@ -295,6 +424,8 @@
       { category: 'Delikado', kilograms: document.getElementById('kg_delikado').value }
     ];
 
+    console.log('📊 Input values:', categories);
+
     // Build rows array - only include entries with values
     const rows = categories
       .filter(item => item.kilograms && parseFloat(item.kilograms) > 0)
@@ -305,39 +436,60 @@
         week_of_month: parseInt(week)
       }));
 
+    console.log('📦 Rows to save:', rows);
+
     if (rows.length === 0) {
-      await showCustomAlert('Error', 'Please enter at least one kilogram value');
+      console.log('❌ No valid data to save');
+      showToast('error', 'Error', 'Please enter at least one kilogram value');
       return;
     }
 
+    // Show loading
+    showLoading();
+
     // Send to backend
     try {
+      console.log('🚀 Sending data to backend...');
       const res = await authFetch('/api/brgy/waste-entries/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rows })
       });
 
-      const data = await res.json();
+      console.log('📨 Backend response status:', res.status);
       
       if (!res.ok) {
-        await showCustomAlert('Error', data.error || 'Failed to save waste entries');
+        const errorData = await res.json();
+        console.error('❌ Backend error:', errorData);
+        showToast('error', 'Error', errorData.error || 'Failed to save waste entries');
         return;
       }
 
-      await showCustomAlert('Success', `Successfully saved ${data.inserted} waste entries!`);
+      const data = await res.json();
+      console.log('✅ Save successful:', data);
       
-      // Clear the form
-      document.getElementById('kg_nabubulok').value = '';
-      document.getElementById('kg_panapon').value = '';
-      document.getElementById('kg_kalakal').value = '';
-      document.getElementById('kg_delikado').value = '';
+      const successMessage = `Successfully saved ${data.inserted} waste ${data.inserted === 1 ? 'entry' : 'entries'} for Purok ${purok}, Week ${week}!`;
+      showToast('success', 'Success!', successMessage, 20000); // 20 seconds for success messages
+      
+      // Reset all form fields
+      resetFormFields();
 
     } catch (error) {
-      console.error('Error saving waste data:', error);
-      await showCustomAlert('Error', 'An error occurred while saving. Please try again.');
+      console.error('💥 Error saving waste data:', error);
+      showToast('error', 'Error', 'An error occurred while saving. Please try again.');
+    } finally {
+      // Hide loading regardless of outcome
+      hideLoading();
     }
   }
+
+  // Test toast function
+  window.testToast = function() {
+    console.log('🧪 Testing toast...');
+    showToast('success', 'Test Success', 'This is a test success message that should stay visible for 20 seconds!');
+  };
+
+  console.log('✅ Toast system ready');
 </script>
 </body>
 </html>
