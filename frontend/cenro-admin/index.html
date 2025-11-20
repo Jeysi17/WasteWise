@@ -10,9 +10,7 @@
   <style>
     body { min-height:100vh; display:flex; align-items:center; justify-content:center; }
     .card { width:360px; }
-    .password-wrapper {
-      position: relative;
-    }
+    .password-wrapper { position: relative; }
     .toggle-btn {
       position: absolute;
       top: 50%;
@@ -23,6 +21,7 @@
       cursor: pointer;
       color: #28a745;
       font-size: 0.9rem;
+      z-index: 10;
     }
   </style>
 </head>
@@ -30,7 +29,8 @@
   <div class="card p-4 shadow">
     <h4 class="mb-3 text-center">WasteWise Admin</h4>
     <div id="msg" class="text-danger mb-2" style="display:none;"></div>
-    <form onsubmit="doLogin(event)">
+    
+    <form id="loginForm">
       <div class="form-group">
         <label>Username</label>
         <input id="username" class="form-control" autocomplete="username" required />
@@ -39,7 +39,7 @@
         <label>Password</label>
         <div class="password-wrapper">
           <input id="password" type="password" class="form-control" autocomplete="current-password" required/>
-          <button type="button" class="toggle-btn" onclick="password.type = password.type === 'password' ? 'text' : 'password'">Show</button>
+          <button type="button" id="togglePassword" class="toggle-btn">Show</button>
         </div>
       </div>
       <button class="btn btn-success btn-block" type="submit">Log In</button>
@@ -48,108 +48,74 @@
   </div>
 
   <script type="module">
-import { login, getToken, checkAuth } from './auth.js';
+    import { login, getToken } from './auth.js';
 
-// Clear any corrupted tokens on load
-(function cleanupOnLoad() {
-  const token = localStorage.getItem('wastewise_brgy_token');
-  if (token && token.length < 10) {
-    console.log('🛠️ Cleaning up corrupted token...');
-    localStorage.removeItem('wastewise_brgy_token');
-    localStorage.removeItem('wastewise_brgy_user');
-  }
-})();
-
-// Redirect if already logged in
-async function checkExistingAuth() {
-  const token = getToken();
-  if (token) {
-    try {
-      console.log('🔐 Checking existing token...');
-      const isValid = await checkAuth();
-      if (isValid) {
-        console.log('✅ Token valid, redirecting...');
-        location.href = 'brgy-analytics.html';
-        return;
+    // 1. Cleanup corrupt tokens
+    (function cleanupOnLoad() {
+      const token = localStorage.getItem('wastewise_admin_token');
+      if (token && (token.length < 10 || token === 'null' || token === 'undefined')) {
+        localStorage.removeItem('wastewise_admin_token');
+        localStorage.removeItem('wastewise_admin_user');
       }
-    } catch (error) {
-      console.log('❌ Token invalid, showing login form');
+    })();
+
+    // 2. Check existing login
+    async function checkExistingAuth() {
+      const token = getToken();
+      if (token) {
+        location.href = 'analytics.html'; 
+      }
     }
-  }
-}
+    checkExistingAuth();
 
-checkExistingAuth();
+    // 3. Password Toggle
+    document.getElementById('togglePassword').addEventListener('click', () => {
+      const pwd = document.getElementById('password');
+      const toggleBtn = document.getElementById('togglePassword');
+      
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        toggleBtn.textContent = 'Hide';
+      } else {
+        pwd.type = 'password';
+        toggleBtn.textContent = 'Show';
+      }
+    });
 
-// Toggle password visibility
-document.getElementById('togglePassword').addEventListener('click', () => {
-  const pwd = document.getElementById('password');
-  const toggleBtn = document.getElementById('togglePassword');
-  
-  if (pwd.type === 'password') {
-    pwd.type = 'text';
-    toggleBtn.textContent = 'Hide';
-  } else {
-    pwd.type = 'password';
-    toggleBtn.textContent = 'Show';
-  }
-});
+    // 4. Login Logic
+    const form = document.getElementById('loginForm');
+    const msg = document.getElementById('msg');
 
-const form = document.getElementById('loginForm');
-const msg = document.getElementById('msg');
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value;
-
-  if (!username || !password) {
-    showError('Please enter both username and password');
-    return;
-  }
-
-  // Show loading state
-  const submitBtn = form.querySelector('button[type="submit"]');
-  const originalText = submitBtn.textContent;
-  submitBtn.textContent = 'Logging in...';
-  submitBtn.disabled = true;
-  msg.style.display = 'none';
-
-  try {
-    console.log('🔄 Starting login process...');
-    const user = await login(username, password);
-    console.log('✅ Login successful, user:', user);
-    
-    // Verify tokens are saved properly
-    const token = localStorage.getItem('wastewise_brgy_token');
-    const userData = localStorage.getItem('wastewise_brgy_user');
-    
-    if (token && userData) {
-      console.log('✅ Tokens saved successfully');
-      console.log('🔄 Redirecting to analytics...');
-      location.href = 'brgy-analytics.html';
-    } else {
-      throw new Error('Failed to save authentication data');
+    function showError(message) {
+      msg.style.display = 'block';
+      msg.textContent = message;
+      setTimeout(() => { msg.style.display = 'none'; }, 5000);
     }
-  } catch (err) {
-    console.error('❌ Login error:', err);
-    showError(err.message || 'Login failed. Check your credentials.');
-  } finally {
-    // Reset button state
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-  }
-});
 
-function showError(message) {
-  msg.style.display = 'block';
-  msg.textContent = message;
-}
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      
+      submitBtn.textContent = 'Logging in...';
+      submitBtn.disabled = true;
+      msg.style.display = 'none';
 
-// Debug: Log storage state
-console.log('🔄 Page loaded, storage state:', {
-  token: localStorage.getItem('wastewise_brgy_token') ? 'exists' : 'missing',
-  user: localStorage.getItem('wastewise_brgy_user') ? 'exists' : 'missing'
-});
-</script>
+      try {
+        await login(username, password);
+        location.href = 'analytics.html';
+      } catch (err) {
+        console.error('Login error:', err);
+        showError(err.message || 'Login failed');
+        document.getElementById('password').value = '';
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>

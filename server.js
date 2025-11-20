@@ -974,7 +974,7 @@ app.get('/api/brgy/pendings', requireBarangay, async (req, res) => {
   }
 });
 
-// ==================== APPROVE (Barangay Admin) ====================
+// ==================== FORWARD TO CENRO  (Barangay Admin) ====================
 app.post('/api/approve/:id', async (req, res) => {
   const id = req.params.id;
   const client = await pool.connect();
@@ -1003,7 +1003,7 @@ app.post('/api/approve/:id', async (req, res) => {
     // 3️⃣ Update status for traceability
     await client.query('UPDATE pendings SET status = $1 WHERE id = $2', [updatedStatus, id]);
 
-    // 4️⃣ Insert into total_approved_posts (history)
+    
     await client.query(`
       INSERT INTO approved_posts 
       (id, user_id, name, title, image, details, location, post_date, approved_at, status)
@@ -1011,7 +1011,7 @@ app.post('/api/approve/:id', async (req, res) => {
       ON CONFLICT (id) DO NOTHING
     `, [
       post.id,
-      post.user_id,  // ✅ Add this
+      post.user_id,  
       post.name,
       post.title,
       post.image,
@@ -1020,7 +1020,8 @@ app.post('/api/approve/:id', async (req, res) => {
       post.post_date,
       updatedStatus
     ]);
-
+    
+    // 4️⃣ Insert into total_approved_posts (history)
     await client.query(`
       INSERT INTO total_approved_posts (id, name, title, image, details, location, post_date, approved_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
