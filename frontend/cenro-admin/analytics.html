@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="des.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"
+        crossorigin="anonymous"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <title>WasteWiseAdmin — Analytics</title>
+</head>
+<body>
+  <div class="sidebar">
+    <button onclick="location.href='analytics.html'">HOME</button>
+    <button onclick="location.href='admin-post.html'">POST</button>
+    <button onclick="location.href='schedule.html'">SCHEDULE</button>
+    <button class="btn btn-danger mt-4" onclick="logout()">Log out</button>
+  </div>
+
+  <div class="header">WasteWise Admin</div>
+
+  <div class="topbar-wrapper">
+    <div class="content">
+      <div class="d-flex align-items-center flex-wrap">
+        <h4 style="margin-bottom: -4px; margin-left: 5px;">Analytics This</h4>
+        <div class="select-wrapper ms-3">
+          <select id="periodSelect" class="botons form-select" onchange="handlePeriodChange()">
+            <option value="year" selected>Year</option>
+            <option value="month">Month</option>
+            <option value="week">Week</option>
+          </select>
+        </div>
+        <div class="period-nav">
+          <button class="nav-btn" onclick="navigatePeriod(-1)">←</button>
+          <span id="periodLabel" class="period-label">Loading...</span>
+          <button class="nav-btn" onclick="navigatePeriod(1)">→</button>
+        </div>
+        <div class="select-wrapper" style="margin-left: 20px !important;">
+          <label for="barangayFilter" style="font-size: 14px; font-weight: 600; margin-right: 8px;">Barangay:</label>
+          <select id="barangayFilter" class="botons form-select" onchange="loadAnalytics()">
+            <option value="">All Barangays</option>
+            <option value="Aguado">Aguado</option>
+            <option value="Cabezas">Cabezas</option>
+            <option value="Cabuco">Cabuco</option>
+            <option value="Conchu">Conchu</option>
+            <option value="De Ocampo">De Ocampo</option>
+            <option value="Gregorio">Gregorio</option>
+            <option value="Hugo Perez">Hugo Perez</option>
+            <option value="Inocencio">Inocencio</option>
+            <option value="Lallana">Lallana</option>
+            <option value="Lapidario">Lapidario</option>
+            <option value="Luciano">Luciano</option>
+            <option value="Osorio">Osorio</option>
+            <option value="San Agustin">San Agustin</option>
+          </select>
+        </div>
+        <div class="ms-auto">
+          <button class="btn btn-primary" onclick="showExportModal()">Export Report</button>
+        </div>
+        <div id="exporterNameModal" class="modal">
+          <div class="modal-content1" style="max-width: 400px;">
+            <span class="close" onclick="closeExportModals()">&times;</span>
+            <h5>Please Enter Your Name</h5>
+            <p style="font-size: 0.9em; color: #666;">Your name is required and will be included in the report.</p>
+            <input type="text" id="exporterNameInput" placeholder="Enter your full name" class="form-control">
+            <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="submitExporterName()">Continue</button>
+          </div>
+        </div>
+
+        <div id="exportFormatModal" class="modal">
+          <div class="modal-content">
+            <span class="close" onclick="closeExportModals()">&times;</span>
+            <button class="export-btn export-pdf" onclick="exportToPDF()">PDF</button>
+            <button class="export-btn export-excel" onclick="exportToExcel()">Excel</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div class="grid">
+      <div class="card">
+        <h6>Wastes by Category</h6>
+        <div class="chart-row">
+          <div class="donut-wrap"><canvas id="catChart"></canvas></div>
+          <div id="catLegend" class="legend legend-right"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h6>Wastes from Barangay</h6>
+        <div class="chart-row">
+          <div class="donut-wrap"><canvas id="brgyChart"></canvas></div>
+          <div id="brgyLegend" class="legend legend-right1"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3 my-3">
+      <div class="pill"><label>Total Post Complaints</label><span id="kpiTotalComplaints">0</span></div>
+      <div class="pill"><label>Pending Post Complaints</label><span id="kpiComplaints">0</span></div>
+      <div class="pill"><label>Complaints Solved </label><span id="kpiSolved">0</span></div>
+      <div class="pill"><label>Users</label><span id="kpiUsers">0</span></div>
+    </div>
+
+    <div class="grid1">
+      <div class="card">
+        <h6>Wastes Comparison</h6>
+        <div class="bar-wrap"><canvas id="compChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h6 id="periodChartTitle">By Week</h6>
+        <div class="bar-wrap"><canvas id="weekChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    // State management
+    let currentPeriod = 'year';
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
+    let currentWeek = getWeekNumber(new Date());
+    let charts = {};
+
+    // Helper function to get week number
+    function getWeekNumber(date) {
+      const startOfYear = new Date(date.getFullYear(), 0, 1);
+      return Math.ceil(((date - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+    }
+
+    // Guard: must be logged in
+    (async function guard() {
+      const r = await authFetch('/api/auth/me');
+      if (!r.ok) { location.href = 'index.html'; return; }
+      loadAnalytics();
+    })();
+
+    // Handle period selection change
+    function handlePeriodChange() {
+      currentPeriod = document.getElementById('periodSelect').value;
+      const now = new Date();
+      currentYear = now.getFullYear();
+      currentMonth = now.getMonth() + 1;
+      currentWeek = getWeekNumber(now);
+      loadAnalytics();
+    }
+
+    // Navigate between periods
+    function navigatePeriod(direction) {
+      if (currentPeriod === 'week') {
+        currentWeek += direction;
+        if (currentWeek > 52) {
+          currentWeek = 1;
+          currentYear++;
+        } else if (currentWeek < 1) {
+          currentWeek = 52;
+          currentYear--;
+        }
+      } else if (currentPeriod === 'month') {
+        currentMonth += direction;
+        if (currentMonth > 12) {
+          currentMonth = 1;
+          currentYear++;
+        } else if (currentMonth < 1) {
+          currentMonth = 12;
+          currentYear--;
+        }
+      } else if (currentPeriod === 'year') {
+        currentYear += direction;
+      }
+      loadAnalytics();
+    }
+
+    // Update period label
+    function updatePeriodLabel() {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      let label = '';
+      
+      if (currentPeriod === 'week') {
+        label = `Week ${currentWeek}, ${currentYear}`;
+      } else if (currentPeriod === 'month') {
+        label = `${monthNames[currentMonth - 1]} ${currentYear}`;
+      } else if (currentPeriod === 'year') {
+        label = `Year ${currentYear}`;
+      }
+      
+      document.getElementById('periodLabel').textContent = label;
+    }
+
+    // Chart.js center text plugin
+    const centerTextPlugin = {
+      id: 'centerText',
+      afterDraw(chart, args, pluginOptions) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+
+        ctx.save();
+        ctx.fillStyle = '#333';
+        ctx.font = '500 40px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pluginOptions.text || '', cx, cy - 6);
+
+        ctx.fillStyle = '#666';
+        ctx.font = '15px Arial';
+        ctx.fillText('Total Kilograms', cx, cy + 16);
+        ctx.restore();
+      }
+    };
+    Chart.register(centerTextPlugin);
+
+    // Donut chart helper
+    function donut(el, labels, values, backgroundColors, centerText) {
+      return new Chart(el, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: backgroundColors
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: '70%',
+          plugins: {
+            legend: { display: false },
+            centerText: { text: centerText },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const names = ctx.dataset.tooltipNames || [];
+                  const val = ctx.parsed.y ?? ctx.parsed;
+                  return ` ${val} kg`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Build interactive legend
+    function buildInteractiveLegend(container, chart, legendTitle) {
+      const labels = chart.data.labels;
+      const colors = chart.data.datasets[0].backgroundColor;
+      const ds = chart.data.datasets[0];
+
+      const baseTotal = ds.data.reduce((s, v) => s + (Number(v) || 0), 0);
+      const fixedPct = ds.data.map(v => {
+        const val = Number(v) || 0;
+        return baseTotal ? Math.round((val / baseTotal) * 100) : 0;
+      });
+
+      function render() {
+        container.innerHTML = labels.map((l, i) => {
+          const visible = chart.getDataVisibility(i);
+          const dim = visible ? '' : ' legend-item--off';
+          const color = colors[i] || '#cccccc';
+          return `
+            <button class="legend-item${dim}" data-index="${i}" title="Show/Hide">
+              <span class="color-box" style="background:${color}"></span>
+              <span class="legend-text">${l}</span>
+              <span class="legend-pct">${fixedPct[i]}%</span>
+            </button>
+          `;
+        }).join('');
+      }
+      render();
+
+      container.addEventListener('click', (e) => {
+        const btn = e.target.closest('.legend-item');
+        if (!btn) return;
+        const i = Number(btn.dataset.index);
+        chart.toggleDataVisibility(i);
+        chart.update();
+        render();
+      });
+    }
+
+    // Bar chart helper
+    function bar(el, labels, values, tooltipNames) {
+      return new Chart(el, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            tooltipNames: tooltipNames || []
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const names = ctx.dataset.tooltipNames || [];
+                  const val = ctx.parsed.y ?? ctx.parsed;
+                  return ` ${val} kg`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Main analytics loading function
+    async function loadAnalytics() {
+      const params = new URLSearchParams({
+        period: currentPeriod,
+        year: currentYear,
+        month: currentMonth,
+        week: currentWeek
+      });
+
+      const selectedBarangay = document.getElementById('barangayFilter').value;
+      if (selectedBarangay) {
+        params.set('barangay', selectedBarangay);
+      }
+
+      try {
+        const res = await authFetch(`/api/analytics/summary?${params}`);
+        if (!res.ok) {
+          console.error('Failed to load analytics');
+          return;
+        }
+        const data = await res.json();
+
+        updatePeriodLabel();
+
+        let periodChartTitle = 'By Week';
+        if (currentPeriod === 'week') {
+          periodChartTitle = 'By Day';
+        } else if (currentPeriod === 'year') {
+          periodChartTitle = 'By Month';
+        }
+        document.getElementById('periodChartTitle').textContent = periodChartTitle;
+
+        document.getElementById('kpiUsers').textContent =
+        (data.kpis?.users_count ?? 0).toLocaleString();
+
+        const totalLabel = Math.round(data.total).toLocaleString();
+
+        Object.values(charts).forEach(chart => {
+          if (chart) chart.destroy();
+        });
+        charts = {};
+
+        if (data.byCategory && data.byCategory.length > 0) {
+          const catLabels = data.byCategory.map(r => r.category);
+          const catValues = data.byCategory.map(r => r.kg);
+          const catColors = ['#7fb069', '#f2c14e', '#e63946', '#f77f00', '#a8dadc', '#457b9d', '#1d3557'].slice(0, catLabels.length);
+          charts.catChart = donut(document.getElementById('catChart'), catLabels, catValues, catColors, totalLabel);
+          buildInteractiveLegend(document.getElementById('catLegend'), charts.catChart, 'Wastes by Category');
+        }
+
+        if (data.byBarangay && data.byBarangay.length > 0) {
+          const brgyLabels = data.byBarangay.map(r => r.barangay);
+          const brgyValues = data.byBarangay.map(r => r.kg);
+          const brgyColors = [
+            '#49A9EA','#EB6383','#6ECB63','#F3A712','#F7D488','#3E78B2',
+            '#74C69D','#9D4EDD','#ADB5BD','#6C757D','#00B4D8','#B08968','#f6a5a5'
+          ].slice(0, brgyLabels.length);
+          charts.brgyChart = donut(document.getElementById('brgyChart'), brgyLabels, brgyValues, brgyColors, totalLabel);
+          buildInteractiveLegend(document.getElementById('brgyLegend'), charts.brgyChart, 'Wastes from Barangay');
+        }
+
+        if (data.byBarangay && data.byBarangay.length > 0) {
+          const comp = [...data.byBarangay].sort((a, b) => b.kg - a.kg).slice(0, 13);
+          const compLabels = comp.map(r => r.barangay);
+          const compValues = comp.map(r => r.kg);
+          charts.compChart = bar(document.getElementById('compChart'), compLabels, compValues);
+        }
+
+        if (data.byPeriod && data.byPeriod.length > 0) {
+          const periodLabels = data.byPeriod.map(r => r.label);
+          const periodValues = data.byPeriod.map(r => r.kg);
+          charts.weekChart = bar(document.getElementById('weekChart'), periodLabels, periodValues);
+        }
+
+        loadComplaintStats(selectedBarangay);
+
+      } catch (error) {
+        console.error('Error loading analytics:', error);
+      }
+    }
+
+    async function loadComplaintStats(barangay = '') {
+      try {
+        const params = new URLSearchParams();
+        if (barangay) params.set('barangay', barangay);
+
+        const totalRes = await authFetch(`/api/stats/total-complaints?${params}`);
+        const totalData = await totalRes.json();
+        document.getElementById('kpiTotalComplaints').textContent = (totalData.total || 0).toLocaleString();
+
+        const complaintsRes = await authFetch(`/api/stats/complaints?${params}`);
+        const complaintsData = await complaintsRes.json();
+        document.getElementById('kpiComplaints').textContent = (complaintsData.complaints || 0).toLocaleString();
+
+        const solvedRes = await authFetch(`/api/stats/solved?${params}`);
+        const solvedData = await solvedRes.json();
+        document.getElementById('kpiSolved').textContent = (solvedData.solved || 0).toLocaleString();
+      } catch (error) {
+        console.error('Error loading complaint stats:', error);
+      }
+    }
+    
+
+    // Export functions
+    function showExportModal() {
+      document.getElementById('exportModal').style.display = 'block';
+    }
+
+    function closeExportModal() {
+      document.getElementById('exportModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('exportModal');
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    /**
+     * Exports analytics data to PDF format.
+     */
+    // Export functions
+let currentData = null;
+let exporterName = ''; // Global variable to store the name
+
+// Step 1: Show the name modal
+function showExportModal() {
+  document.getElementById('exporterNameModal').style.display = 'block';
+  document.getElementById('exporterNameInput').focus();
+}
+
+// Step 2: Validate name and show the format modal
+function submitExporterName() {
+  const nameInput = document.getElementById('exporterNameInput');
+  exporterName = nameInput.value.trim().toUpperCase();
+
+  if (!exporterName) {
+    alert('Please enter your name to continue.');
+    return;
+  }
+
+  // Name is valid, proceed to next step
+  document.getElementById('exporterNameModal').style.display = 'none';
+  document.getElementById('exportFormatModal').style.display = 'block';
+}
+
+// This function now closes BOTH modals and resets everything
+function closeExportModals() {
+  document.getElementById('exporterNameModal').style.display = 'none';
+  document.getElementById('exportFormatModal').style.display = 'none';
+  document.getElementById('exporterNameInput').value = ''; // Clear input
+  exporterName = ''; // Clear stored name
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+  const nameModal = document.getElementById('exporterNameModal');
+  const formatModal = document.getElementById('exportFormatModal');
+  if (event.target == nameModal || event.target == formatModal) {
+    closeExportModals();
+  }
+}
+
+async function exportToPDF() {
+  try {
+    // Name check is no longer needed here, it's already in exporterName
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const selectedBarangay = document.getElementById('barangayFilter').value;
+    const barangayText = selectedBarangay || 'All Barangays';
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    let periodText = '';
+    
+    if (currentPeriod === 'week') {
+      periodText = `Week ${currentWeek}, ${currentYear}`;
+    } else if (currentPeriod === 'month') {
+      periodText = `${monthNames[currentMonth - 1]} ${currentYear}`;
+    } else if (currentPeriod === 'year') {
+      periodText = `Year ${currentYear}`;
+    }
+
+    // Title
+    doc.setFontSize(18);
+    doc.text('WasteWise Analytics Report', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Barangay: ${barangayText}`, 14, 28);
+    doc.text(`Period: ${periodText}`, 14, 35);
+    
+    let yPos = 45;
+
+    // Get current data from the page
+    const totalComplaints = document.getElementById('kpiTotalComplaints').textContent;
+    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
+    const solved = document.getElementById('kpiSolved').textContent;
+    const users = document.getElementById('kpiUsers').textContent;
+
+    // KPI Summary
+    doc.autoTable({
+      startY: yPos,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Complaints', totalComplaints],
+        ['Pending Complaints', pendingComplaints],
+        ['Solved', solved],
+        ['Users', users]
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [120, 194, 173] }
+    });
+
+    yPos = doc.lastAutoTable.finalY + 10;
+
+    // Fetch fresh data for tables
+    const params = new URLSearchParams({
+      period: currentPeriod,
+      year: currentYear,
+      month: currentMonth,
+      week: currentWeek
+    });
+    if (selectedBarangay) params.set('barangay', selectedBarangay);
+
+    const res = await fetch(`/api/analytics/summary?${params}`, { credentials: 'include' });
+    const data = await res.json();
+
+    // Wastes by Category
+    if (data.byCategory && data.byCategory.length > 0) {
+      doc.text('Wastes by Category', 14, yPos);
+      yPos += 7;
+      
+      doc.autoTable({
+        startY: yPos,
+        head: [['Category', 'Kilograms']],
+        body: data.byCategory.map(r => [r.category, r.kg.toFixed(2)]),
+        theme: 'grid',
+        headStyles: { fillColor: [120, 194, 173] }
+      });
+      yPos = doc.lastAutoTable.finalY + 10;
+    }
+
+    // Wastes by Period
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+    if (data.byPeriod && data.byPeriod.length > 0) {
+      doc.text('Wastes by Period', 14, yPos);
+      yPos += 7;
+      
+      doc.autoTable({
+        startY: yPos,
+        head: [['Period', 'Kilograms']],
+        body: data.byPeriod.map(r => [r.label, r.kg.toFixed(2)]),
+        theme: 'grid',
+        headStyles: { fillColor: [120, 194, 173] }
+      });
+      yPos = doc.lastAutoTable.finalY + 10;
+    }
+
+    // Wastes by Barangay
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+    if (data.byBarangay && data.byBarangay.length > 0) {
+      doc.text('Wastes by Barangay', 14, yPos);
+      yPos += 7;
+      
+      doc.autoTable({
+        startY: yPos,
+        head: [['Barangay', 'Kilograms']],
+        body: data.byBarangay.map(r => [r.barangay, r.kg.toFixed(2)]),
+        theme: 'grid',
+        headStyles: { fillColor: [120, 194, 173] }
+      });
+      yPos = doc.lastAutoTable.finalY;
+    }
+
+    // Add Exporter Name to Bottom
+    if (yPos > 270) { 
+      doc.addPage();
+      yPos = 20;
+    } else {
+      yPos += 20; 
+    }
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Exported by: ${exporterName}`, 14, yPos);
+
+    doc.save(`WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.pdf`);
+    closeExportModals();
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
+    alert('Error exporting to PDF');
+  }
+}
+
+async function exportToExcel() {
+  try {
+    // Name check is no longer needed here, it's in the global exporterName
+    const selectedBarangay = document.getElementById('barangayFilter').value;
+    const barangayText = selectedBarangay || 'All Barangays';
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    let periodText = '';
+    
+    if (currentPeriod === 'week') {
+      periodText = `Week ${currentWeek}, ${currentYear}`;
+    } else if (currentPeriod === 'month') {
+      periodText = `${monthNames[currentMonth - 1]} ${currentYear}`;
+    } else if (currentPeriod === 'year') {
+      periodText = `Year ${currentYear}`;
+    }
+
+    // Get current KPI data
+    const totalComplaints = document.getElementById('kpiTotalComplaints').textContent;
+    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
+    const solved = document.getElementById('kpiSolved').textContent;
+    const users = document.getElementById('kpiUsers').textContent;
+
+    // Fetch data
+    const params = new URLSearchParams({
+      period: currentPeriod,
+      year: currentYear,
+      month: currentMonth,
+      week: currentWeek
+    });
+    if (selectedBarangay) params.set('barangay', selectedBarangay);
+
+    const res = await fetch(`/api/analytics/summary?${params}`, { credentials: 'include' });
+    const data = await res.json();
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // --- Create ONE dataset for a single sheet ---
+    let allData = [];
+
+    // Summary Sheet Data
+    allData.push(['WasteWise Analytics Report']);
+    allData.push(['Barangay:', barangayText]);
+    allData.push(['Period:', periodText]);
+    allData.push([]); 
+    allData.push(['Metric', 'Value']);
+    allData.push(['Total Complaints', totalComplaints]);
+    allData.push(['Pending Complaints', pendingComplaints]);
+    allData.push(['Solved', solved]);
+    allData.push(['Users', users]);
+    allData.push([]); 
+    allData.push([]); 
+
+    // Wastes by Category Sheet Data
+    if (data.byCategory && data.byCategory.length > 0) {
+      allData.push(['Wastes by Category']);
+      allData.push(['Category', 'Kilograms']);
+      data.byCategory.forEach(r => allData.push([r.category, r.kg]));
+      allData.push([]); 
+    }
+
+    // Wastes by Barangay Sheet Data
+    if (data.byBarangay && data.byBarangay.length > 0) {
+      allData.push(['Wastes by Barangay']);
+      allData.push(['Barangay', 'Kilograms']);
+      data.byBarangay.forEach(r => allData.push([r.barangay, r.kg]));
+      allData.push([]); 
+    }
+
+    // Period Data Sheet Data
+    if (data.byPeriod && data.byPeriod.length > 0) {
+      allData.push(['Wastes by Period']);
+      allData.push(['Period', 'Kilograms']);
+      data.byPeriod.forEach(r => allData.push([r.label, r.kg]));
+    }
+
+    // Add exporter name
+    allData.push([]); 
+    allData.push([]); 
+    allData.push([`Exported by: ${exporterName}`]);
+
+    // Create a single worksheet and append it
+    const summaryWS = XLSX.utils.aoa_to_sheet(allData);
+    XLSX.utils.book_append_sheet(wb, summaryWS, 'Analytics Report');
+
+    // Save file
+    XLSX.writeFile(wb, `WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.xlsx`);
+    closeExportModals();
+  } catch (error) {
+    console.error('Error exporting to Excel:', error);
+    alert('Error exporting to Excel');
+  }
+}
+
+  </script>
+</body>
+</html>

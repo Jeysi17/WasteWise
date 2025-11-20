@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug</title>
+</head>
+<body>
+    <h1>Authentication Debug</h1>
+    <div id="debug"></div>
+    <button onclick="testAuth()">Test Authentication</button>
+    <button onclick="clearAuth()">Clear Auth Data</button>
+    
+    <script type="module">
+        import { login, checkAuth, getToken } from './auth.js';
+        
+        const debug = document.getElementById('debug');
+        
+        function log(message) {
+            debug.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+        }
+        
+        async function testAuth() {
+            debug.innerHTML = '';
+            log('Starting auth test...');
+            
+            const token = getToken();
+            log(`Token in localStorage: ${token ? 'YES' : 'NO'}`);
+            
+            if (token) {
+                log(`Token length: ${token.length} chars`);
+                log(`Token preview: ${token.substring(0, 50)}...`);
+            }
+            
+            try {
+                const isValid = await checkAuth();
+                log(`Token validation: ${isValid ? 'VALID' : 'INVALID'}`);
+            } catch (error) {
+                log(`Token validation ERROR: ${error.message}`);
+            }
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('wastewise_brgy_token');
+            localStorage.removeItem('wastewise_brgy_user');
+            log('Auth data cleared!');
+        }
+        
+        // Run test on load
+        testAuth();
+    </script>
+</body>
+</html>

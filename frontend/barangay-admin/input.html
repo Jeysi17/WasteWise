@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"
+        crossorigin="anonymous"/>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="enhanced-tables.css" />
+  <title>WasteWiseBRGY — Data Input</title>
+  <style>
+    .wrap { max-width: 1000px; margin: 40px auto; }
+    .card { background:#fff; border-radius:16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); padding:24px; margin-bottom:18px; border:1px solid #cfe9d5; }
+    .sheet { width:100%; border-collapse: collapse; margin-top: 20px; }
+    .sheet th, .sheet td { border:1px solid #cfe9d5; padding:12px; font-size:14px; vertical-align: middle; }
+    .sheet th { background:#e8f7ea; font-weight: 600; }
+    .sheet td input { width:100%; border:1px solid #ddd; outline:0; padding: 8px; border-radius: 4px; }
+    .sheet td input:focus { border-color: #78C2AD; }
+    .category-label { font-weight: 600; color: #2d6a4f; background: #f1f9f5; }
+    .hint { font-size:12px; color:#6c757d; margin-top: 8px; }
+    .pill { display:inline-block; padding:4px 12px; border-radius:20px; background:#e8f7ea; font-size:13px; font-weight:500; margin-left:8px; }
+    .filter-section { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px; }
+    .filter-group { display: flex; flex-direction: column; }
+    .filter-group label { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #495057; }
+    .filter-group select { padding: 6px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4>Data Input <span id="barangayPill" class="pill"></span></h4>
+      <div>
+        <a class="btn btn-outline-secondary btn-sm" href="brgy-analytics.html">Back to Analytics</a>
+        <button class="btn btn-outline-danger btn-sm" onclick="logout()">Log out</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h5 class="mb-3">Waste Entry</h5>
+
+      <div class="filter-section">
+        <div class="filter-group">
+          <label for="purokSelect">Select Purok:</label>
+          <select id="purokSelect" class="form-control form-control-sm">
+            <option value="">Purok</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="weekSelect">Select Week:</label>
+          <select id="weekSelect" class="form-control form-control-sm">
+            <option value="1">Week 1</option>
+            <option value="2">Week 2</option>
+            <option value="3">Week 3</option>
+            <option value="4">Week 4</option>
+            <option value="5">Week 5</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="hint mb-2">
+        Enter the kilogram values for each category. The selected Purok and Week will be applied to all entries.
+      </div>
+
+      <table class="sheet" id="wasteTable">
+        <thead>
+          <tr>
+            <th style="width: 30%;">Category</th>
+            <th style="width: 70%;">Kilograms</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="category-label">Nabubulok</td>
+            <td><input type="number" id="kg_nabubulok" step="0.01" min="0" placeholder="Enter kilograms"></td>
+          </tr>
+          <tr>
+            <td class="category-label">Panapon</td>
+            <td><input type="number" id="kg_panapon" step="0.01" min="0" placeholder="Enter kilograms"></td>
+          </tr>
+          <tr>
+            <td class="category-label">Mga Kalakal</td>
+            <td><input type="number" id="kg_kalakal" step="0.01" min="0" placeholder="Enter kilograms"></td>
+          </tr>
+          <tr>
+            <td class="category-label">Delikado</td>
+            <td><input type="number" id="kg_delikado" step="0.01" min="0" placeholder="Enter kilograms"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="text-right mt-3">
+        <button class="btn btn-primary" onclick="saveWasteData()">Save</button>
+      </div>
+    </div>
+  </div>
+
+<div id="customModalBackdrop" class="custom-modal-backdrop" style="display: none;">
+  <div id="customModal" class="custom-modal">
+    <h4 id="customModalTitle">Modal Title</h4>
+    <p id="customModalMessage">Modal message goes here.</p>
+    <input type="text" id="customModalInput" class="custom-modal-input" style="display: none;" />
+    <div id="customModalActions" class="custom-modal-actions">
+      <button id="customModalBtnCancel" class="btn btn-secondary">Cancel</button>
+      <button id="customModalBtnOk" class="btn btn-primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+  // --- ADDED: Modal Functions (with ghost-click fix) ---
+  
+  const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+  /**
+   * Shows a custom, promise-based alert.
+   */
+  function showCustomAlert(title, message) {
+    const backdrop = document.getElementById('customModalBackdrop');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    document.getElementById('customModalInput').style.display = 'none';
+    document.getElementById('customModalBtnCancel').style.display = 'none';
+    
+    const okBtn = document.getElementById('customModalBtnOk');
+    okBtn.style.display = 'inline-block'; 
+    okBtn.textContent = 'OK';
+    
+    backdrop.classList.add('visible');
+    backdrop.style.display = 'flex';
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const onOkClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          resolve(true);
+        };
+        okBtn.addEventListener('click', onOkClick, { once: true });
+      }, 50); 
+    });
+  }
+
+  /**
+   * Shows a custom, promise-based prompt.
+   */
+  function showCustomPrompt(title, message) {
+    const backdrop = document.getElementById('customModalBackdrop');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    
+    const input = document.getElementById('customModalInput');
+    input.style.display = 'block';
+    input.value = ''; 
+    
+    const okBtn = document.getElementById('customModalBtnOk');
+    const cancelBtn = document.getElementById('customModalBtnCancel');
+    okBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+    okBtn.textContent = 'OK';
+    
+    backdrop.classList.add('visible');
+    backdrop.style.display = 'flex';
+    input.focus();
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const onOkClick = () => {
+          const value = input.value;
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          cleanup();
+          resolve(value); 
+        };
+        
+        const onCancelClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          cleanup();
+          resolve(null); 
+        };
+
+        const cleanup = () => {
+          okBtn.removeEventListener('click', onOkClick);
+          cancelBtn.removeEventListener('click', onCancelClick);
+        };
+        
+        okBtn.addEventListener('click', onOkClick, { once: true });
+        cancelBtn.addEventListener('click', onCancelClick, { once: true });
+      }, 50);
+    });
+  }
+
+  /**
+   * Shows a custom, promise-based confirm dialog.
+   */
+  function showCustomConfirm(title, message) {
+    const backdrop = document.getElementById('customModalBackdrop');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    document.getElementById('customModalInput').style.display = 'none'; 
+
+    const okBtn = document.getElementById('customModalBtnOk');
+    const cancelBtn = document.getElementById('customModalBtnCancel');
+    okBtn.style.display = 'inline-block'; 
+    cancelBtn.style.display = 'inline-block';
+    okBtn.textContent = 'OK';
+
+    backdrop.classList.add('visible');
+    backdrop.style.display = 'flex';
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const onOkClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          cleanup();
+          resolve(true);
+        };
+
+        const onCancelClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          cleanup();
+          resolve(false);
+        };
+
+        const cleanup = () => {
+          okBtn.removeEventListener('click', onOkClick);
+          cancelBtn.removeEventListener('click', onCancelClick);
+        };
+
+        okBtn.addEventListener('click', onOkClick, { once: true });
+        cancelBtn.addEventListener('click', onCancelClick, { once: true });
+      }, 50);
+    });
+  }
+  
+  // --- End of Modal Functions ---
+
+
+  // --- Configuration: Puroks per Barangay ---
+  const PUROKS_BY_BRGY = {
+    DEFAULT: 13
+  };
+
+  let BARANGAY = null;
+  let PUROK_COUNT = PUROKS_BY_BRGY.DEFAULT;
+
+  // Must be logged in as BRGY admin
+  (async function guard() {
+    const r = await authFetch('/api/brgy/auth/me');
+    if (!r.ok) { location.href = 'index.html'; return; }
+    const me = await r.json();
+    BARANGAY = me.barangay;
+    document.getElementById('barangayPill').textContent = BARANGAY;
+
+    // set purok count for this barangay (fallback to DEFAULT)
+    PUROK_COUNT = PUROKS_BY_BRGY[BARANGAY] || PUROKS_BY_BRGY.DEFAULT;
+
+    // Populate purok dropdown
+    populatePurokDropdown();
+  })();
+
+  function populatePurokDropdown() {
+    const select = document.getElementById('purokSelect');
+    for (let i = 1; i <= PUROK_COUNT; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `Purok ${i}`;
+      select.appendChild(option);
+    }
+  }
+
+  async function saveWasteData() {
+    // Get selected purok and week
+    const purok = document.getElementById('purokSelect').value;
+    const week = document.getElementById('weekSelect').value;
+
+    if (!purok) {
+      await showCustomAlert('Error', 'Please select a Purok');
+      return;
+    }
+
+    if (!week) {
+      await showCustomAlert('Error', 'Please select a Week');
+      return;
+    }
+
+    // Gather data from inputs
+    const categories = [
+      { category: 'Nabubulok', kilograms: document.getElementById('kg_nabubulok').value },
+      { category: 'Panapon', kilograms: document.getElementById('kg_panapon').value },
+      { category: 'Mga Kalakal', kilograms: document.getElementById('kg_kalakal').value },
+      { category: 'Delikado', kilograms: document.getElementById('kg_delikado').value }
+    ];
+
+    // Build rows array - only include entries with values
+    const rows = categories
+      .filter(item => item.kilograms && parseFloat(item.kilograms) > 0)
+      .map(item => ({
+        category: item.category,
+        kilograms: parseFloat(item.kilograms),
+        purok: parseInt(purok),
+        week_of_month: parseInt(week)
+      }));
+
+    if (rows.length === 0) {
+      await showCustomAlert('Error', 'Please enter at least one kilogram value');
+      return;
+    }
+
+    // Send to backend
+    try {
+      const res = await authFetch('/api/brgy/waste-entries/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        await showCustomAlert('Error', data.error || 'Failed to save waste entries');
+        return;
+      }
+
+      await showCustomAlert('Success', `Successfully saved ${data.inserted} waste entries!`);
+      
+      // Clear the form
+      document.getElementById('kg_nabubulok').value = '';
+      document.getElementById('kg_panapon').value = '';
+      document.getElementById('kg_kalakal').value = '';
+      document.getElementById('kg_delikado').value = '';
+
+    } catch (error) {
+      console.error('Error saving waste data:', error);
+      await showCustomAlert('Error', 'An error occurred while saving. Please try again.');
+    }
+  }
+</script>
+</body>
+</html>

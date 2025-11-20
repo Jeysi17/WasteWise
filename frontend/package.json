@@ -1,0 +1,20 @@
+{
+  "name": "barangay-cenro-admin",
+  "version": "1.0.0",
+  "description": "Barangay and Cenro Admin Frontend",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx live-server"
+  },
+  "keywords": [
+    "barangay",
+    "admin",
+    "frontend"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

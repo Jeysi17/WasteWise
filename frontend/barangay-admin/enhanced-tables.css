@@ -1,0 +1,475 @@
+/* Enhanced Table Styles for WasteWise Admin */
+
+/* Modern Card-based Table Container */
+.table-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 20px 0;
+  border: 1px solid #e8f5e8;
+}
+
+/* Enhanced Table Styling */
+.enhanced-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.enhanced-table thead {
+  background: linear-gradient(135deg, #0a9b06 0%, #0e7f08 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.enhanced-table thead th {
+  padding: 20px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  position: relative;
+
+}
+
+.enhanced-table thead th:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.enhanced-table tbody tr {
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f8f0;
+  cursor: pointer;
+}
+
+.enhanced-table tbody tr:hover {
+  background: linear-gradient(90deg, #f1f8f1 0%, #edf5ed 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.enhanced-table tbody td {
+  padding: 18px 16px;
+  border: none;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+  width: 250px;
+}
+
+/* Image Styling */
+.enhanced-table img {
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.enhanced-table img:hover {
+  transform: scale(1.05);
+}
+
+/* Enhanced Button Styles */
+.btn-enhanced {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-success-enhanced {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.btn-success-enhanced:hover {
+  background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+  color: white;
+}
+
+.btn-danger-enhanced {
+  background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+  color: white;
+}
+
+.btn-danger-enhanced:hover {
+  background: linear-gradient(135deg, #c82333 0%, #e55a00 100%);
+  color: white;
+}
+
+.btn-warning-enhanced {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: #212529;
+}
+
+.btn-warning-enhanced:hover {
+  background: linear-gradient(135deg, #e0a800 0%, #e55a00 100%);
+  color: #212529;
+}
+
+.btn-primary-enhanced {
+  background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
+  color: white;
+}
+
+.btn-primary-enhanced:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #5a32a3 100%);
+  color: white;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+  color: white;
+}
+
+/* Action Button Container */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-buttons .btn-enhanced {
+  width: 100%;
+  justify-content: center;
+  min-width: 100px;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.status-urgent {
+  background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+  color: white;
+}
+
+.status-less-urgent {
+  background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+  color: white;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Add this to the end of enhanced-tables.css 
+*/
+
+/* 1. General Icon Styling */
+.enhanced-table tbody td .bi {
+  vertical-align: middle;
+  margin-right: 6px;
+  font-size: 1.1em;
+  color: #555; /* Default icon color */
+}
+
+/* 2. Date Background Colors (Pill Style) */
+.enhanced-table .date-cell {
+  background-color: #f0f8f0; /* Light green tint */
+  padding: 5px 12px;
+  border-radius: 16px;
+  display: inline-block;
+  font-size: 0.9em;
+  font-weight: 500;
+  color: #333;
+  border: 1px solid #e0f0e0;
+  white-space: nowrap; /* Prevents ugly wrapping */
+}
+
+.enhanced-table .date-cell .bi {
+  color: #5a6268; /* Neutral gray for calendar icons */
+}
+
+/* 3. Specific Icon Colors for Clarity */
+.enhanced-table [data-label="Location"] .bi-geo-alt-fill {
+  color: #dc3545; /* Red for location pin */
+}
+
+.enhanced-table [data-label="Status"] .bi-check-circle-fill {
+  color: #28a745; /* Green for solved */
+}
+
+.enhanced-table [data-label="Name"] .bi-person {
+  color: #007bff; /* Blue for person */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .table-container {
+    margin: 10px;
+    border-radius: 12px;
+  }
+  
+  .enhanced-table thead th,
+  .enhanced-table tbody td {
+    padding: 12px 8px;
+    font-size: 12px;
+  }
+  
+  .enhanced-table img {
+    width: 80px !important;
+    height: auto;
+  }
+  
+  .action-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .action-buttons .btn-enhanced {
+    min-width: 80px;
+    font-size: 10px;
+    padding: 6px 12px;
+  }
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #0a9b06;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+  .table-container {
+    margin: 15px 0;
+  }
+}
+
+/* Enhanced Controls */
+.controls-enhanced {
+  background: linear-gradient(135deg, #f8fff8 0%, #e8f5e8 100%);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #d4edda;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.controls-enhanced select,
+.controls-enhanced input {
+  padding: 10px 16px;
+  border: 2px solid #d4edda;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.controls-enhanced select:focus,
+.controls-enhanced input:focus {
+  outline: none;
+  border-color: #0a9b06;
+  box-shadow: 0 0 0 3px rgba(10, 155, 6, 0.1);
+}
+
+/* Content Area Enhancement */
+.content-area-enhanced {
+  margin-top: 142px;
+  margin-left: 150px;
+  padding: 20px;
+  background: #f8fff8;
+  min-height: calc(100vh - 142px);
+}
+
+.content-area-enhanced h3 {
+  color: #0a9b06;
+  font-weight: 700;
+  margin-bottom: 20px;
+  font-size: 24px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+/* --- Add this to the end of enhanced-tables.css --- */
+
+.custom-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 15px;
+}
+
+.custom-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  width: 100%;
+  max-width: 450px;
+  transform: scale(0.9);
+  transition: transform 0.2s ease;
+}
+
+.custom-modal-backdrop.visible {
+  opacity: 1;
+}
+.custom-modal-backdrop.visible .custom-modal {
+  transform: scale(1);
+}
+
+.custom-modal h4 {
+  margin-top: 0;
+  color: #333;
+}
+.custom-modal p {
+  color: #555;
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.custom-modal-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  box-sizing: border-box; /* Important */
+}
+
+.custom-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+    .btn-remind {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-remind:hover {
+      background: linear-gradient(135deg, #218838 0%, #1ba87e 100%);
+      box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-remind:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    }
+    .btn-mark-done {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-mark-done:hover {
+      background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-mark-done:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+    }

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Token Debugger</title>
+</head>
+<body>
+    <h1>JWT Token Debugger</h1>
+    <div id="output"></div>
+    
+    <script>
+        function decodeJWT(token) {
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    return { error: 'Invalid JWT format - should have 3 parts' };
+                }
+                
+                const header = JSON.parse(atob(parts[0]));
+                const payload = JSON.parse(atob(parts[1]));
+                
+                return {
+                    header,
+                    payload,
+                    signature: parts[2] + '...',
+                    isExpired: payload.exp ? (Date.now() >= payload.exp * 1000) : 'No expiration'
+                };
+            } catch (error) {
+                return { error: error.message };
+            }
+        }
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ccc;">${message}</div>`;
+            console.log(message);
+        }
+        
+        // Check current token
+        const token = localStorage.getItem('wastewise_brgy_token');
+        
+        if (token) {
+            log(`🔍 Token found: ${token.length} characters`);
+            log(`📝 Token: ${token}`);
+            
+            const decoded = decodeJWT(token);
+            log(`🔓 Decoded: ${JSON.stringify(decoded, null, 2)}`);
+            
+            if (decoded.payload) {
+                const expDate = decoded.payload.exp ? new Date(decoded.payload.exp * 1000) : 'No expiration';
+                log(`⏰ Expiration: ${expDate} (${decoded.isExpired ? 'EXPIRED' : 'VALID'})`);
+                log(`👤 User ID: ${decoded.payload.id}`);
+                log(`🏠 Barangay: ${decoded.payload.barangay}`);
+            }
+        } else {
+            log('❌ No token found in localStorage');
+        }
+    </script>
+</body>
+</html>

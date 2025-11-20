@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"/>
+<title>Barangay Admin — Login</title>
+<style>
+body { display:flex; min-height:100vh; align-items:center; justify-content:center; background:#f7fff8; }
+.card { width: 360px; }
+.password-wrapper { position: relative; }
+.toggle-btn {
+  position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+  border: none; background: none; cursor: pointer; color: #28a745; font-size: 0.9rem;
+}
+</style>
+</head>
+<body>
+<div class="card p-4 shadow">
+  <h4 class="mb-3 text-center">Barangay Admin Login</h4>
+  <div id="msg" class="text-danger mb-2" style="display:none;"></div>
+
+  <form id="loginForm">
+    <div class="form-group">
+      <label>Username</label>
+      <input id="username" class="form-control" autocomplete="username" required/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <div class="password-wrapper">
+        <input id="password" type="password" class="form-control" autocomplete="current-password" required/>
+        <button type="button" class="toggle-btn" id="togglePassword">Show</button>
+      </div>
+    </div>
+    <button class="btn btn-success btn-block" type="submit">Login</button>
+  </form>
+</div>
+
+<script type="module">
+import { login, getToken, checkAuth } from './auth.js';
+
+// Clear any corrupted tokens on load
+(function cleanupOnLoad() {
+  const token = localStorage.getItem('wastewise_brgy_token');
+  // If token exists but is invalid, clear it
+  if (token && (token.length < 10 || token === 'null' || token === 'undefined')) {
+    console.log('🛠️ Cleaning up corrupted token...');
+    localStorage.removeItem('wastewise_brgy_token');
+    localStorage.removeItem('wastewise_brgy_user');
+  }
+})();
+
+// Redirect if already logged in - WITH DELAY FOR DEBUGGING
+async function checkExistingAuth() {
+  const token = getToken();
+  console.log('🔄 checkExistingAuth(): Token found?', !!token);
+  
+  if (token) {
+    try {
+      console.log('🔐 Checking existing token validity...');
+      
+      // Use a working endpoint instead of the broken /auth/me
+      const testRes = await fetch('https://admin-backend-qkfm.onrender.com/api/brgy/analytics/summary?month=2024-11', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const isValid = testRes.ok;
+      console.log('✅ Token is valid:', isValid);
+      
+      if (isValid) {
+        console.log('🔄 Redirecting to analytics in 2 seconds...');
+        // Add delay so you can see the console messages
+        setTimeout(() => {
+          location.href = 'brgy-analytics.html';
+        }, 2000);
+        return;
+      }
+    } catch (error) {
+      console.log('❌ Token validation failed:', error.message);
+    }
+  } else {
+    console.log('❌ No token found, showing login form');
+  }
+}
+
+// Wait a moment before checking auth so console is visible
+setTimeout(() => {
+  checkExistingAuth();
+}, 1000);
+
+// Toggle password visibility
+document.getElementById('togglePassword').addEventListener('click', () => {
+  const pwd = document.getElementById('password');
+  const toggleBtn = document.getElementById('togglePassword');
+  
+  if (pwd.type === 'password') {
+    pwd.type = 'text';
+    toggleBtn.textContent = 'Hide';
+  } else {
+    pwd.type = 'password';
+    toggleBtn.textContent = 'Show';
+  }
+});
+
+const form = document.getElementById('loginForm');
+const msg = document.getElementById('msg');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!username || !password) {
+    showError('Please enter both username and password');
+    return;
+  }
+
+  // Show loading state
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Logging in...';
+  submitBtn.disabled = true;
+  msg.style.display = 'none';
+
+  try {
+    console.log('🔄 Starting login process for user:', username);
+    const user = await login(username, password);
+    console.log('✅ Login successful, user:', user);
+    
+    // Verify tokens are saved properly
+    const token = localStorage.getItem('wastewise_brgy_token');
+    const userData = localStorage.getItem('wastewise_brgy_user');
+    
+    console.log('🔍 Token saved to localStorage:', !!token);
+    console.log('🔍 User data saved to localStorage:', !!userData);
+    
+    if (token && userData) {
+      console.log('✅ Tokens saved successfully, redirecting in 2 seconds...');
+      setTimeout(() => {
+        location.href = 'brgy-analytics.html';
+      }, 2000);
+    } else {
+      throw new Error('Failed to save authentication data');
+    }
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    showError(err.message || 'Login failed. Check your credentials.');
+  } finally {
+    // Reset button state
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
+});
+
+function showError(message) {
+  msg.style.display = 'block';
+  msg.textContent = message;
+}
+
+// Debug: Log storage state on load
+console.log('🔄 Page loaded, initial storage state:');
+console.log('  - Token:', localStorage.getItem('wastewise_brgy_token') ? 'EXISTS' : 'MISSING');
+console.log('  - User:', localStorage.getItem('wastewise_brgy_user') ? 'EXISTS' : 'MISSING');
+</script>
+</body>
+</html>

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="brgy-des.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"
+        crossorigin="anonymous"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <title>WasteWiseBRGYAdmin — Analytics</title>
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content, .modal-content1 {
+      background-color: white;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+    }
+    .close {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <button onclick="location.href='brgy-analytics.html'">HOME</button>
+    <button onclick="location.href='input.html'">INPUT</button>
+    <button onclick="location.href='post.html'">POST</button>
+    <button class="btn btn-danger mt-4" id="logoutBtn">Log out</button>
+  </div>
+
+  <div class="header" style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <span id="hdrBrand">WasteWise BRGY Admin</span>
+    <div class="d-flex align-items-center" style="gap:8px;">
+      <label class="mb-0">Month</label>
+      <input id="monthSelect" type="month" class="form-control" style="width:auto;max-width:170px;">
+    </div>
+    <div class="d-flex align-items-center" style="gap:8px;">
+      <label class="mb-0">Week</label>
+      <select id="weekSelect" class="form-control" style="width:auto;max-width:140px;">
+        <option value="">All</option>
+        <option value="1">Week 1</option>
+        <option value="2">Week 2</option>
+        <option value="3">Week 3</option>
+        <option value="4">Week 4</option>
+        <option value="5">Week 5</option>
+      </select>
+    </div>
+    <div class="ms-auto">
+      <button class="btn btn-primary" onclick="showExportModal()">Export Report</button>
+    </div>
+
+    <div id="exporterNameModal" class="modal">
+      <div class="modal-content1" style="max-width: 400px;">
+        <span class="close" onclick="closeExportModals()">&times;</span>
+        <h5>Please Enter Your Name</h5>
+        <p style="font-size: 0.6em; color: #666;">Your name is required and will be included in the report.</p>
+        <input type="text" id="exporterNameInput" placeholder="Enter your full name" class="form-control">
+        <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="submitExporterName()">Continue</button>
+      </div>
+    </div>
+
+    <div id="exportFormatModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeExportModals()">&times;</span>
+        <button class="export-btn export-pdf" onclick="exportToPDF()">PDF</button>
+        <button class="export-btn export-excel" onclick="exportToExcel()">Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" style="margin-right: 20px;">
+    <h4 style="margin-left: 5px;">Analytics</h4>
+
+    <div class="grid">
+      <div class="card">
+        <h6>Wastes by Category</h6>
+        <div class="chart-row">
+          <div class="donut-wrap"><canvas id="catChart"></canvas></div>
+          <div id="catLegend" class="legend legend-right"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h6>Wastes Per Purok</h6>
+        <div class="chart-row">
+          <div class="donut-wrap"><canvas id="purokChart"></canvas></div>
+          <div id="purokLegend" class="legend legend-right"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3 my-3">
+      <div class="pill"><label>Complaints</label><span id="kpiComplaints">0</span></div>
+      <div class="pill"><label>Solved</label><span id="kpiSolved">0</span></div>
+      <div class="pill"><label>Users</label><span id="kpiUsers">0</span></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h6>Wastes Comparison By Purok</h6>
+        <div class="bar-wrap"><canvas id="purokBar"></canvas></div>
+      </div>
+      <div class="card">
+        <h6>Wastes by Month</h6>
+        <div class="bar-wrap"><canvas id="monthChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { authFetch, logout } from './auth.js';
+
+let loggedInBarangay = '';
+let currentData = null;
+let exporterName = '';
+
+// --- DEBUG Authentication Guard ---
+(async function() {
+  const token = localStorage.getItem('wastewise_brgy_token');
+  const userData = localStorage.getItem('wastewise_brgy_user');
+  
+  console.log('🔄 DEBUG: Starting authentication check...');
+  console.log('🔑 Token exists:', !!token);
+  console.log('👤 User data exists:', !!userData);
+  
+  // Add a delay so we can see console messages
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  // Immediate redirect if no tokens
+  if (!token || !userData) {
+    console.log('❌ No authentication tokens found, redirecting to login...');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  try {
+    // Get barangay name from saved user data (from login response)
+    const user = JSON.parse(userData);
+    loggedInBarangay = user.barangay;
+    console.log('🏠 Barangay from user data:', loggedInBarangay);
+    
+    // Test token with a working endpoint instead of the broken /auth/me
+    console.log('🧪 Testing token validity with data endpoint...');
+    
+    // Use a simpler test without authFetch to isolate the issue
+    const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/brgy/analytics/summary?month=2024-11', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📡 Test response status:', testResponse.status, testResponse.statusText);
+    
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error('❌ Token test failed:', errorText);
+      throw new Error(`Token validation failed: ${testResponse.status} ${testResponse.statusText}`);
+    }
+
+    console.log('✅ Token is valid, initializing app...');
+    document.getElementById('hdrBrand').textContent += ` — ${loggedInBarangay}`;
+    
+    // Initialize the rest of the app
+    initializeApp();
+  } catch (err) {
+    console.error('💥 Authentication failed:', err);
+    console.error('💥 Full error details:', err.message);
+    
+    // Add delay before redirect so we can see the error
+    console.log('🔄 Redirecting to login in 5 seconds...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    localStorage.removeItem('wastewise_brgy_token');
+    localStorage.removeItem('wastewise_brgy_user');
+    window.location.href = 'index.html';
+  }
+})();
+
+function initializeApp() {
+  // Setup logout button
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    console.log('🚪 Logging out...');
+    await logout();
+  });
+
+  // Initialize charts and load data
+  setupCharts();
+  loadAnalytics();
+  
+  // Setup event listeners
+  document.getElementById('monthSelect').addEventListener('change', loadAnalytics);
+  document.getElementById('weekSelect').addEventListener('change', loadAnalytics);
+}
+
+function setupCharts() {
+  // FIXED: Use proper Chart.js v4 plugin registration
+  const centerTextPlugin = {
+    id: 'centerText',
+    afterDraw(chart, args, options) {
+      const { ctx, chartArea: { left, right, top, bottom } } = chart;
+      const centerX = (left + right) / 2;
+      const centerY = (top + bottom) / 2;
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Main text (total weight)
+      ctx.font = 'bold 24px Arial';
+      ctx.fillStyle = '#333';
+      ctx.fillText(options.text || '', centerX, centerY - 10);
+      
+      // Subtext label
+      ctx.font = '12px Arial';
+      ctx.fillStyle = '#666';
+      ctx.fillText('Total Kilograms', centerX, centerY + 10);
+      
+      ctx.restore();
+    }
+  };
+
+  // Register the plugin globally
+  Chart.register(centerTextPlugin);
+
+  // Set default month
+  const m = document.getElementById('monthSelect');
+  const now = new Date();
+  const ym = String(now.getFullYear()) + '-' + String(now.getMonth()+1).padStart(2,'0');
+  m.value = ym;
+}
+
+function donut(el, labels, values, colors, centerText) {
+  return new Chart(el, {
+    type: 'doughnut',
+    data: { 
+      labels, 
+      datasets: [{ 
+        data: values, 
+        backgroundColor: colors 
+      }] 
+    },
+    options: { 
+      responsive: true, 
+      cutout: '70%', 
+      plugins: { 
+        legend: { display: false },
+        // FIXED: Use the registered plugin correctly
+        centerText: {
+          text: centerText
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = context.parsed;
+              return ` ${value} kg`;
+            }
+          }
+        }
+      } 
+    },
+    // FIXED: Add plugins configuration at the chart level
+    plugins: [centerTextPlugin]
+  });
+}
+
+function makeLegend(container, chart) {
+  const labels = chart.data.labels;
+  const colors = chart.data.datasets[0].backgroundColor;
+  const data = chart.data.datasets[0].data.map(v => Number(v)||0);
+  const base = data.reduce((s,v)=>s+v,0) || 1;
+  container.innerHTML = labels.map((l,i)=>{
+    const pct = Math.round((data[i]/base)*100);
+    const color = colors[i] || '#ccc';
+    return `<div class="legend-item">
+              <span class="color-box" style="background:${color}"></span>
+              <span class="legend-text">${l}</span>
+              <span class="legend-pct">${pct}%</span>
+            </div>`;
+  }).join('');
+}
+
+function bar(el, labels, values, horizontal=false) {
+  return new Chart(el, {
+    type: 'bar',
+    data: { 
+      labels, 
+      datasets: [{ 
+        data: values,
+        backgroundColor: '#78c2ad',
+        borderColor: '#5a9c8a',
+        borderWidth: 1
+      }] 
+    },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { 
+        legend: { display: false } 
+      },
+      scales: { 
+        x: { 
+          ticks: { autoSkip: false } 
+        },
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+async function loadAnalytics() {
+  try {
+    const m = document.getElementById('monthSelect').value;
+    const w = document.getElementById('weekSelect').value;
+
+    const qs = new URLSearchParams();
+    if (m) qs.set('month', m);
+    if (w) qs.set('week', w);
+
+    const res = await authFetch(`/api/brgy/analytics/summary?${qs}`);
+    if (!res.ok) { 
+      console.error('Failed to load brgy analytics'); 
+      return; 
+    }
+    const data = await res.json();
+
+    currentData = data;
+
+    // Load complaint stats
+    await loadComplaintStats();
+
+    // Update charts
+    updateCharts(data);
+  } catch (error) {
+    console.error('Error loading analytics:', error);
+  }
+}
+
+async function loadComplaintStats() {
+  let complaintStats = { 
+    total_complaints: 0, 
+    solved: 0, 
+    users_count: 0 
+  };
+  
+  try {
+    const statsRes = await authFetch('/api/brgy/stats/complaints');
+    if (statsRes.ok) {
+      const statsData = await statsRes.json();
+      complaintStats = statsData;
+    }
+  } catch (error) {
+    console.error('Error fetching complaint stats:', error);
+  }
+
+  // Update KPI elements
+  const kpiComplaintsEl = document.getElementById('kpiComplaints');
+  const kpiSolvedEl = document.getElementById('kpiSolved');
+  const kpiUsersEl = document.getElementById('kpiUsers');
+
+  if (kpiComplaintsEl) kpiComplaintsEl.textContent = (complaintStats.total_complaints || 0).toLocaleString();
+  if (kpiSolvedEl) kpiSolvedEl.textContent = (complaintStats.solved || 0).toLocaleString();
+  if (kpiUsersEl) kpiUsersEl.textContent = (complaintStats.users_count || 0).toLocaleString();
+}
+
+function updateCharts(data) {
+  // Category Chart
+  const catLabels = data.byCategory.map(r=>r.category);
+  const catValues = data.byCategory.map(r=>r.kg);
+  const catColors = ['#7fb069','#f2c14e','#e63946','#f77f00'].slice(0,catLabels.length);
+  const totalFromCategories = catValues.reduce((sum, val) => sum + (Number(val) || 0), 0);
+  const totalLabel = Math.round(totalFromCategories).toLocaleString();
+  
+  if (window._catChart) window._catChart.destroy();
+  window._catChart = donut(document.getElementById('catChart'), catLabels, catValues, catColors, totalLabel);
+  makeLegend(document.getElementById('catLegend'), window._catChart);
+
+  // Purok Chart
+  const pLabels = data.byPurok.map(r=> (r.purok && r.purok !== 'N/A') ? `Purok ${r.purok}` : 'N/A');
+  const pValues = data.byPurok.map(r=>r.kg);
+  const pColors = ['#49A9EA','#EB6383','#6ECB63','#F3A712','#9D4EDD','#74C69D','#6C757D','#00B4D8','#B08968','#ADB5BD'];
+  const totalFromPurok = pValues.reduce((sum, val) => sum + (Number(val) || 0), 0);
+  const totalPurokLabel = Math.round(totalFromPurok).toLocaleString();
+  
+  if (window._purokChart) window._purokChart.destroy();
+  window._purokChart = donut(document.getElementById('purokChart'), pLabels, pValues, pColors.slice(0,pLabels.length), totalPurokLabel);
+  makeLegend(document.getElementById('purokLegend'), window._purokChart);
+
+  // Purok Bar Chart
+  if (window._purokBar) window._purokBar.destroy();
+  window._purokBar = bar(document.getElementById('purokBar'), pLabels, pValues);
+
+  // Monthly Chart
+  loadMonthlyChart();
+}
+
+async function loadMonthlyChart() {
+  const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  let monthValues = new Array(12).fill(0);
+  
+  try {
+    const monthlyRes = await authFetch('/api/brgy/analytics/monthly');
+    if (monthlyRes.ok) {
+      const monthlyData = await monthlyRes.json();
+      monthValues = monthlyData.monthlyData;
+    }
+  } catch (error) {
+    console.error('Error loading monthly data:', error);
+  }
+  
+  if (window._monthChart) window._monthChart.destroy();
+  window._monthChart = bar(document.getElementById('monthChart'), monthLabels, monthValues);
+}
+
+// Export functionality
+function showExportModal() {
+  document.getElementById('exporterNameModal').style.display = 'block';
+  document.getElementById('exporterNameInput').focus();
+}
+
+function submitExporterName() {
+  const nameInput = document.getElementById('exporterNameInput');
+  exporterName = nameInput.value.trim().toUpperCase();
+
+  if (!exporterName) {
+    alert('Please enter your name to continue.');
+    return;
+  }
+
+  document.getElementById('exporterNameModal').style.display = 'none';
+  document.getElementById('exportFormatModal').style.display = 'block';
+}
+
+function closeExportModals() {
+  document.getElementById('exporterNameModal').style.display = 'none';
+  document.getElementById('exportFormatModal').style.display = 'none';
+  document.getElementById('exporterNameInput').value = '';
+  exporterName = '';
+}
+
+window.onclick = function (event) {
+  const nameModal = document.getElementById('exporterNameModal');
+  const formatModal = document.getElementById('exportFormatModal');
+
+  if (event.target === nameModal || event.target === formatModal) {
+    closeExportModals();
+  }
+};
+
+async function exportToPDF() {
+  try {
+    if (!loggedInBarangay || !currentData) {
+      alert('Page is still loading. Please try again in a moment.');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const data = currentData;
+
+    const barangayText = loggedInBarangay;
+    const monthVal = document.getElementById('monthSelect').value;
+    const weekVal = document.getElementById('weekSelect').value;
+
+    let periodText = monthVal;
+    if (weekVal) {
+      periodText = `${monthVal}, Week ${weekVal}`;
+    }
+
+    doc.setFontSize(18);
+    doc.text('WasteWise Analytics Report', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Barangay: ${barangayText}`, 14, 28);
+    doc.text(`Period: ${periodText}`, 14, 35);
+
+    let yPos = 45;
+
+    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
+    const solved = document.getElementById('kpiSolved').textContent;
+    const users = document.getElementById('kpiUsers').textContent;
+
+    doc.autoTable({
+      startY: yPos,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Pending Complaints', pendingComplaints],
+        ['Solved', solved],
+        ['Users', users],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [120, 194, 173] }
+    });
+
+    yPos = doc.lastAutoTable.finalY + 10;
+
+    if (data.byCategory && data.byCategory.length > 0) {
+      doc.text('Wastes by Category', 14, yPos);
+      yPos += 7;
+
+      doc.autoTable({
+        startY: yPos,
+        head: [['Category', 'Kilograms']],
+        body: data.byCategory.map(r => [r.category, r.kg.toFixed(2)]),
+        theme: 'grid',
+        headStyles: { fillColor: [120, 194, 173] }
+      });
+
+      yPos = doc.lastAutoTable.finalY + 10;
+    }
+
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    if (data.byWeek && data.byWeek.length > 0) {
+      doc.text('Wastes by Week', 14, yPos);
+      yPos += 7;
+
+      doc.autoTable({
+        startY: yPos,
+        head: [['Week', 'Kilograms']],
+        body: data.byWeek.map(r => [`Week ${r.week}`, r.kg.toFixed(2)]),
+        theme: 'grid',
+        headStyles: { fillColor: [120, 194, 173] }
+      });
+
+      yPos = doc.lastAutoTable.finalY + 10;
+    }
+
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    if (data.byPurok && data.byPurok.length > 0) {
+      doc.text('Wastes by Purok', 14, yPos);
+      yPos += 7;
+
+      doc.autoTable({
+        startY: yPos,
+        head: [['Purok', 'Kilograms']],
+        body: data.byPurok.map(r => [r.purok, r.kg.toFixed(2)]),
+        theme: 'grid',
+        headStyles: { fillColor: [120, 194, 173] }
+      });
+
+      yPos = doc.lastAutoTable.finalY;
+    }
+
+    if (yPos > 270) {
+      doc.addPage();
+      yPos = 20;
+    } else {
+      yPos += 20;
+    }
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Exported by: ${exporterName}`, 14, yPos);
+
+    doc.save(`WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.pdf`);
+    closeExportModals();
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
+    alert('Error exporting to PDF');
+  }
+}
+
+async function exportToExcel() {
+  try {
+    if (!loggedInBarangay || !currentData) {
+      alert('Page is still loading. Please try again in a moment.');
+      return;
+    }
+
+    const data = currentData;
+
+    const barangayText = loggedInBarangay;
+    const monthVal = document.getElementById('monthSelect').value;
+    const weekVal = document.getElementById('weekSelect').value;
+
+    let periodText = monthVal;
+    if (weekVal) {
+      periodText = `${monthVal}, Week ${weekVal}`;
+    }
+
+    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
+    const solved = document.getElementById('kpiSolved').textContent;
+    const users = document.getElementById('kpiUsers').textContent;
+
+    const wb = XLSX.utils.book_new();
+    let allData = [];
+
+    allData.push(['WasteWise Analytics Report']);
+    allData.push(['Barangay:', barangayText]);
+    allData.push(['Period:', periodText]);
+    allData.push([]);
+    allData.push(['Metric', 'Value']);
+    allData.push(['Pending Complaints', pendingComplaints]);
+    allData.push(['Solved', solved]);
+    allData.push(['Users', users]);
+    allData.push([]);
+    allData.push([]);
+
+    if (data.byCategory && data.byCategory.length > 0) {
+      allData.push(['Wastes by Category']);
+      allData.push(['Category', 'Kilograms']);
+      data.byCategory.forEach(r => allData.push([r.category, r.kg]));
+      allData.push([]);
+    }
+
+    if (data.byPurok && data.byPurok.length > 0) {
+      allData.push(['Wastes by Purok']);
+      allData.push(['Purok', 'Kilograms']);
+      data.byPurok.forEach(r => allData.push([r.purok, r.kg]));
+      allData.push([]);
+    }
+
+    if (data.byWeek && data.byWeek.length > 0) {
+      allData.push(['Wastes by Week']);
+      allData.push(['Week', 'Kilograms']);
+      data.byWeek.forEach(r => allData.push([`Week ${r.week}`, r.kg]));
+    }
+
+    allData.push([]);
+    allData.push([]);
+    allData.push([`Exported by: ${exporterName}`]);
+
+    const ws = XLSX.utils.aoa_to_sheet(allData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Analytics Report');
+
+    XLSX.writeFile(wb, `WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.xlsx`);
+    closeExportModals();
+  } catch (error) {
+    console.error('Error exporting to Excel:', error);
+    alert('Error exporting to Excel');
+  }
+}
+</script>
+</body>
+</html>

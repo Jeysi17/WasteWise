@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css" crossorigin="anonymous"/>
+  <title>Barangay Admin — Bulk Input</title>
+  <style>
+    body { background:#f7fff8; }
+    .wrap { max-width: 1100px; margin: 28px auto; }
+    .card { border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+    .sheet { width:100%; border-collapse: collapse; }
+    .sheet th, .sheet td { border:1px solid #cfe9d5; padding:8px; font-size:14px; }
+    .sheet th { background:#e8f7ea; }
+    .sheet td[contenteditable="true"] { background:#fff; }
+    .hint { font-size:12px; color:#6c757d; }
+    .tab-btn { margin-right: 6px; }
+    .hidden { display:none; }
+    .toolbar { gap:8px; }
+    .pill { padding: 2px 10px; border:1px dashed #b9dfbf; border-radius: 999px; font-size:12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Bulk Data Input (Barangay)</h4>
+      <div>
+        <a class="btn btn-outline-secondary btn-sm" href="brgy-analytics.html">Back to Analytics</a>
+        <button class="btn btn-outline-danger btn-sm" onclick="logout()">Log out</button>
+      </div>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <div class="d-flex align-items-center toolbar mb-2">
+        <button class="btn btn-success btn-sm tab-btn" id="tabWaste">Waste</button>
+        <button class="btn btn-outline-success btn-sm tab-btn" id="tabComplaints">Complaints</button>
+        <span class="pill" id="scopePill">Barangay: …</span>
+      </div>
+
+      <!-- Waste sheet -->
+      <div id="wastePane">
+        <div class="d-flex mb-2">
+          <button class="btn btn-primary btn-sm mr-2" onclick="addWasteRow()">Add Row</button>
+          <button class="btn btn-secondary btn-sm mr-2" onclick="pasteFromClipboard('waste')">Paste from Clipboard</button>
+          <button class="btn btn-success btn-sm" onclick="saveWaste()">Validate & Save</button>
+        </div>
+        <div class="hint mb-2">
+          Columns: <span class="mono">category</span>, <span class="mono">kilograms</span>, <span class="mono">purok (optional)</span>, <span class="mono">week_of_month (1–5)</span>.<br/>
+          Example paste (with header row):<br/>
+          <code class="mono">category,kilograms,purok,week_of_month<br/>Nabubulok,120,1,1</code>
+        </div>
+        <table class="sheet" id="wasteTable">
+          <thead>
+            <tr>
+              <th>category</th><th>kilograms</th><th>purok (opt)</th><th>week_of_month (1–5)</th><th>—</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Complaints sheet -->
+      <div id="complaintsPane" class="hidden">
+        <div class="d-flex mb-2">
+          <button class="btn btn-primary btn-sm mr-2" onclick="addComplaintRow()">Add Row</button>
+          <button class="btn btn-secondary btn-sm mr-2" onclick="pasteFromClipboard('complaints')">Paste from Clipboard</button>
+          <button class="btn btn-success btn-sm" onclick="saveComplaints()">Validate & Save</button>
+        </div>
+        <div class="hint mb-2">
+          Columns: <span class="mono">category</span>, <span class="mono">count</span>, <span class="mono">purok (optional)</span>, <span class="mono">week_of_month (1–5)</span>.<br/>
+          Example paste (with header row):<br/>
+          <code class="mono">category,count,purok,week_of_month<br/>Waste Collection,12,2,1</code>
+        </div>
+        <table class="sheet" id="complaintsTable">
+          <thead>
+            <tr>
+              <th>category</th><th>count</th><th>purok (opt)</th><th>week_of_month (1–5)</th><th>—</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card p-3">
+      <div class="hint">
+        Notes: “Solved” will be entered in a separate form. Pasting works from Excel/Sheets if the first row is a header exactly as shown.
+      </div>
+    </div>
+  </div>
+
+<script src="auth.js"></script>
+<script>
+  
+  const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+(async function guard() {
+  const me = await authFetch('/api/brgy/auth/me');
+  if (!me.ok) { location.href = 'index.html'; return; }
+  const user = await me.json();
+  document.getElementById('scopePill').textContent = 'Barangay: ' + (user.barangay || '—');
+})();
+
+// ----- small helpers
+function td(editable=true, text='') {
+  const c = document.createElement('td');
+  if (editable) c.setAttribute('contenteditable', 'true');
+  c.textContent = text;
+  return c;
+}
+function addWasteRow(row={category:'', kilograms:'', purok:'', week_of_month:''}) {
+  const tr = document.createElement('tr');
+  tr.appendChild(td(true, row.category));
+  tr.appendChild(td(true, row.kilograms));
+  tr.appendChild(td(true, row.purok));
+  tr.appendChild(td(true, row.week_of_month));
+  const del = document.createElement('td');
+  del.innerHTML = '<button class="btn btn-sm btn-outline-danger">Delete</button>';
+  del.firstChild.onclick = () => tr.remove();
+  tr.appendChild(del);
+  document.querySelector('#wasteTable tbody').appendChild(tr);
+}
+function addComplaintRow(row={category:'', count:'', purok:'', week_of_month:''}) {
+  const tr = document.createElement('tr');
+  tr.appendChild(td(true, row.category));
+  tr.appendChild(td(true, row.count));
+  tr.appendChild(td(true, row.purok));
+  tr.appendChild(td(true, row.week_of_month));
+  const del = document.createElement('td');
+  del.innerHTML = '<button class="btn btn-sm btn-outline-danger">Delete</button>';
+  del.firstChild.onclick = () => tr.remove();
+  tr.appendChild(del);
+  document.querySelector('#complaintsTable tbody').appendChild(tr);
+}
+
+// Paste CSV/TSV with header
+async function pasteFromClipboard(kind) {
+  try {
+    const text = await navigator.clipboard.readText();
+    importText(kind, text);
+  } catch {
+    alert('Clipboard read failed. Paste into the first cell of the first row or use Ctrl+V directly.');
+  }
+}
+
+function importText(kind, text) {
+  const sep = text.includes('\t') ? '\t' : ',';
+  const rows = text.trim().split(/\r?\n/).map(r => r.split(sep).map(c => c.trim()));
+  if (!rows.length) return;
+
+  const [h1, h2, h3, h4] = rows[0].map(s => s.toLowerCase());
+  const body = rows.slice(1);
+
+  if (kind === 'waste') {
+    if (!(h1==='category' && h2==='kilograms' && h3==='purok' && h4==='week_of_month')) {
+      alert('Waste header must be: category,kilograms,purok,week_of_month'); return;
+    }
+    body.forEach(r => addWasteRow({category:r[0]||'', kilograms:r[1]||'', purok:r[2]||'', week_of_month:r[3]||''}));
+  } else {
+    if (!(h1==='category' && h2==='count' && h3==='purok' && h4==='week_of_month')) {
+      alert('Complaints header must be: category,count,purok,week_of_month'); return;
+    }
+    body.forEach(r => addComplaintRow({category:r[0]||'', count:r[1]||'', purok:r[2]||'', week_of_month:r[3]||''}));
+  }
+}
+
+function gather(tableId, mapFn) {
+  const rows = [];
+  document.querySelectorAll(`#${tableId} tbody tr`).forEach(tr => {
+    const tds = [...tr.querySelectorAll('td')];
+    rows.push(mapFn(tds));
+  });
+  return rows;
+}
+
+// Save
+async function saveWaste() {
+  const rows = gather('wasteTable', tds => ({
+    category: tds[0].textContent.trim(),
+    kilograms: tds[1].textContent.trim(),
+    purok: tds[2].textContent.trim(),
+    week_of_month: tds[3].textContent.trim()
+  })).filter(r => r.category || r.kilograms || r.purok || r.week_of_month); // drop empty lines
+
+  const res = await authFetch('/api/brgy/waste-entries/bulk', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ rows })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Failed to save waste');
+  alert(`Saved ${data.inserted} waste rows`);
+}
+
+async function saveComplaints() {
+  const rows = gather('complaintsTable', tds => ({
+    category: tds[0].textContent.trim(),
+    count: tds[1].textContent.trim(),
+    purok: tds[2].textContent.trim(),
+    week_of_month: tds[3].textContent.trim()
+  })).filter(r => r.category || r.count || r.purok || r.week_of_month);
+
+  const res = await authFetch('/api/brgy/complaints/bulk', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ rows })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Failed to save complaints');
+  alert(`Saved ${data.inserted} complaint rows`);
+}
+
+// Tabs
+const wastePane = document.getElementById('wastePane');
+const complaintsPane = document.getElementById('complaintsPane');
+document.getElementById('tabWaste').onclick = () => {
+  wastePane.classList.remove('hidden'); complaintsPane.classList.add('hidden');
+  document.getElementById('tabWaste').classList.replace('btn-outline-success','btn-success');
+  document.getElementById('tabComplaints').classList.replace('btn-success','btn-outline-success');
+};
+document.getElementById('tabComplaints').onclick = () => {
+  complaintsPane.classList.remove('hidden'); wastePane.classList.add('hidden');
+  document.getElementById('tabComplaints').classList.replace('btn-outline-success','btn-success');
+  document.getElementById('tabWaste').classList.replace('btn-success','btn-outline-success');
+};
+
+// seed one empty row each
+addWasteRow(); addComplaintRow();
+</script>
+</body>
+</html>

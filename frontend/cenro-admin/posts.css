@@ -1,0 +1,381 @@
+:root {
+  --sidebar-width: 150px;
+  --header-height: 50px;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  background-color: #f8fbf8;
+  padding-top: var(--header-height);
+}
+
+.sidebar {
+  margin-top: 50px;
+  width: 150px;
+  background-color: #0a9b06;
+  color: white;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  padding-left: 15px;
+   z-index: 1100;
+}
+
+.sidebar button {
+  background: green;
+  color: white;
+  border: none;
+  padding: 10px;
+  width: 120px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: medium;
+  border-style: solid;
+  border-width: 2px;
+  text-align: center;
+  margin-right: 15px;
+}
+
+.sidebar button:hover {
+  background: #0e7f08;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  background-color: #e6ffe6;
+  text-align: center;
+  font-weight: bold;
+  color: #0a9b06;
+  font-size: 20px;
+  box-shadow: 0px 10px 15px lightgreen;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main {
+  position: fixed;
+  top: 60px; 
+  left: 150px; 
+  right: 0;
+  height: 70px;
+  background-color: green;
+  padding-left: 40px;
+  padding-top: 15px;
+  color: white;
+  z-index: 999;
+  margin-top: 14px;
+}
+
+.topbar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: white;
+  box-shadow: 0 4px 10px lightgreen;
+  height: 90px;
+}
+
+.backframe{
+    background-color: white;
+    position: fixed;
+    height: 100px;
+    width: heig;
+}
+
+.content-area {
+  margin-top: 142px; 
+  margin-left: var(--sidebar-width); 
+  padding: 20px;
+}
+
+.controls select,
+.controls button {
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  font-family: 'Montserrat';
+}
+
+.controls {
+  border-radius: 5px;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  
+}
+
+/* Container for the date filter controls */
+.date-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* Label styling */
+.date-label {
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+/* Date input styling */
+.date-input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: inherit;
+}
+
+/* Clear button styling override */
+.clear-filter-btn {
+  padding: 6px 15px;
+}
+
+.filter {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+}
+
+.filter select {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid green;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  border: 1px solid green;
+  text-align: center !important;
+}
+
+
+.approve-btn {
+  background-color: #00e600;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.decline-btn {
+  background-color: #ff5c33;
+  color: white;
+  border: none;
+  padding: 6px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Modal Styles - Detail Modal for Posts */
+.image-detail-modal-backdrop {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.85);
+  padding-top: 50px;
+  padding-bottom: 50px;
+}
+
+.image-detail-modal-content {
+  position: relative;
+  background-color: #fefefe;
+  margin: auto;
+  padding: 0;
+  width: 90%;
+  max-width: 1200px;
+  display: flex;
+  height: 90vh;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+  animation-name: animatetop;
+  animation-duration: 0.4s
+}
+
+@keyframes animatetop {
+  from {top: -300px; opacity: 0}
+  to {top: 0; opacity: 1}
+}
+
+.close-detail-modal {
+  position: absolute;
+  top: 15px;
+  right: 35px;
+  color: #fff;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1051;
+}
+
+.image-detail-modal-image-container {
+  flex-basis: 65%;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-detail-modal-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.image-detail-modal-details-container {
+  flex-basis: 35%;
+  padding: 30px;
+  overflow-y: auto;
+  background-color: #fff;
+  color: #333;
+}
+
+.image-detail-modal-details-container h4 {
+  margin-top: 0;
+  font-weight: bold;
+  color: #000;
+}
+
+.image-detail-modal-details-container p {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.image-detail-modal-details-container hr {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.date-pill {
+  display: inline-block;
+  padding: 5px 12px;
+  background-color: #f3f7f4;
+  border: 1px solid #a8a8a8b9;
+  border-radius: 20px;
+  font-size: 0.9em;
+  color: #333;
+  font-weight: 500;
+  margin-top: 5px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 900px) {
+  .image-detail-modal-content {
+    flex-direction: column;
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .image-detail-modal-image-container {
+    height: 50vh;
+  }
+  .image-detail-modal-details-container {
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 18px;
+    margin-top: 0;
+  }
+
+  .sidebar button {
+    width: auto;
+    flex: 1 1 120px;
+    margin: 5px;
+  }
+
+  .topbar-wrapper,
+  .main {
+    position: static;
+    width: 100%;
+    padding: 12px 18px;
+    left: auto;
+    margin-top: 0;
+  }
+
+  .main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    height: auto;
+  }
+
+  .content-area {
+    margin-left: 0;
+    margin-top: 20px;
+  }
+
+  .controls,
+  .filter,
+  .date-filter-container {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar button {
+    flex: 1 1 100%;
+  }
+
+  .controls select,
+  .controls button,
+  .filter select,
+  .clear-filter-btn,
+  .date-input {
+    width: 100%;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  th,
+  td {
+    min-width: 120px;
+  }
+}

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="posts.css" />
+  <link rel="stylesheet" href="enhanced-tables.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <title>WasteWiseBRGYAdmin — Posts</title>
+
+  <style>
+    .enhanced-table tbody tr {
+      cursor: pointer;
+    }
+    .enhanced-table tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+  </style>
+</head>
+<body>
+
+<div id="sidebar" class="sidebar">
+  <button onclick="location.href='brgy-analytics.html'">HOME</button>
+  <button onclick="location.href='input.html'">INPUT</button>
+  <button onclick="location.href='post.html'">POST</button>
+</div>
+
+<div class="topbar-wrapper">
+  <div class="header" id="hdrBrand">WasteWise BRGY Admin</div>
+  <div class="main">
+    <div class="controls">
+      <div class="date-filter-container" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <label for="fromDate" class="date-label">FILTER POSTS FROM:</label>
+        <input
+          type="date"
+          id="fromDate"
+          class="date-input"
+          onchange="applyDateFilter()"
+        />
+
+        <label for="toDate" class="date-label">TO:</label>
+        <input
+          type="date"
+          id="toDate"
+          class="date-input"
+          onchange="applyDateFilter()"
+        />
+
+        <button
+          class="btn btn-success clear-filter-btn"
+          onclick="clearDateFilters()"
+        >
+          Clear Filter
+        </button>
+
+        <div class="btn-group" style="margin-left: 20px;">
+          <button id="viewPendingBtn" class="btn btn-primary" onclick="switchView('pending')">
+            Pending Posts
+          </button>
+          <button id="viewSolvedBtn" class="btn btn-outline-primary" onclick="switchView('solved')">
+            Solved Posts
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pending-view">
+  <div class="content-area-enhanced">
+    <h3>Pending Posts</h3>
+    <div class="table-container">
+      <table class="enhanced-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Title</th>
+            <th style="width: 400px;">Image</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="postsTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="solved-view" style="display: none;">
+  <div class="content-area-enhanced">
+    <h3>Solved Posts (History)</h3>
+    <div class="table-container">
+      <table class="enhanced-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Title</th>
+            <th>Image</th>
+            <th>Solved At</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="solvedPostsTable"></tbody> 
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="customModalBackdrop" class="custom-modal-backdrop" style="display: none;">
+  <div id="customModal" class="custom-modal">
+    <h4 id="customModalTitle">Modal Title</h4>
+    <p id="customModalMessage">Modal message goes here.</p>
+    <input type="text" id="customModalInput" class="custom-modal-input" style="display: none;" />
+    <div id="customModalActions" class="custom-modal-actions">
+      <button id="customModalBtnCancel" class="btn btn-secondary">Cancel</button>
+      <button id="customModalBtnOk" class="btn btn-primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="imageDetailModal" class="image-detail-modal-backdrop">
+  <span class="close-detail-modal" onclick="closeImageDetailModal()">&times;</span>
+  <div class="image-detail-modal-content">
+    <div class="image-detail-modal-image-container">
+      <img id="detailModalImage" src="" alt="Post Image">
+    </div>
+    <div class="image-detail-modal-details-container">
+      <h4 id="detailModalTitle">Post Title</h4>
+      <p><strong>By:</strong> <span id="detailModalName"></span></p>
+      <p style="color: #0a9b06; font-weight: 600;"><i class="bi bi-geo-alt-fill"></i> <span id="detailModalLocation"></span></p>
+      <p><strong>Description:</strong></p>
+      <p id="detailModalDescription" style="white-space: pre-wrap;"></p>
+      <hr>
+
+      <div id="pending-post-details">
+        <p><strong>Posted On:</strong></p>
+        <p><span id="detailModalPostedDate" class="date-pill"></span></p>
+      </div>
+
+      <div id="brgy-solved-post-details" style="display: none;">
+        <p><strong>Posted On:</strong></p>
+        <p><span id="detailModalPostedDate_Solved" class="date-pill"></span></p>
+
+        <p><strong>Solved On:</strong></p>
+        <p><span id="detailModalSolvedDate_Solved" class="date-pill"></span></p>
+
+        <p><strong>Remarks:</strong></p>
+        <p id="detailModalRemarks_Solved" style="white-space: pre-wrap; background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 5px;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+  
+  const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+  function formatReadableDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const options = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: true 
+    };
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+  }
+
+  function showCustomAlert(title, message) {
+    const backdrop = document.getElementById('customModalBackdrop');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    document.getElementById('customModalInput').style.display = 'none';
+    document.getElementById('customModalBtnCancel').style.display = 'none';
+    
+    const okBtn = document.getElementById('customModalBtnOk');
+    okBtn.style.display = 'inline-block'; 
+    okBtn.textContent = 'OK';
+    
+    backdrop.classList.add('visible');
+    backdrop.style.display = 'flex';
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const onOkClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          resolve(true);
+        };
+        okBtn.addEventListener('click', onOkClick, { once: true });
+      }, 50); 
+    });
+  }
+
+  function showCustomPrompt(title, message) {
+    const backdrop = document.getElementById('customModalBackdrop');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    
+    const input = document.getElementById('customModalInput');
+    input.style.display = 'block';
+    input.value = ''; 
+    
+    const okBtn = document.getElementById('customModalBtnOk');
+    const cancelBtn = document.getElementById('customModalBtnCancel');
+    okBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+    okBtn.textContent = 'OK';
+    
+    backdrop.classList.add('visible');
+    backdrop.style.display = 'flex';
+    input.focus();
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const onOkClick = () => {
+          const value = input.value;
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 2000);
+          cleanup();
+          resolve(value); 
+        };
+        
+        const onCancelClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          cleanup();
+          resolve(null); 
+        };
+
+        const cleanup = () => {
+          okBtn.removeEventListener('click', onOkClick);
+          cancelBtn.removeEventListener('click', onCancelClick);
+        };
+        
+        okBtn.addEventListener('click', onOkClick, { once: true });
+        cancelBtn.addEventListener('click', onCancelClick, { once: true });
+      }, 50);
+    });
+  }
+
+  function showCustomConfirm(title, message) {
+    const backdrop = document.getElementById('customModalBackdrop');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    document.getElementById('customModalInput').style.display = 'none'; 
+
+    const okBtn = document.getElementById('customModalBtnOk');
+    const cancelBtn = document.getElementById('customModalBtnCancel');
+    okBtn.style.display = 'inline-block'; 
+    cancelBtn.style.display = 'inline-block';
+    okBtn.textContent = 'OK';
+
+    backdrop.classList.add('visible');
+    backdrop.style.display = 'flex';
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const onOkClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          cleanup();
+          resolve(true);
+        };
+
+        const onCancelClick = () => {
+          backdrop.classList.remove('visible');
+          setTimeout(() => backdrop.style.display = 'none', 200);
+          cleanup();
+          resolve(false);
+        };
+
+        const cleanup = () => {
+          okBtn.removeEventListener('click', onOkClick);
+          cancelBtn.removeEventListener('click', onCancelClick);
+        };
+
+        okBtn.addEventListener('click', onOkClick, { once: true });
+        cancelBtn.addEventListener('click', onCancelClick, { once: true });
+      }, 50);
+    });
+  }
+
+  let allPosts = [];
+  let allSolvedPosts = [];
+  let currentView = 'pending';
+  let currentBarangay = '';
+
+  (async function guard(){
+    const r = await authFetch('/api/brgy/auth/me');
+    if (!r.ok) { location.href='index.html'; return; }
+    const me = await r.json();
+    currentBarangay = me.barangay;
+    document.getElementById('hdrBrand').insertAdjacentText('beforeend', ` — ${me.barangay}`);
+    
+    fetchPosts();
+    fetchSolvedPosts();
+  })();
+
+  function renderPosts(posts) {
+    const table = document.getElementById('postsTable');
+    table.innerHTML = '';
+
+    const locationFiltered = posts.filter(post => post.location === currentBarangay);
+
+    if (locationFiltered.length === 0) {
+      table.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3>No Pending Posts</h3>
+            <p>No pending posts for ${currentBarangay} match the current filter.</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    locationFiltered.forEach(post => {
+      const imageUrl = post.image || 'placeholder.jpg';
+      const row = document.createElement('tr');
+      row.setAttribute('onclick', `showPendingPostModal('${post.id}')`);
+      
+      row.innerHTML = `
+        <td data-label="Name"><strong><i class="bi bi-person"></i> ${post.name}</strong></td>
+        <td data-label="Title"><strong>${post.title}</strong></td>
+        <td data-label="Image">
+          <img 
+            src="${imageUrl}" 
+            alt="${post.title}" 
+            style="width: 300px; height: auto; object-fit: cover;"
+            onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjVGNUY1Ii8+PHBhdGggZD0iTTQwIDQ1SDYwVjU1SDQwVjQ1WiIgZmlsbD0iI0NDQyIvPjwvc3ZnPg=='; this.alt='Image not found';" 
+          />
+        </td>
+        <td>
+          <div class="action-buttons">
+            <button 
+              class="btn-enhanced btn-success-enhanced" 
+              onclick="event.stopPropagation(); approvePost('${post.id}')"
+            >
+              🚀 Forward to Cenro
+            </button>
+            <button 
+              class="btn-enhanced btn-warning-enhanced" 
+              onclick="event.stopPropagation(); solvePost('${post.id}')"
+            >
+              ✅ Mark as Solved
+            </button>
+          </div>
+        </td>
+      `;
+      table.appendChild(row);
+    });
+  }
+
+  function renderSolvedPosts(posts) {
+    const table = document.getElementById('solvedPostsTable');
+    table.innerHTML = '';
+
+    const locationFiltered = posts.filter(post => post.location === currentBarangay);
+
+    if (locationFiltered.length === 0) {
+      table.innerHTML = `
+        <tr>
+          <td colspan="9" class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h3>No Solved Posts</h3>
+            <p>No solved posts for ${currentBarangay} match the current filter.</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    locationFiltered.forEach(post => {
+      const row = document.createElement('tr');
+      row.setAttribute('onclick', `showBrgySolvedPostModal('${post.id}')`);
+
+      const imageUrl = post.image || 'placeholder.jpg';
+
+      row.innerHTML = `
+        <td data-label="Name"><strong><i class="bi bi-person"></i> ${post.name || 'N/A'}</strong></td>
+        <td data-label="Title"><strong>${post.title || 'N/A'}</strong></td>
+        <td data-label="Image">
+          <img 
+            src="${imageUrl}" 
+            alt="Post Image" 
+            style="width: 300px; height: auto; object-fit: cover;" 
+          >
+        </td>
+        <td data-label="Solved At">
+          <span class="date-cell">
+            <i class="bi bi-calendar-check-fill"></i> ${formatReadableDate(post.solved_at)}
+          </span>
+        </td>
+        <td data-label="Status"><i class="bi bi-check-circle-fill"></i> ${post.status || 'N/A'}</td>
+      `;
+      table.appendChild(row);
+    });
+  }
+
+  async function fetchPosts() {
+    try {
+      const response = await authFetch('/api/pendings');
+      if (!response.ok) throw new Error('Failed to fetch data');
+      
+      allPosts = await response.json();
+      allPosts.sort((a, b) => new Date(b.post_date) - new Date(a.post_date));
+      applyDateFilter(); 
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      document.getElementById('postsTable').innerHTML = `
+        <tr><td colspan="7" class="empty-state"><h3>Failed to Load Posts</h3></td></tr>
+      `;
+    }
+  }
+
+  async function fetchSolvedPosts() {
+    try {
+      const response = await authFetch('/api/brgy/solved-posts');
+      if (!response.ok) throw new Error('Failed to fetch solved posts');
+      allSolvedPosts = await response.json();
+      allSolvedPosts.sort((a, b) => new Date(b.solved_at) - new Date(a.solved_at));
+      applyDateFilter(); 
+    } catch (error) {
+      console.error('Error fetching solved posts:', error);
+      document.getElementById('solvedPostsTable').innerHTML = `
+        <tr><td colspan="9" class="empty-state"><h3>Failed to Load Solved Posts</h3></td></tr>
+      `;
+    }
+  }
+
+  function applyDateFilter() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+
+    if (currentView === 'pending') {
+      let filtered = [...allPosts];
+      if (fromDate) {
+        const from = new Date(fromDate);
+        filtered = filtered.filter(p => new Date(p.post_date) >= from);
+      }
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setHours(23, 59, 59, 999);
+        filtered = filtered.filter(p => new Date(p.post_date) <= to);
+      }
+      renderPosts(filtered);
+    
+    } else if (currentView === 'solved') {
+      let filtered = [...allSolvedPosts];
+      if (fromDate) {
+        const from = new Date(fromDate);
+        filtered = filtered.filter(p => new Date(p.solved_at) >= from);
+      }
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setHours(23, 59, 59, 999);
+        filtered = filtered.filter(p => new Date(p.solved_at) <= to);
+      }
+      renderSolvedPosts(filtered);
+    }
+  }
+
+  function clearDateFilters() {
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
+    applyDateFilter(); 
+  }
+
+  async function approvePost(id) {
+    const didConfirm = await showCustomConfirm(
+      'Forward to CENRO', 
+      'Are you sure you want to forward this post to CENRO?'
+    );
+    if (!didConfirm) return;
+    
+    try {
+      const response = await authFetch(`/api/approve/${id}`, {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error('Failed to forward post');
+
+      await showCustomAlert('Success', 'Post forwarded to CENRO!');
+      fetchPosts();
+    } catch (error) {
+      console.error('Error forwarding post to CENRO:', error);
+      await showCustomAlert('Error', 'Error forwarding post: ' + error.message);
+    }
+  }
+
+  async function solvePost(id) {
+    const remarks = await showCustomPrompt(
+      "Mark this post as solved.",
+      "Please enter your remarks below:"
+    );
+    if (remarks === null) return;
+
+    if (remarks.trim() === "") {
+      await showCustomAlert("Error", "Remarks are required to mark this post as solved.");
+      return;
+    }
+
+    try {
+      const response = await authFetch(`/api/solve-pending-with-remarks/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remarks })
+      });
+
+      if (!response.ok) throw new Error("Failed to mark as solved");
+
+      await showCustomAlert("Success", "Post marked as solved with remarks!");
+      fetchPosts();
+      fetchSolvedPosts();
+    } catch (error) {
+      console.error("Error marking post as solved:", error);
+      await showCustomAlert("Error", "Error: " + error.message);
+    }
+  }
+
+  function showPendingPostModal(postId) {
+    const post = allPosts.find(p => p.id == postId);
+    if (!post) {
+      console.error("Could not find pending post with ID:", postId);
+      return;
+    }
+
+    document.getElementById("detailModalImage").src = post.image || 'placeholder.jpg';
+    document.getElementById("detailModalTitle").textContent = post.title || "No Title";
+    document.getElementById("detailModalName").textContent = post.name || "Unknown";
+    document.getElementById("detailModalLocation").textContent = post.location || "Unknown";
+    document.getElementById("detailModalDescription").textContent = post.details || "No Description";
+    
+    const postedDate = formatReadableDate(post.post_date);
+    document.getElementById("detailModalPostedDate").innerHTML = 
+      `<i class="bi bi-calendar-event"></i> ${postedDate}`;
+
+    document.getElementById('pending-post-details').style.display = 'block';
+    document.getElementById('brgy-solved-post-details').style.display = 'none';
+
+    document.getElementById("imageDetailModal").style.display = "block";
+    document.body.style.overflow = "hidden";
+  }
+
+  function showBrgySolvedPostModal(postId) {
+    const post = allSolvedPosts.find(p => p.id == postId);
+    if (!post) {
+      console.error("Could not find solved post with ID:", postId);
+      return;
+    }
+
+    document.getElementById("detailModalImage").src = post.image || 'placeholder.jpg';
+    document.getElementById("detailModalTitle").textContent = post.title || "No Title";
+    document.getElementById("detailModalName").textContent = post.name || "Unknown";
+    document.getElementById("detailModalLocation").textContent = post.location || "Unknown";
+    document.getElementById("detailModalDescription").textContent = post.details || "No Description";
+    
+    const postedDate = formatReadableDate(post.post_date);
+    const solvedDate = formatReadableDate(post.solved_at);
+
+    document.getElementById("detailModalPostedDate_Solved").innerHTML = 
+      `<i class="bi bi-calendar-event"></i> ${postedDate}`;
+    document.getElementById("detailModalSolvedDate_Solved").innerHTML = 
+      `<i class="bi bi-calendar-check-fill"></i> ${solvedDate}`;
+    document.getElementById("detailModalRemarks_Solved").textContent = post.remarks || "N/A";
+
+    document.getElementById('pending-post-details').style.display = 'none';
+    document.getElementById('brgy-solved-post-details').style.display = 'block';
+
+    document.getElementById("imageDetailModal").style.display = "block";
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeImageDetailModal() {
+    document.getElementById("imageDetailModal").style.display = "none";
+    document.body.style.overflow = "";
+  }
+
+  window.onclick = function(event) {
+    const modal = document.getElementById("imageDetailModal");
+    if (event.target === modal) {
+      closeImageDetailModal();
+    }
+  }
+
+  function switchView(viewName) {
+    currentView = viewName;
+    
+    const pendingView = document.getElementById('pending-view');
+    const solvedView = document.getElementById('solved-view');
+    const pendingBtn = document.getElementById('viewPendingBtn');
+    const solvedBtn = document.getElementById('viewSolvedBtn');
+
+    if (viewName === 'pending') {
+      pendingView.style.display = 'block';
+      solvedView.style.display = 'none';
+      pendingBtn.classList.add('btn-primary');
+      pendingBtn.classList.remove('btn-outline-primary');
+      solvedBtn.classList.add('btn-outline-primary');
+      solvedBtn.classList.remove('btn-primary');
+    } else if (viewName === 'solved') {
+      pendingView.style.display = 'none';
+      solvedView.style.display = 'block';
+      solvedBtn.classList.add('btn-primary');
+      solvedBtn.classList.remove('btn-outline-primary');
+      pendingBtn.classList.add('btn-outline-primary');
+      pendingBtn.classList.remove('btn-primary');
+    }
+    
+    applyDateFilter();
+  }
+
+  window.onload = () => {
+    fetchPosts();
+    fetchSolvedPosts();
+  };
+</script>
+
+</body>
+</html>
