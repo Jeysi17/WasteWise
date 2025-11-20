@@ -204,7 +204,7 @@ const HomeScreen = ({ navigation }) => {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg_green }}>
       <ScrollView 
         contentContainerStyle={{
-          paddingBottom: SCREEN_HEIGHT * 0.17,
+          paddingBottom: SCREEN_HEIGHT * 0.13,
           backgroundColor: colors.lime_green,
           flexGrow: 1,
         }}
@@ -372,7 +372,12 @@ const styles = StyleSheet.create({
     fontSize: SCREEN_WIDTH * 0.06, 
     textAlign: 'center', 
     marginTop: SCREEN_HEIGHT * 0.025,  
-    fontFamily: 'PSemi-Bold'
+    fontFamily: 'PSemi-Bold',
+    color: colors.border_green,
+    width: SCREEN_WIDTH * 0.8,
+    alignSelf: 'center',
+    backgroundColor: colors.pale_green,
+    borderRadius: 40,
   },
   circleContainer: { 
     flexDirection: 'row', 

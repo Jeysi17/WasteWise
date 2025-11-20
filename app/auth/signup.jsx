@@ -238,8 +238,6 @@ const handleDetectBarangay = async () => {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAwareScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        enableOnAndroid={true}
-        extraScrollHeight={20}
         keyboardShouldPersistTaps="handled"
       >
         <ImageBackground

@@ -54,7 +54,6 @@ const SideNav = ({ visible, onClose }) => {
             router.push('/home');
           }
         }}>Notification Log</Text>
-        <Text style={styles.navItem}>About</Text>
         <Text style={styles.signOut} onPress={signout}>Sign Out</Text>
       </Animated.View>
     </View>

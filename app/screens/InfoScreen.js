@@ -112,7 +112,7 @@ const InfoScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={true}
       >
-        <Text style={styles.header}>Materials on Waste Management</Text>
+        <Text style={styles.title}>Materials on Waste Management</Text>
 
         {articles.map((item, idx) => {
           const isVideo = item.link.includes("youtube.com") || item.link.includes("youtu.be");
@@ -136,25 +136,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.lime_green,
+    paddingBottom: SCREEN_HEIGHT * 0.05,
   },
   scrollContainer: {
     flexGrow: 1, // ✅ ensures full scrollability
     paddingBottom: SCREEN_HEIGHT * 0.12, // ✅ extra space at the bottom
   },
-  header: {
-    fontSize: SCREEN_WIDTH * 0.06,
-    textAlign: 'center',
-    marginVertical: SCREEN_HEIGHT * 0.025,
-    fontFamily: 'PSemi-Bold',
-    color: 'black',
-    fontFamily: 'PSemi-Bold'
-  },
+  title: { 
+      fontSize: SCREEN_WIDTH * 0.06, 
+      textAlign: 'center', 
+      marginTop: SCREEN_HEIGHT * 0.025,  
+      fontFamily: 'PSemi-Bold',
+      color: colors.border_green,
+      width: SCREEN_WIDTH * 0.8,
+      alignSelf: 'center',
+      backgroundColor: colors.pale_green,
+      borderRadius: 20,
+    },
   card: {
-    backgroundColor: colors.pale_green,
+    backgroundColor: colors.bg_green,
     marginHorizontal: SCREEN_WIDTH * 0.05,
     marginVertical: SCREEN_HEIGHT * 0.012,
     padding: SCREEN_WIDTH * 0.04,
     borderRadius: 10,
+    borderWidth: 3,
+    borderColor: colors.border_green,
   },
   cardTitle: {
     fontSize: SCREEN_WIDTH * 0.045,

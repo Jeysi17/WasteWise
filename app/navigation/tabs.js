@@ -28,7 +28,9 @@ const CustomTabBarButton = ({children, onPress}) => (
             width: SCREEN_WIDTH * 0.18,
             height: SCREEN_WIDTH * 0.18,
             borderRadius: SCREEN_WIDTH * 0.09,
-            backgroundColor: colors.lime_green,
+            backgroundColor: colors.bg_green,
+            borderWidth: 2,
+            borderColor: colors.border_green,
         }}>{children}</View>
     </TouchableOpacity>
 
@@ -58,7 +60,7 @@ const Tabs = () => {
                 elevation: 1,
                 backgroundColor: colors.BG_color,
                 borderRadius: 15,
-                height: SCREEN_HEIGHT * 0.11,
+                height: SCREEN_HEIGHT * 0.08,
                 margin: SCREEN_WIDTH * 0.025,
                 zIndex: 1,
                 ...styles.shadow
@@ -114,9 +116,9 @@ const Tabs = () => {
                         style={{
                             width: SCREEN_WIDTH * 0.125,
                             height: SCREEN_WIDTH * 0.125,
-                            marginTop: SCREEN_WIDTH * 0.115,
-                            marginLeft: SCREEN_WIDTH * 0.105,
-                            tintColor: colors.BG_color,
+                            marginTop: SCREEN_WIDTH * 0.089,
+                            marginLeft: SCREEN_WIDTH * 0.089,
+                            tintColor: colors.border_green,
                         }}/>
                     ), 
                         tabBarButton: (props) => (
@@ -206,8 +208,9 @@ const styles = StyleSheet.create({
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    top: SCREEN_HEIGHT * 0.025,
+    top: SCREEN_HEIGHT * 0.018,
     width: SCREEN_WIDTH * 0.15, // ✅ Fixed width container
+
   },
   // ✅ NEW: Responsive tab label
   tabLabel: {

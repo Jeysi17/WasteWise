@@ -7,7 +7,6 @@ export default function Header({ onMenuPress }) {
     <View style={styles.container}>
       {/* Title */}
       <Text style={styles.title}>WasteWise</Text>
-
       {/* Menu Button */}
       <TouchableOpacity
         style={styles.menuButton}
@@ -36,7 +35,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 25,
     fontFamily: 'PSemi-Bold',
-    color: colors.lime_green,
+    color: colors.border_green,
 
   },
   menuButton: {

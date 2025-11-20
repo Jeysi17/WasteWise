@@ -226,9 +226,6 @@ const ChatbotScreen = () => {
             style={styles.input}
             placeholder="Type your message..."
             value={input}
-            onChangeText={setInput}
-            editable={!isLoading}
-            onSubmitEditing={() => sendMessage(input)}
             returnKeyType="send"
           />
           <TouchableOpacity
@@ -253,16 +250,18 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.lime_green,
-    paddingTop: SCREEN_HEIGHT * 0.05,
+    paddingTop: SCREEN_HEIGHT * 0.01,
   },
   chatContainer: {
     flex: 1,
     padding: SCREEN_WIDTH * 0.04,
+    marginTop: SCREEN_WIDTH * 0.06,
     backgroundColor: colors.pale_green,
     width: SCREEN_WIDTH * 0.85,
     alignSelf: "center",
     borderRadius: 10,
     maxHeight: SCREEN_HEIGHT * 0.65,
+    marginBottom: SCREEN_HEIGHT * 0.18,
   },
   flatListContent: {
     paddingBottom: SCREEN_HEIGHT * 0.012,
@@ -348,13 +347,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: SCREEN_WIDTH * 0.038,
   },
-  title: {
-    fontSize: SCREEN_WIDTH * 0.06,
-    fontFamily: 'PSemi-Bold',
-    textAlign: 'center',
-    marginTop: -SCREEN_HEIGHT * 0.025,
-    marginBottom: SCREEN_HEIGHT * 0.012
-  }
+  title: { 
+      fontSize: SCREEN_WIDTH * 0.06, 
+      textAlign: 'center', 
+      marginTop: SCREEN_HEIGHT * 0.025,  
+      fontFamily: 'PSemi-Bold',
+      color: colors.border_green,
+      width: SCREEN_WIDTH * 0.8,
+      alignSelf: 'center',
+      backgroundColor: colors.pale_green,
+      borderRadius: 40,
+    },
 });
 
 export default ChatbotScreen;

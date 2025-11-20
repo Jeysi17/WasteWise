@@ -1,4 +1,4 @@
-import { Image, Text, View, StyleSheet, ImageBackground, TouchableOpacity, Dimensions, Animated} from "react-native";
+import { Image, Text, View, StyleSheet, ImageBackground, TouchableOpacity, Dimensions, Animated, KeyboardAvoidingView} from "react-native";
 import colors from '../constant/colors';
 import { useRouter } from "expo-router";
 import SplashScreen from '../app/screens/SplashScreenView'
@@ -36,68 +36,69 @@ export default function Index() {
 
 
   return (
-    
-    <View>
-      <>{isShowSplash ? <SplashScreen /> : 
-      <ImageBackground 
-      source={require('./../assets/images/trece.jpg')}
-      style={{
-        height: 1000
-      }}
-      resizeMode="cover"
-    >
-      <Animated.Image source={require('./../assets/images/logo-modified.png')}
-      style={{
-        height: containerHeight * 0.35,
-        width: containerHeight * 0.35,
-        resizeMode: 'contain',
-        alignSelf: 'center',
-        marginTop: 10,
-        transform: [{ translateY: logoTranslateY}]
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 3}}>
+      <View>
+        <>{isShowSplash ? <SplashScreen /> : 
+        <ImageBackground 
+        source={require('./../assets/images/trece.jpg')}
+        style={{
+          height: 1000
         }}
-      />
-      
-      <Animated.View style={{ transform: [{ translateY: panelTranslateY }] }}>
-            <View style={{
-                padding: 25,
-                marginTop: 10,
-                backgroundColor: colors.pale_green,
-                height: '110%',
-                borderTopLeftRadius: 35,
-                borderTopRightRadius: 35
-              }}>
-                <Text style={{
-                  fontSize: 35,
-                  textAlign: 'center',
-                  fontFamily: 'PSemi-Bold',
-                  letterSpacing: 4,
-                  color: colors.lime_green,
-                }}>Welcome to WasteWise!</Text>
+        resizeMode="cover"
+      >
+        <Animated.Image source={require('./../assets/images/logo-modified.png')}
+        style={{
+          height: containerHeight * 0.35,
+          width: containerHeight * 0.35,
+          resizeMode: 'contain',
+          alignSelf: 'center',
+          marginTop: 10,
+          transform: [{ translateY: logoTranslateY}]
+          }}
+        />
+        
+        <Animated.View style={{ transform: [{ translateY: panelTranslateY }] }}>
+              <View style={{
+                  padding: 25,
+                  marginTop: 10,
+                  backgroundColor: colors.pale_green,
+                  height: '110%',
+                  borderTopLeftRadius: 35,
+                  borderTopRightRadius: 35
+                }}>
+                  <Text style={{
+                    fontSize: 35,
+                    textAlign: 'center',
+                    fontFamily: 'PSemi-Bold',
+                    letterSpacing: 4,
+                    color: colors.lime_green,
+                  }}>Welcome to WasteWise!</Text>
 
-                <Text style={{
-                  marginTop: 15,
-                  fontSize: 20,
-                  textAlign: 'center',
-                  fontFamily: 'PSemi-Bold'
-                }}>City Environment and Natural Resource Office of Trece Martires</Text>
+                  <Text style={{
+                    marginTop: 15,
+                    fontSize: 20,
+                    textAlign: 'center',
+                    fontFamily: 'PSemi-Bold'
+                  }}>City Environment and Natural Resource Office of Trece Martires</Text>
 
-                <TouchableOpacity style={styles.button}
-                onPress={()=>router.push('../auth/signup')}
-                >
-                  <Text style={[styles.buttonText, { color: 'rgb(255, 255, 255)'}]}>Get Started on WasteWise</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.button, {
-                  backgroundColor: colors.pale_green, marginTop: 10, borderWidth: 1, borderColor: colors.BG_color}]}
-                  onPress={()=>router.push('../auth/login')}
+                  <TouchableOpacity style={styles.button}
+                  onPress={()=>router.push('../auth/signup')}
                   >
-                  <Text style={styles.buttonText}>Already have an account?</Text>
-                </TouchableOpacity>
-            </View>
-        </Animated.View>
-    </ImageBackground>
-    }</>
-    </View>
+                    <Text style={[styles.buttonText, { color: 'rgb(255, 255, 255)'}]}>Get Started on WasteWise</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={[styles.button, {
+                    backgroundColor: colors.pale_green, marginTop: 10, borderWidth: 1, borderColor: colors.BG_color}]}
+                    onPress={()=>router.push('../auth/login')}
+                    >
+                    <Text style={styles.buttonText}>Already have an account?</Text>
+                  </TouchableOpacity>
+              </View>
+          </Animated.View>
+      </ImageBackground>
+      }</>
+      </View>
+    </KeyboardAvoidingView>  
   );
 }
 
