@@ -55,8 +55,59 @@ const articles = [
       title: "Waste Disposal",
       link: "https://www.britannica.com/technology/waste-disposal-system",
     },
-    // ... your other articles
-];
+    {
+      title: "How Our Trash Impacts the Environment",
+      link: "https://www.earthday.org/how-our-trash-impacts-the-environment/",
+    },
+    {
+      title: "Simple Ways to Heal The Planet: A FREE Guide to Waste Management & Pollution Reduction",
+      link: "https://healtheplanet.com/waste?gad_source=1&gad_campaignid=22255977746&gbraid=0AAAAACTrHhwJwapKHfIflVCBV1nbXoDFx&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrCAxTeabneH_KYoSDemHHRwvCQ3EUX14t2VQrnp0nzQDXdEE5EqOsRoCXjwQAvD_BwE",
+    },
+    {
+      title: "Everything You Need to Know About Waste Management ",
+      link: "https://www.recyclingbristol.com/waste-management-everything-you-need-to-know-about-waste-management/",
+    },
+    {
+      title: "Solid waste management needs to improve",
+      link: "https://www.britishecologicalsociety.org/solid-waste-management-needs-to-improve/?gad_source=1&gad_campaignid=22686019361&gbraid=0AAAAABL5RNTVz-M5kJCZvmAZzlJ6VyRJ5&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrJtp9Z33HbqJiJmiGjmDRrddmEGl2EXVlUk1Nggyn7E9lP47hnzNHhoCksIQAvD_BwE",
+    },
+    {
+      title: "Bounty's Green Revolution: Leading Plastic Waste Management",
+      link: "https://bounty.com.ph/2025/05/19/bounty-plastic-waste-management/?gad_source=1&gad_campaignid=23217610034&gbraid=0AAAAAqUOxF159ety0IVb20ZQX25tE1hwy&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrMUqQaPK8di3RwGgSbeGvR66NsZAV6uODrBV_RHaVRZUYsuhe0CfRhoCHzoQAvD_BwE",
+    },
+    {
+      title: "Status of Solid Waste Management in the Philippines ",
+      link: "https://www.jstage.jst.go.jp/article/jsmcwm/24/0/24_677/_pdf",
+    },
+    {
+      title: "Ridge to Reef: The Fight Against Mismanaged Waste",
+      link: "https://climate.gov.ph/news/923",
+    },
+    {
+      title: "Zero Waste",
+      link: "https://www.no-burn.org/zero-waste/?gad_source=1&gad_campaignid=21174378386&gbraid=0AAAAAogjHBlS_-QYlc9g42mOmhOfn_2Ej&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrAoycItGJQxtzIA2074w5LSa7UzUbnHdblfSO5aABoTsnoo5_A0XPhoCj2QQAvD_BwE",
+    },
+    {
+      title: "Solid Waste Management Awareness and Practices",
+      link: " https://www.aquademia-journal.com/download/solid-waste-management-awareness-and-practices-among-senior-high-school-students-in-a-state-college-9579.pdf",
+    },
+    {
+      title: "Best Practice in Solid Waste Management in the Philippines",
+      link: "https://www.youtube.com/watch?v=-EQBG5TdTn4&pp=ygUWc29saWQgd2FzdGUgbWFuYWdlbWVudA%3D%3D",
+    },
+    {
+      title: "I-Witness: 'Plastic Republic', a documentary by Howie Severino",
+      link: "https://www.youtube.com/watch?v=qGNCK_buzNk&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
+    },
+    {
+      title: "IRONY - Environmental Short Film",
+      link: "https://www.youtube.com/watch?v=JNGUwrmvbs0&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
+    },
+    {
+      title: "Ano sa tingin mo? | Ecological Solid Waste Management",
+      link: "https://www.youtube.com/watch?v=G-JKwlb1enY&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
+    },
+  ];
 
 const InfoScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -170,15 +221,14 @@ const InfoScreen = ({ navigation }) => {
         {slogans.map((slogan, index) => (
           <View key={slogan.id} style={[
             styles.card,
-            styles.sloganCard,
             index === 0 && styles.firstSloganCard
           ]}>
             <Text style={styles.cardTitle}>{slogan.title}</Text>
             <TouchableOpacity 
-              style={styles.imageButton} 
+              style={styles.linkButton} 
               onPress={() => openSloganImage(slogan)}
             >
-              <Text style={styles.imageButtonText}>View Slogan →</Text>
+              <Text style={styles.linkButtonText}>View Slogan →</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -273,16 +323,6 @@ const InfoScreen = ({ navigation }) => {
                 <Text style={styles.navButtonText}>›</Text>
               </TouchableOpacity>
             )}
-          </View>
-
-          {/* Footer */}
-          <View style={styles.modalFooter}>
-            <Text style={styles.zoomHint}>
-              Pinch to zoom • Drag to pan
-            </Text>
-            <TouchableOpacity style={styles.resetButton} onPress={resetZoom}>
-              <Text style={styles.resetButtonText}>Reset Zoom</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>

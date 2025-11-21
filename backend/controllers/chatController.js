@@ -3,12 +3,16 @@ import { sendToDialogflow } from "../config/dialogflow.js";
 export const chatWithBot = async (req, res) => {
   const { message, sessionId } = req.body;
 
+  console.log('🔍 Chat request received:', { message, sessionId });
+
   if (!message || !sessionId) {
     return res.status(400).json({ error: "Message and sessionId are required" });
   }
 
   try {
+    console.log('📤 Sending to Dialogflow...');
     const result = await sendToDialogflow(message, sessionId);
+    console.log('✅ Dialogflow response received successfully');
 
     const fulfillmentMessages = result?.fulfillmentMessages || [];
     const fulfillmentText =
@@ -19,12 +23,14 @@ export const chatWithBot = async (req, res) => {
     let suggestionChips = [];
 
     // Extract suggestion chips from fulfillment messages
-    fulfillmentMessages.forEach((msg) => {
+    fulfillmentMessages.forEach((msg, index) => {
+      console.log(`📨 Processing message ${index}:`, msg.message);
+      
       // Method 1: Check for payload with richContent
       if (msg?.payload?.fields?.richContent) {
         try {
           const richContent = msg.payload.fields.richContent;
-          console.log('📦 Raw richContent:', JSON.stringify(richContent, null, 2));
+          console.log('📦 Raw richContent structure detected');
           
           const chips = extractChipsFromRichContent(richContent);
           if (chips.length > 0) {
@@ -65,9 +71,9 @@ export const chatWithBot = async (req, res) => {
       type: 'suggestion_chips'
     } : {};
 
-    console.log('🤖 Final response:', { 
+    console.log('🤖 Final response prepared:', { 
       reply: fulfillmentText, 
-      buttons: suggestionChips.length,
+      buttonCount: suggestionChips.length,
       chips: suggestionChips
     });
 
@@ -78,7 +84,20 @@ export const chatWithBot = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Dialogflow error:", err);
+    console.error("❌ FULL Dialogflow error details:");
+    console.error("Error message:", err.message);
+    console.error("Error stack:", err.stack);
+    console.error("Error code:", err.code);
+    
+    // Check for specific authentication errors
+    if (err.message?.includes('UNAUTHENTICATED') || err.code === 16) {
+      console.error('🔐 AUTHENTICATION ERROR - Check service account credentials');
+      return res.status(500).json({ 
+        error: "Authentication failed",
+        userMessage: "Chat service is temporarily unavailable. Please try again later."
+      });
+    }
+
     res.status(500).json({ 
       error: "Failed to process chat message",
       userMessage: "Sorry, I'm having trouble connecting right now. Please try again."
@@ -95,13 +114,16 @@ function extractChipsFromRichContent(richContent) {
     
     // Structure 1: richContent.listValue.values (array of sections)
     if (richContent.listValue?.values) {
-      richContent.listValue.values.forEach(section => {
+      console.log('📋 Processing listValue structure');
+      richContent.listValue.values.forEach((section, sectionIndex) => {
         // Each section can be a list of items
         if (section.listValue?.values) {
-          section.listValue.values.forEach(item => {
+          section.listValue.values.forEach((item, itemIndex) => {
+            console.log(`  Processing section ${sectionIndex}, item ${itemIndex}`);
             extractChipsFromItem(item, chips);
           });
         } else {
+          console.log(`  Processing section ${sectionIndex} directly`);
           extractChipsFromItem(section, chips);
         }
       });
@@ -109,6 +131,7 @@ function extractChipsFromRichContent(richContent) {
     
     // Structure 2: Direct struct value
     else if (richContent.structValue?.fields) {
+      console.log('📋 Processing structValue structure');
       extractChipsFromItem(richContent, chips);
     }
     
@@ -128,6 +151,7 @@ function extractChipsFromItem(item, chips) {
       
       // Check for chips type
       if (fields.type?.stringValue === 'chips' && fields.options?.listValue?.values) {
+        console.log('🎰 Found chips type with options');
         fields.options.listValue.values.forEach(option => {
           if (option.structValue?.fields?.text?.stringValue) {
             chips.push(option.structValue.fields.text.stringValue);
@@ -137,17 +161,20 @@ function extractChipsFromItem(item, chips) {
       
       // Check for button type
       if (fields.type?.stringValue === 'button' && fields.text?.stringValue) {
+        console.log('🔘 Found button type:', fields.text.stringValue);
         chips.push(fields.text.stringValue);
       }
       
       // Check for direct text in simple buttons
       if (fields.text?.stringValue && !fields.type) {
+        console.log('📝 Found direct text:', fields.text.stringValue);
         chips.push(fields.text.stringValue);
       }
     }
     
     // Check for direct text in list values
     if (item.stringValue) {
+      console.log('📄 Found string value:', item.stringValue);
       chips.push(item.stringValue);
     }
     
@@ -163,6 +190,7 @@ function extractChipsFromSuggestions(suggestions) {
   try {
     // Structure: suggestions.listValue.values (array of suggestion items)
     if (suggestions.listValue?.values) {
+      console.log('💡 Processing suggestions list');
       suggestions.listValue.values.forEach(suggestion => {
         if (suggestion.structValue?.fields?.title?.stringValue) {
           chips.push(suggestion.structValue.fields.title.stringValue);
@@ -179,10 +207,11 @@ function extractChipsFromSuggestions(suggestions) {
   return chips;
 }
 
-// Optional: Add a test endpoint to check chip extraction
+// Test endpoint to check chip extraction
 export const testChipExtraction = async (req, res) => {
-  // This can help you debug your Dialogflow response structure
   const { message, sessionId } = req.body;
+  
+  console.log('🧪 Test endpoint called with:', { message, sessionId });
   
   try {
     const result = await sendToDialogflow(message, sessionId || 'test-session');
@@ -195,17 +224,21 @@ export const testChipExtraction = async (req, res) => {
     fulfillmentMessages.forEach((msg, index) => {
       console.log(`\n--- Message ${index} ---`);
       console.log('Message type:', msg.message);
-      console.log('Payload:', msg.payload);
-      console.log('Quick Replies:', msg.quickReplies);
+      if (msg.payload) console.log('Payload keys:', Object.keys(msg.payload));
+      if (msg.quickReplies) console.log('Quick Replies:', msg.quickReplies);
     });
     
     res.status(200).json({
       fullResponse: result,
-      fulfillmentMessages: fulfillmentMessages
+      fulfillmentMessages: fulfillmentMessages,
+      status: "success"
     });
     
   } catch (error) {
-    console.error('Test error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ Test endpoint error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
