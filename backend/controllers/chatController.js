@@ -1,79 +1,5 @@
 import { sendToDialogflow } from "../config/dialogflow.js";
 
-// Fallback responses for when Dialogflow fails
-const getFallbackResponse = (message) => {
-  const lowerMessage = message.toLowerCase().trim();
-  
-  const fallbackResponses = {
-    "what is waste management": {
-      reply: "Waste management involves the collection, transport, treatment, and disposal of waste, together with monitoring and regulation of the waste management process. It helps protect the environment and public health.",
-      buttons: [
-        "What are the benefits?",
-        "Why is it important?",
-        "Types of waste management",
-        "Back to main menu"
-      ]
-    },
-    "what are the benefits of waste management": {
-      reply: "Proper waste management offers many benefits:\n\n• Environmental protection\n• Resource conservation through recycling\n• Pollution reduction\n• Public health improvement\n• Energy generation from waste\n• Economic opportunities",
-      buttons: [
-        "Environmental benefits",
-        "Economic benefits", 
-        "Health benefits",
-        "Back to main menu"
-      ]
-    },
-    "is waste management important": {
-      reply: "Yes, waste management is extremely important for:\n\n• Protecting our environment from pollution\n• Conserving natural resources\n• Preventing disease spread\n• Reducing greenhouse gas emissions\n• Creating sustainable communities",
-      buttons: [
-        "Why protect environment?",
-        "How to start recycling",
-        "Waste segregation tips",
-        "Back to main menu"
-      ]
-    },
-    "recycling": {
-      reply: "Recycling involves converting waste materials into new products. Common recyclables include:\n\n• Paper and cardboard\n• Plastic bottles and containers\n• Glass jars and bottles\n• Aluminum and steel cans\n• Electronic waste",
-      buttons: [
-        "How to recycle properly",
-        "What can be recycled",
-        "Recycling benefits",
-        "Back to main menu"
-      ]
-    },
-    "default": {
-      reply: "I'm here to help you with waste management knowledge! Please ask me about:\n\n• What waste management is\n• Benefits of proper waste disposal\n• Recycling methods\n• Waste segregation\n• Environmental protection",
-      buttons: [
-        "What is Waste Management?",
-        "Benefits of Waste Management",
-        "Is Waste Management important?",
-        "How to recycle properly"
-      ]
-    }
-  };
-
-  // Check for exact matches first
-  if (fallbackResponses[lowerMessage]) {
-    return fallbackResponses[lowerMessage];
-  }
-
-  // Check for partial matches
-  if (lowerMessage.includes('waste management') && lowerMessage.includes('what')) {
-    return fallbackResponses["what is waste management"];
-  }
-  if (lowerMessage.includes('benefit') || lowerMessage.includes('advantage')) {
-    return fallbackResponses["what are the benefits of waste management"];
-  }
-  if (lowerMessage.includes('important') || lowerMessage.includes('why')) {
-    return fallbackResponses["is waste management important"];
-  }
-  if (lowerMessage.includes('recycle') || lowerMessage.includes('recycling')) {
-    return fallbackResponses["recycling"];
-  }
-
-  return fallbackResponses["default"];
-};
-
 export const chatWithBot = async (req, res) => {
   const { message, sessionId } = req.body;
 
@@ -160,21 +86,6 @@ export const chatWithBot = async (req, res) => {
   } catch (err) {
     console.error("❌ Dialogflow error - using fallback response");
     console.error("Error details:", err.message);
-
-    // Use fallback response instead of showing error
-    const fallback = getFallbackResponse(message);
-    
-    console.log('🔄 Using fallback response for:', message);
-    
-    res.status(200).json({
-      reply: fallback.reply,
-      payload: {
-        buttons: fallback.buttons,
-        type: 'fallback_chips',
-        note: 'Using fallback response'
-      },
-      sessionId: sessionId
-    });
   }
 };
 
