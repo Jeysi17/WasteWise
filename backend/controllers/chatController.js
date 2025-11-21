@@ -99,7 +99,7 @@ export const chatWithBot = async (req, res) => {
     }
 
     res.status(500).json({ 
-      error: "Failed to process chat message",
+      error: "Failed to process chat message bobo",
       userMessage: "Sorry, I'm having trouble connecting right now. Please try again."
     });
   }
