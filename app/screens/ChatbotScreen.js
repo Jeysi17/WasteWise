@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import uuid from "react-native-uuid";
+import { Keyboard, Platform } from "react-native";
 import colors from "../../constant/colors";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -36,7 +37,28 @@ const ChatbotScreen = () => {
   const [sessionId] = useState(uuid.v4());
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  useEffect(() => {
+  const showSub = Keyboard.addListener(
+    Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+    (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    }
+  );
+
+  const hideSub = Keyboard.addListener(
+    Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+    () => {
+      setKeyboardHeight(0);
+    }
+  );
+
+  return () => {
+    showSub.remove();
+    hideSub.remove();
+  };
+}, []);
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (flatListRef.current && messages.length > 0) {
@@ -176,7 +198,7 @@ const ChatbotScreen = () => {
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>WasteWise Chatbot</Text>
-      <View style={styles.chatContainer}>
+      <View style={[styles.chatContainer, { marginBottom: keyboardHeight > 0 ? 10 : SCREEN_HEIGHT * 0.15 }]}>
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -254,31 +276,48 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     flex: 1,
-    padding: SCREEN_WIDTH * 0.04,
     marginTop: SCREEN_WIDTH * 0.06,
-    backgroundColor: colors.pale_green,
-    width: SCREEN_WIDTH * 0.85,
+    backgroundColor: '#d0f3d7ff',
+    width: SCREEN_WIDTH * 0.9,
     alignSelf: "center",
     borderRadius: 10,
     maxHeight: SCREEN_HEIGHT * 0.65,
-    marginBottom: SCREEN_HEIGHT * 0.18,
+    marginBottom: SCREEN_HEIGHT * 0.15,
+    borderWidth: 3,
+    borderColor: colors.border_green,
   },
   flatListContent: {
     paddingBottom: SCREEN_HEIGHT * 0.012,
+    padding: SCREEN_WIDTH * 0.04,
   },
   message: {
-    marginVertical: SCREEN_HEIGHT * 0.006,
+    marginVertical: SCREEN_HEIGHT * 0.01,
     padding: SCREEN_WIDTH * 0.025,
-    borderRadius: 8,
     maxWidth: SCREEN_WIDTH * 0.8,
   },
   userMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#32CD32",
+    backgroundColor: "#51e651ff",
+    shadowColor: colors.border_green,
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 4,
+    borderRadius: 10,
+    borderBottomRightRadius: 0,
+    borderWidth: 1,
+    borderColor: colors.border_green,
   },
   botMessage: {
     alignSelf: "flex-start",
     backgroundColor: "#ECECEC",
+    shadowColor: colors.border_green,
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 4,
+    borderRadius: 10,
+    borderBottomLeftRadius: 0,
+    borderWidth: 1,
+    borderColor: colors.border_green,
   },
   messageText: {
     color: "#000",
@@ -291,7 +330,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   optionButton: {
-    borderColor: "#32CD32",
+    borderColor: "#0f690fff",
+    backgroundColor: colors.pale_green,
     borderWidth: 1.5,
     borderRadius: 20,
     paddingVertical: SCREEN_HEIGHT * 0.007,
@@ -300,7 +340,7 @@ const styles = StyleSheet.create({
     marginTop: SCREEN_HEIGHT * 0.007,
   },
   optionText: {
-    color: "#32CD32",
+    color: "#0f690fff",
     fontWeight: "500",
     fontSize: SCREEN_WIDTH * 0.033,
   },
@@ -320,6 +360,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: SCREEN_HEIGHT * 0.01,
+    backgroundColor: colors.BG_color,
+    padding: SCREEN_WIDTH * 0.02,
+    paddingVertical: SCREEN_HEIGHT * 0.017,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+    borderTopWidth: 2,
+    borderColor: colors.border_green,
   },
   input: {
     flex: 1,
@@ -357,6 +404,9 @@ const styles = StyleSheet.create({
       alignSelf: 'center',
       backgroundColor: colors.pale_green,
       borderRadius: 40,
+      borderWidth: 2,
+      borderColor: colors.border_green,
+      paddingTop: SCREEN_HEIGHT * 0.0069,
     },
 });
 

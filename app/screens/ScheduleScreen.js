@@ -134,11 +134,18 @@ const ScheduleScreen = () => {
       <View style={{ backgroundColor: colors.lime_green }}>
         <Text
           style={{
-            fontFamily: 'PSemi-Bold',
-            fontSize: SCREEN_WIDTH * 0.06,
-            marginTop: SCREEN_HEIGHT * 0.012,
-            textAlign: 'center',
-            paddingHorizontal: SCREEN_WIDTH * 0.05,
+            fontSize: SCREEN_WIDTH * 0.06, 
+                textAlign: 'center', 
+                marginTop: SCREEN_HEIGHT * 0.025,  
+                fontFamily: 'PSemi-Bold',
+                color: colors.border_green,
+                width: SCREEN_WIDTH * 0.8,
+                alignSelf: 'center',
+                backgroundColor: colors.pale_green,
+                borderRadius: 20,
+                paddingTop: SCREEN_HEIGHT * 0.0069,
+                borderWidth: 2,
+                borderColor: colors.border_green,
           }}
         >
           Waste Collection Schedule for {userLocation}

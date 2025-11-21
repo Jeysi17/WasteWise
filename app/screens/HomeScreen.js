@@ -242,7 +242,12 @@ const HomeScreen = ({ navigation }) => {
 
         {/* 📊 Complaints Summary */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Your Complaints</Text>
+          <Text style={[
+            styles.cardTitle, 
+            { borderBottomWidth: 2, 
+            paddingBottom: 3, 
+            borderColor: colors.border_green}
+            ]}>Your Complaints</Text>
 
           <View style={styles.circleContainer}>
             <View style={styles.circleWrapper}>
@@ -308,7 +313,7 @@ export default HomeScreen;
 // ================= Styles =================
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.pale_green,
+    backgroundColor: colors.bg_green,
     width: SCREEN_WIDTH * 0.9,
     borderRadius: 15,
     alignSelf: 'center',
@@ -354,14 +359,16 @@ const styles = StyleSheet.create({
   profileCard: { 
     flexDirection: 'row', 
     alignItems: 'center',
-    // ✅ Removed marginBottom - using image height only
   },
   viewButton: { 
     marginTop: SCREEN_HEIGHT * 0.015, 
     paddingVertical: SCREEN_HEIGHT * 0.01, 
     borderRadius: 8, 
     alignItems: 'center', 
-    justifyContent: 'center' 
+    justifyContent: 'center',
+    backgroundColor: colors.pale_green,
+    borderWidth: 2,
+    borderColor: colors.border_green,
   },
   viewButtonText: { 
     color: colors.border_green, 
@@ -378,12 +385,16 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: colors.pale_green,
     borderRadius: 40,
+    paddingTop: SCREEN_HEIGHT * 0.0069,
+    borderWidth: 2,
+    borderColor: colors.border_green,
   },
   circleContainer: { 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
     alignItems: 'center', 
-    marginVertical: SCREEN_HEIGHT * 0.025 
+    marginVertical: SCREEN_HEIGHT * 0.025,
+    marginBottom: SCREEN_HEIGHT * 0.001, 
   },
   circleWrapper: { 
     alignItems: 'center' 
@@ -420,6 +431,9 @@ const styles = StyleSheet.create({
     color: '#222', 
     marginTop: SCREEN_HEIGHT * 0.012,
     fontFamily: 'PSemi-Bold',
+    borderBottomWidth: 2,
+    borderBottomColor: colors.border_green,
+    paddingBottom: 6,
   },
   articleSummary: { 
     fontSize: SCREEN_WIDTH * 0.035, 

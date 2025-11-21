@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.lime_green,
-    paddingBottom: SCREEN_HEIGHT * 0.05,
+    paddingBottom: SCREEN_HEIGHT * 0.01,
   },
   scrollContainer: {
     flexGrow: 1, // ✅ ensures full scrollability
@@ -151,7 +151,10 @@ const styles = StyleSheet.create({
       width: SCREEN_WIDTH * 0.8,
       alignSelf: 'center',
       backgroundColor: colors.pale_green,
+      borderWidth: 2,
+      borderColor: colors.border_green,
       borderRadius: 20,
+      marginBottom: SCREEN_HEIGHT * 0.02,
     },
   card: {
     backgroundColor: colors.bg_green,
@@ -161,6 +164,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 3,
     borderColor: colors.border_green,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
   },
   cardTitle: {
     fontSize: SCREEN_WIDTH * 0.045,
