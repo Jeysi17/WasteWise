@@ -280,6 +280,7 @@ function extractChipsFromSuggestions(suggestions) {
   return chips;
 }
 
+// Test endpoint to check chip extraction
 export const testChipExtraction = async (req, res) => {
   const { message, sessionId } = req.body;
   
@@ -288,22 +289,29 @@ export const testChipExtraction = async (req, res) => {
   try {
     const result = await sendToDialogflow(message, sessionId || 'test-session');
     
-    console.log('✅ Dialogflow test successful');
+    console.log('🔍 Full Dialogflow response structure:');
+    console.log(JSON.stringify(result, null, 2));
+    
+    const fulfillmentMessages = result?.fulfillmentMessages || [];
+    
+    fulfillmentMessages.forEach((msg, index) => {
+      console.log(`\n--- Message ${index} ---`);
+      console.log('Message type:', msg.message);
+      if (msg.payload) console.log('Payload keys:', Object.keys(msg.payload));
+      if (msg.quickReplies) console.log('Quick Replies:', msg.quickReplies);
+    });
     
     res.status(200).json({
-      status: "success",
-      message: "Dialogflow is working correctly",
-      response: result
+      fullResponse: result,
+      fulfillmentMessages: fulfillmentMessages,
+      status: "success"
     });
     
   } catch (error) {
-    console.error('❌ Dialogflow test failed:', error.message);
-    
+    console.error('❌ Test endpoint error:', error);
     res.status(500).json({ 
-      status: "error",
-      error: "Dialogflow authentication failed",
-      message: error.message,
-      solution: "Check Render environment variables for GOOGLE_PROJECT_ID, GOOGLE_CLIENT_EMAIL, and GOOGLE_PRIVATE_KEY"
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
