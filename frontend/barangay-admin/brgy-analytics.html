@@ -164,12 +164,12 @@ const centerTextPlugin = {
     ctx.textBaseline = 'middle';
     
     // Main text (total weight)
-    ctx.font = 'bold 24px Arial';
+    ctx.font = '500 40px Arial';
     ctx.fillStyle = '#333';
     ctx.fillText(options.text || '', centerX, centerY - 10);
     
     // Subtext label
-    ctx.font = '12px Arial';
+    ctx.font = '15px Arial';
     ctx.fillStyle = '#666';
     ctx.fillText('Total Kilograms', centerX, centerY + 10);
     
@@ -349,9 +349,7 @@ function bar(el, labels, values, horizontal=false) {
       labels, 
       datasets: [{ 
         data: values,
-        backgroundColor: '#78c2ad',
-        borderColor: '#5a9c8a',
-        borderWidth: 1
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
       }] 
     },
     options: {
