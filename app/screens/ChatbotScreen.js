@@ -16,7 +16,7 @@ import { Keyboard, Platform } from "react-native";
 import colors from "../../constant/colors";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
+const backendUrl = "https://wastewise-w7rb.onrender.com";
 const ChatbotScreen = () => {
   const [messages, setMessages] = useState([
     {

@@ -77,15 +77,28 @@ export const chatWithBot = async (req, res) => {
       chips: suggestionChips
     });
 
-    res.status(200).json({
+    // CRITICAL: Always return status 200 with proper JSON
+    return res.status(200).json({
       reply: fulfillmentText,
       payload: payload,
       sessionId: sessionId
     });
 
   } catch (err) {
-    console.error("❌ Dialogflow error - using fallback response");
-    console.error("Error details:", err.message);
+    console.error("❌ Dialogflow error:", err.message);
+    console.error("Stack:", err.stack);
+
+    // CRITICAL: Return 200 with error message instead of 500
+    // This prevents 502 Bad Gateway errors
+    return res.status(200).json({
+      reply: "Sorry, I'm having trouble connecting right now. Please try again.",
+      payload: {
+        buttons: ["Try again"],
+        type: 'error'
+      },
+      sessionId: sessionId,
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
@@ -212,7 +225,7 @@ export const testChipExtraction = async (req, res) => {
       if (msg.quickReplies) console.log('Quick Replies:', msg.quickReplies);
     });
     
-    res.status(200).json({
+    return res.status(200).json({
       fullResponse: result,
       fulfillmentMessages: fulfillmentMessages,
       status: "success"
@@ -220,9 +233,10 @@ export const testChipExtraction = async (req, res) => {
     
   } catch (error) {
     console.error('❌ Test endpoint error:', error);
-    res.status(500).json({ 
+    return res.status(200).json({ 
       error: error.message,
+      status: "error",
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-};
+}
