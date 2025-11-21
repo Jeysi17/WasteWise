@@ -18,7 +18,7 @@
     <button onclick="location.href='analytics.html'">HOME</button>
     <button onclick="location.href='admin-post.html'">POST</button>
     <button onclick="location.href='schedule.html'">SCHEDULE</button>
-    <button class="btn btn-danger mt-4" onclick="logout()">Log out</button>
+    <button id="logoutBtn" class="btn btn-danger mt-4">Log out</button>
   </div>
 
   <div class="header">WasteWise Admin</div>
@@ -59,23 +59,23 @@
           </select>
         </div>
         <div class="ms-auto">
-          <button class="btn btn-primary" onclick="showExportModal()">Export Report</button>
+          <button id="exportReportBtn" class="btn btn-primary" onclick="showExportModal()">Export Report</button>
         </div>
         <div id="exporterNameModal" class="modal">
           <div class="modal-content1" style="max-width: 400px;">
-            <span class="close" onclick="closeExportModals()">&times;</span>
+            <span id="closeNameModal" class="close">&times;</span>
             <h5>Please Enter Your Name</h5>
             <p style="font-size: 0.9em; color: #666;">Your name is required and will be included in the report.</p>
             <input type="text" id="exporterNameInput" placeholder="Enter your full name" class="form-control">
-            <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="submitExporterName()">Continue</button>
+            <button id="submitExporterNameBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%;">Continue</button>
           </div>
         </div>
 
         <div id="exportFormatModal" class="modal">
           <div class="modal-content">
-            <span class="close" onclick="closeExportModals()">&times;</span>
-            <button class="export-btn export-pdf" onclick="exportToPDF()">PDF</button>
-            <button class="export-btn export-excel" onclick="exportToExcel()">Excel</button>
+            <span id="closeFormatModal" class="close">&times;</span>
+            <button id="exportPdfBtn" class="export-btn export-pdf">PDF</button>
+            <button id="exportExcelBtn" class="export-btn export-excel">Excel</button>
           </div>
         </div>
 
@@ -121,8 +121,15 @@
     </div>
   </div>
 
-  <script src="auth.js"></script>
-  <script>
+
+   <script type="module">
+    import { authFetch, logout } from './auth.js';
+    
+    // Make functions global for the HTML onchange/onclick attributes
+    window.handlePeriodChange = handlePeriodChange;
+    window.navigatePeriod = navigatePeriod;
+    window.loadAnalytics = loadAnalytics;
+    
     // State management
     let currentPeriod = 'year';
     let currentYear = new Date().getFullYear();
@@ -130,18 +137,80 @@
     let currentWeek = getWeekNumber(new Date());
     let charts = {};
 
-    // Helper function to get week number
     function getWeekNumber(date) {
       const startOfYear = new Date(date.getFullYear(), 0, 1);
       return Math.ceil(((date - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
     }
 
-    // Guard: must be logged in
-    (async function guard() {
-      const r = await authFetch('/api/auth/me');
-      if (!r.ok) { location.href = 'index.html'; return; }
-      loadAnalytics();
+    // --- Authentication Guard ---
+    (async function() {
+      const token = localStorage.getItem('wastewise_admin_token');
+      const userData = localStorage.getItem('wastewise_admin_user');
+
+      if (!token || !userData) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      try {
+        // Just a simple check to see if we can fetch data
+        const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/analytics/summary?month=2024-11', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!testResponse.ok) {
+          throw new Error('Token validation failed');
+        }
+        
+        // If successful, start the app
+        initializeApp();
+      } catch (err) {
+        console.error('Authentication failed:', err);
+        localStorage.removeItem('wastewise_admin_token');
+        localStorage.removeItem('wastewise_admin_user');
+        window.location.href = 'index.html';
+      }
     })();
+
+    function initializeApp() {
+      // Setup logout button
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await logout();
+      });
+
+      // Setup export functionality
+      setupExportHandlers();
+
+      // Initialize charts and load data
+      loadAnalytics();
+    }
+
+    function setupExportHandlers() {
+      // Export report button
+      document.getElementById('exportReportBtn').addEventListener('click', showExportModal);
+      
+      // Name modal handlers
+      document.getElementById('closeNameModal').addEventListener('click', closeExportModals);
+      document.getElementById('submitExporterNameBtn').addEventListener('click', submitExporterName);
+      
+      // Format modal handlers
+      document.getElementById('closeFormatModal').addEventListener('click', closeExportModals);
+      document.getElementById('exportPdfBtn').addEventListener('click', exportToPDF);
+      document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+      
+      // Close modals when clicking outside
+      window.addEventListener('click', function (event) {
+        const nameModal = document.getElementById('exporterNameModal');
+        const formatModal = document.getElementById('exportFormatModal');
+
+        if (event.target === nameModal || event.target === formatModal) {
+          closeExportModals();
+        }
+      });
+    }
 
     // Handle period selection change
     function handlePeriodChange() {
@@ -179,7 +248,6 @@
       loadAnalytics();
     }
 
-    // Update period label
     function updatePeriodLabel() {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       let label = '';
@@ -240,7 +308,6 @@
             tooltip: {
               callbacks: {
                 label: (ctx) => {
-                  const names = ctx.dataset.tooltipNames || [];
                   const val = ctx.parsed.y ?? ctx.parsed;
                   return ` ${val} kg`;
                 }
@@ -290,14 +357,13 @@
     }
 
     // Bar chart helper
-    function bar(el, labels, values, tooltipNames) {
+    function bar(el, labels, values) {
       return new Chart(el, {
         type: 'bar',
         data: {
           labels,
           datasets: [{
-            data: values,
-            tooltipNames: tooltipNames || []
+            data: values
           }]
         },
         options: {
@@ -308,7 +374,6 @@
             tooltip: {
               callbacks: {
                 label: (ctx) => {
-                  const names = ctx.dataset.tooltipNames || [];
                   const val = ctx.parsed.y ?? ctx.parsed;
                   return ` ${val} kg`;
                 }
@@ -420,298 +485,230 @@
         console.error('Error loading complaint stats:', error);
       }
     }
-    
 
     // Export functions
+    let exporterName = '';
+
     function showExportModal() {
-      document.getElementById('exportModal').style.display = 'block';
+      document.getElementById('exporterNameModal').style.display = 'block';
+      document.getElementById('exporterNameInput').focus();
     }
 
-    function closeExportModal() {
-      document.getElementById('exportModal').style.display = 'none';
+    function submitExporterName() {
+      const nameInput = document.getElementById('exporterNameInput');
+      exporterName = nameInput.value.trim().toUpperCase();
+
+      if (!exporterName) {
+        alert('Please enter your name to continue.');
+        return;
+      }
+
+      document.getElementById('exporterNameModal').style.display = 'none';
+      document.getElementById('exportFormatModal').style.display = 'block';
     }
 
-    window.onclick = function(event) {
-      const modal = document.getElementById('exportModal');
-      if (event.target == modal) {
-        modal.style.display = 'none';
+    function closeExportModals() {
+      document.getElementById('exporterNameModal').style.display = 'none';
+      document.getElementById('exportFormatModal').style.display = 'none';
+      document.getElementById('exporterNameInput').value = '';
+      exporterName = '';
+    }
+
+    async function exportToPDF() {
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const selectedBarangay = document.getElementById('barangayFilter').value;
+        const barangayText = selectedBarangay || 'All Barangays';
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        let periodText = '';
+        
+        if (currentPeriod === 'week') {
+          periodText = `Week ${currentWeek}, ${currentYear}`;
+        } else if (currentPeriod === 'month') {
+          periodText = `${monthNames[currentMonth - 1]} ${currentYear}`;
+        } else if (currentPeriod === 'year') {
+          periodText = `Year ${currentYear}`;
+        }
+
+        // Title
+        doc.setFontSize(18);
+        doc.text('WasteWise Analytics Report', 14, 20);
+        doc.setFontSize(12);
+        doc.text(`Barangay: ${barangayText}`, 14, 28);
+        doc.text(`Period: ${periodText}`, 14, 35);
+        
+        let yPos = 45;
+
+        // KPI Summary
+        const totalComplaints = document.getElementById('kpiTotalComplaints').textContent;
+        const pendingComplaints = document.getElementById('kpiComplaints').textContent;
+        const solved = document.getElementById('kpiSolved').textContent;
+        const users = document.getElementById('kpiUsers').textContent;
+
+        doc.autoTable({
+          startY: yPos,
+          head: [['Metric', 'Value']],
+          body: [
+            ['Total Complaints', totalComplaints],
+            ['Pending Complaints', pendingComplaints],
+            ['Solved', solved],
+            ['Users', users]
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [120, 194, 173] }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+
+        // Fetch data
+        const params = new URLSearchParams({
+          period: currentPeriod,
+          year: currentYear,
+          month: currentMonth,
+          week: currentWeek
+        });
+        if (selectedBarangay) params.set('barangay', selectedBarangay);
+
+        const res = await authFetch(`/api/analytics/summary?${params}`);
+        const data = await res.json();
+
+        if (data.byCategory && data.byCategory.length > 0) {
+          doc.text('Wastes by Category', 14, yPos);
+          yPos += 7;
+          doc.autoTable({
+            startY: yPos,
+            head: [['Category', 'Kilograms']],
+            body: data.byCategory.map(r => [r.category, r.kg.toFixed(2)]),
+            theme: 'grid',
+            headStyles: { fillColor: [120, 194, 173] }
+          });
+          yPos = doc.lastAutoTable.finalY + 10;
+        }
+
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        if (data.byPeriod && data.byPeriod.length > 0) {
+          doc.text('Wastes by Period', 14, yPos);
+          yPos += 7;
+          doc.autoTable({
+            startY: yPos,
+            head: [['Period', 'Kilograms']],
+            body: data.byPeriod.map(r => [r.label, r.kg.toFixed(2)]),
+            theme: 'grid',
+            headStyles: { fillColor: [120, 194, 173] }
+          });
+          yPos = doc.lastAutoTable.finalY + 10;
+        }
+
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        if (data.byBarangay && data.byBarangay.length > 0) {
+          doc.text('Wastes by Barangay', 14, yPos);
+          yPos += 7;
+          doc.autoTable({
+            startY: yPos,
+            head: [['Barangay', 'Kilograms']],
+            body: data.byBarangay.map(r => [r.barangay, r.kg.toFixed(2)]),
+            theme: 'grid',
+            headStyles: { fillColor: [120, 194, 173] }
+          });
+          yPos = doc.lastAutoTable.finalY;
+        }
+
+        if (yPos > 270) { doc.addPage(); yPos = 20; } else { yPos += 20; }
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'italic');
+        doc.text(`Exported by: ${exporterName}`, 14, yPos);
+
+        doc.save(`WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.pdf`);
+        closeExportModals();
+      } catch (error) {
+        console.error('Error exporting to PDF:', error);
+        alert('Error exporting to PDF');
       }
     }
 
-    /**
-     * Exports analytics data to PDF format.
-     */
-    // Export functions
-let currentData = null;
-let exporterName = ''; // Global variable to store the name
+    async function exportToExcel() {
+      try {
+        const selectedBarangay = document.getElementById('barangayFilter').value;
+        const barangayText = selectedBarangay || 'All Barangays';
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        let periodText = '';
+        
+        if (currentPeriod === 'week') {
+          periodText = `Week ${currentWeek}, ${currentYear}`;
+        } else if (currentPeriod === 'month') {
+          periodText = `${monthNames[currentMonth - 1]} ${currentYear}`;
+        } else if (currentPeriod === 'year') {
+          periodText = `Year ${currentYear}`;
+        }
 
-// Step 1: Show the name modal
-function showExportModal() {
-  document.getElementById('exporterNameModal').style.display = 'block';
-  document.getElementById('exporterNameInput').focus();
-}
+        const totalComplaints = document.getElementById('kpiTotalComplaints').textContent;
+        const pendingComplaints = document.getElementById('kpiComplaints').textContent;
+        const solved = document.getElementById('kpiSolved').textContent;
+        const users = document.getElementById('kpiUsers').textContent;
 
-// Step 2: Validate name and show the format modal
-function submitExporterName() {
-  const nameInput = document.getElementById('exporterNameInput');
-  exporterName = nameInput.value.trim().toUpperCase();
+        const params = new URLSearchParams({
+          period: currentPeriod,
+          year: currentYear,
+          month: currentMonth,
+          week: currentWeek
+        });
+        if (selectedBarangay) params.set('barangay', selectedBarangay);
 
-  if (!exporterName) {
-    alert('Please enter your name to continue.');
-    return;
-  }
+        const res = await authFetch(`/api/analytics/summary?${params}`);
+        const data = await res.json();
+        
+        const wb = XLSX.utils.book_new();
+        let allData = [];
 
-  // Name is valid, proceed to next step
-  document.getElementById('exporterNameModal').style.display = 'none';
-  document.getElementById('exportFormatModal').style.display = 'block';
-}
+        allData.push(['WasteWise Analytics Report']);
+        allData.push(['Barangay:', barangayText]);
+        allData.push(['Period:', periodText]);
+        allData.push([]); 
+        allData.push(['Metric', 'Value']);
+        allData.push(['Total Complaints', totalComplaints]);
+        allData.push(['Pending Complaints', pendingComplaints]);
+        allData.push(['Solved', solved]);
+        allData.push(['Users', users]);
+        allData.push([]); 
+        allData.push([]); 
 
-// This function now closes BOTH modals and resets everything
-function closeExportModals() {
-  document.getElementById('exporterNameModal').style.display = 'none';
-  document.getElementById('exportFormatModal').style.display = 'none';
-  document.getElementById('exporterNameInput').value = ''; // Clear input
-  exporterName = ''; // Clear stored name
-}
+        if (data.byCategory && data.byCategory.length > 0) {
+          allData.push(['Wastes by Category']);
+          allData.push(['Category', 'Kilograms']);
+          data.byCategory.forEach(r => allData.push([r.category, r.kg]));
+          allData.push([]); 
+        }
 
-// Close modals when clicking outside
-window.onclick = function(event) {
-  const nameModal = document.getElementById('exporterNameModal');
-  const formatModal = document.getElementById('exportFormatModal');
-  if (event.target == nameModal || event.target == formatModal) {
-    closeExportModals();
-  }
-}
+        if (data.byBarangay && data.byBarangay.length > 0) {
+          allData.push(['Wastes by Barangay']);
+          allData.push(['Barangay', 'Kilograms']);
+          data.byBarangay.forEach(r => allData.push([r.barangay, r.kg]));
+          allData.push([]); 
+        }
 
-async function exportToPDF() {
-  try {
-    // Name check is no longer needed here, it's already in exporterName
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    const selectedBarangay = document.getElementById('barangayFilter').value;
-    const barangayText = selectedBarangay || 'All Barangays';
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    let periodText = '';
-    
-    if (currentPeriod === 'week') {
-      periodText = `Week ${currentWeek}, ${currentYear}`;
-    } else if (currentPeriod === 'month') {
-      periodText = `${monthNames[currentMonth - 1]} ${currentYear}`;
-    } else if (currentPeriod === 'year') {
-      periodText = `Year ${currentYear}`;
+        if (data.byPeriod && data.byPeriod.length > 0) {
+          allData.push(['Wastes by Period']);
+          allData.push(['Period', 'Kilograms']);
+          data.byPeriod.forEach(r => allData.push([r.label, r.kg]));
+        }
+
+        allData.push([]); 
+        allData.push([]); 
+        allData.push([`Exported by: ${exporterName}`]);
+
+        const summaryWS = XLSX.utils.aoa_to_sheet(allData);
+        XLSX.utils.book_append_sheet(wb, summaryWS, 'Analytics Report');
+
+        XLSX.writeFile(wb, `WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.xlsx`);
+        closeExportModals();
+      } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        alert('Error exporting to Excel');
+      }
     }
-
-    // Title
-    doc.setFontSize(18);
-    doc.text('WasteWise Analytics Report', 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Barangay: ${barangayText}`, 14, 28);
-    doc.text(`Period: ${periodText}`, 14, 35);
-    
-    let yPos = 45;
-
-    // Get current data from the page
-    const totalComplaints = document.getElementById('kpiTotalComplaints').textContent;
-    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
-    const solved = document.getElementById('kpiSolved').textContent;
-    const users = document.getElementById('kpiUsers').textContent;
-
-    // KPI Summary
-    doc.autoTable({
-      startY: yPos,
-      head: [['Metric', 'Value']],
-      body: [
-        ['Total Complaints', totalComplaints],
-        ['Pending Complaints', pendingComplaints],
-        ['Solved', solved],
-        ['Users', users]
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [120, 194, 173] }
-    });
-
-    yPos = doc.lastAutoTable.finalY + 10;
-
-    // Fetch fresh data for tables
-    const params = new URLSearchParams({
-      period: currentPeriod,
-      year: currentYear,
-      month: currentMonth,
-      week: currentWeek
-    });
-    if (selectedBarangay) params.set('barangay', selectedBarangay);
-
-    const res = await fetch(`/api/analytics/summary?${params}`, { credentials: 'include' });
-    const data = await res.json();
-
-    // Wastes by Category
-    if (data.byCategory && data.byCategory.length > 0) {
-      doc.text('Wastes by Category', 14, yPos);
-      yPos += 7;
-      
-      doc.autoTable({
-        startY: yPos,
-        head: [['Category', 'Kilograms']],
-        body: data.byCategory.map(r => [r.category, r.kg.toFixed(2)]),
-        theme: 'grid',
-        headStyles: { fillColor: [120, 194, 173] }
-      });
-      yPos = doc.lastAutoTable.finalY + 10;
-    }
-
-    // Wastes by Period
-    if (yPos > 250) {
-      doc.addPage();
-      yPos = 20;
-    }
-    if (data.byPeriod && data.byPeriod.length > 0) {
-      doc.text('Wastes by Period', 14, yPos);
-      yPos += 7;
-      
-      doc.autoTable({
-        startY: yPos,
-        head: [['Period', 'Kilograms']],
-        body: data.byPeriod.map(r => [r.label, r.kg.toFixed(2)]),
-        theme: 'grid',
-        headStyles: { fillColor: [120, 194, 173] }
-      });
-      yPos = doc.lastAutoTable.finalY + 10;
-    }
-
-    // Wastes by Barangay
-    if (yPos > 250) {
-      doc.addPage();
-      yPos = 20;
-    }
-    if (data.byBarangay && data.byBarangay.length > 0) {
-      doc.text('Wastes by Barangay', 14, yPos);
-      yPos += 7;
-      
-      doc.autoTable({
-        startY: yPos,
-        head: [['Barangay', 'Kilograms']],
-        body: data.byBarangay.map(r => [r.barangay, r.kg.toFixed(2)]),
-        theme: 'grid',
-        headStyles: { fillColor: [120, 194, 173] }
-      });
-      yPos = doc.lastAutoTable.finalY;
-    }
-
-    // Add Exporter Name to Bottom
-    if (yPos > 270) { 
-      doc.addPage();
-      yPos = 20;
-    } else {
-      yPos += 20; 
-    }
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'italic');
-    doc.text(`Exported by: ${exporterName}`, 14, yPos);
-
-    doc.save(`WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.pdf`);
-    closeExportModals();
-  } catch (error) {
-    console.error('Error exporting to PDF:', error);
-    alert('Error exporting to PDF');
-  }
-}
-
-async function exportToExcel() {
-  try {
-    // Name check is no longer needed here, it's in the global exporterName
-    const selectedBarangay = document.getElementById('barangayFilter').value;
-    const barangayText = selectedBarangay || 'All Barangays';
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    let periodText = '';
-    
-    if (currentPeriod === 'week') {
-      periodText = `Week ${currentWeek}, ${currentYear}`;
-    } else if (currentPeriod === 'month') {
-      periodText = `${monthNames[currentMonth - 1]} ${currentYear}`;
-    } else if (currentPeriod === 'year') {
-      periodText = `Year ${currentYear}`;
-    }
-
-    // Get current KPI data
-    const totalComplaints = document.getElementById('kpiTotalComplaints').textContent;
-    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
-    const solved = document.getElementById('kpiSolved').textContent;
-    const users = document.getElementById('kpiUsers').textContent;
-
-    // Fetch data
-    const params = new URLSearchParams({
-      period: currentPeriod,
-      year: currentYear,
-      month: currentMonth,
-      week: currentWeek
-    });
-    if (selectedBarangay) params.set('barangay', selectedBarangay);
-
-    const res = await fetch(`/api/analytics/summary?${params}`, { credentials: 'include' });
-    const data = await res.json();
-    
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    
-    // --- Create ONE dataset for a single sheet ---
-    let allData = [];
-
-    // Summary Sheet Data
-    allData.push(['WasteWise Analytics Report']);
-    allData.push(['Barangay:', barangayText]);
-    allData.push(['Period:', periodText]);
-    allData.push([]); 
-    allData.push(['Metric', 'Value']);
-    allData.push(['Total Complaints', totalComplaints]);
-    allData.push(['Pending Complaints', pendingComplaints]);
-    allData.push(['Solved', solved]);
-    allData.push(['Users', users]);
-    allData.push([]); 
-    allData.push([]); 
-
-    // Wastes by Category Sheet Data
-    if (data.byCategory && data.byCategory.length > 0) {
-      allData.push(['Wastes by Category']);
-      allData.push(['Category', 'Kilograms']);
-      data.byCategory.forEach(r => allData.push([r.category, r.kg]));
-      allData.push([]); 
-    }
-
-    // Wastes by Barangay Sheet Data
-    if (data.byBarangay && data.byBarangay.length > 0) {
-      allData.push(['Wastes by Barangay']);
-      allData.push(['Barangay', 'Kilograms']);
-      data.byBarangay.forEach(r => allData.push([r.barangay, r.kg]));
-      allData.push([]); 
-    }
-
-    // Period Data Sheet Data
-    if (data.byPeriod && data.byPeriod.length > 0) {
-      allData.push(['Wastes by Period']);
-      allData.push(['Period', 'Kilograms']);
-      data.byPeriod.forEach(r => allData.push([r.label, r.kg]));
-    }
-
-    // Add exporter name
-    allData.push([]); 
-    allData.push([]); 
-    allData.push([`Exported by: ${exporterName}`]);
-
-    // Create a single worksheet and append it
-    const summaryWS = XLSX.utils.aoa_to_sheet(allData);
-    XLSX.utils.book_append_sheet(wb, summaryWS, 'Analytics Report');
-
-    // Save file
-    XLSX.writeFile(wb, `WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.xlsx`);
-    closeExportModals();
-  } catch (error) {
-    console.error('Error exporting to Excel:', error);
-    alert('Error exporting to Excel');
-  }
-}
-
   </script>
 </body>
 </html>

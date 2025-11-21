@@ -3,21 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="enhanced-tables.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="enhanced-tables.css" />
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"
-    crossorigin="anonymous"/>
-  
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <title>Admin - Schedule</title>
-  <style>
-  </style>
 </head>
 <body>
-
 
 <div class="sidebar">
   <button onclick="location.href='analytics.html'">HOME</button>
@@ -58,27 +54,28 @@
 
       <button class="confirm btn btn-success btn-sm" onclick="addSchedule()">CONFIRM</button>
       <button class="cancel btn btn-secondary btn-sm" onclick="clearFields()">CANCEL</button>
-        <div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <label for="filterBarangay" style="font-weight: bold; margin: 0;">FILTER BY BARANGAY:</label>
-            <select id="filterBarangay" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" onchange="filterSchedules()">
-              <option value="all">All Barangays</option>
-              <option>Aguado</option>
-              <option>Cabezas</option>
-              <option>Cabuco</option>
-              <option>Conchu</option>
-              <option>De Ocampo</option>
-              <option>Gregorio</option>
-              <option>Hugo Perez</option>
-              <option>Inocencio</option>
-              <option>Lallana</option>
-              <option>Lapidario</option>
-              <option>Luciano</option>
-              <option>Osorio</option>
-              <option>San Agustin</option>
-            </select>
-          </div>
+      
+      <div >
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label for="filterBarangay" style="font-weight: bold; margin: 0;">FILTER BY BARANGAY:</label>
+          <select id="filterBarangay" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" onchange="filterSchedules()">
+            <option value="all">All Barangays</option>
+            <option>Aguado</option>
+            <option>Cabezas</option>
+            <option>Cabuco</option>
+            <option>Conchu</option>
+            <option>De Ocampo</option>
+            <option>Gregorio</option>
+            <option>Hugo Perez</option>
+            <option>Inocencio</option>
+            <option>Lallana</option>
+            <option>Lapidario</option>
+            <option>Luciano</option>
+            <option>Osorio</option>
+            <option>San Agustin</option>
+          </select>
         </div>
+      </div>
     </div>
   </div>
 </div>
@@ -110,24 +107,67 @@
       <button id="customModalBtnOk" class="btn btn-primary">OK</button>
     </div>
   </div>
-  </div>
+</div>
 
+<script type="module">
+  import { authFetch, logout } from './auth.js';
+  window.authFetch = authFetch;
 
-<script src="auth.js"></script>
-<script>
-  // --- ADDED: Modal Functions (with ghost-click fix) ---
+  // --- AUTHENTICATION GUARD ---
+  (async function() {
+    const token = localStorage.getItem('wastewise_admin_token');
+    const userData = localStorage.getItem('wastewise_admin_user');
 
-  /**
-   * Shows a custom, promise-based alert.
-   */
-  function showCustomAlert(title, message) {
+    if (!token || !userData) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    try {
+      // Simple validation call to ensure token works
+      const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/schedules', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!testResponse.ok) {
+        throw new Error('Token validation failed');
+      }
+
+      // Token is valid, initialize the app
+      initializeApp();
+
+    } catch (err) {
+      console.error('Authentication failed:', err);
+      localStorage.removeItem('wastewise_admin_token');
+      localStorage.removeItem('wastewise_admin_user');
+      window.location.href = 'index.html';
+    }
+  })();
+
+  function initializeApp() {
+    fetchSchedules();
+  }
+
+  // --- MODAL FUNCTIONS (ROBUST FIX) ---
+
+  function getCleanButton(buttonId) {
+    const oldBtn = document.getElementById(buttonId);
+    const newBtn = oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+    return newBtn;
+  }
+
+  window.showCustomAlert = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
     document.getElementById('customModalMessage').textContent = message;
     document.getElementById('customModalInput').style.display = 'none';
     document.getElementById('customModalBtnCancel').style.display = 'none';
     
-    const okBtn = document.getElementById('customModalBtnOk');
+    const okBtn = getCleanButton('customModalBtnOk');
     okBtn.style.display = 'inline-block'; 
     okBtn.textContent = 'OK';
     
@@ -135,78 +175,23 @@
     backdrop.style.display = 'flex';
 
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          resolve(true);
-        };
-        okBtn.addEventListener('click', onOkClick, { once: true });
-      }, 50); 
+      okBtn.addEventListener('click', () => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(true);
+      });
     });
-  }
+  };
 
-  /**
-   * Shows a custom, promise-based prompt.
-   */
-  function showCustomPrompt(title, message) {
-    const backdrop = document.getElementById('customModalBackdrop');
-    document.getElementById('customModalTitle').textContent = title;
-    document.getElementById('customModalMessage').textContent = message;
-    
-    const input = document.getElementById('customModalInput');
-    input.style.display = 'block';
-    input.value = ''; 
-    
-    const okBtn = document.getElementById('customModalBtnOk');
-    const cancelBtn = document.getElementById('customModalBtnCancel');
-    okBtn.style.display = 'inline-block';
-    cancelBtn.style.display = 'inline-block';
-    okBtn.textContent = 'OK';
-    
-    backdrop.classList.add('visible');
-    backdrop.style.display = 'flex';
-    input.focus();
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          const value = input.value;
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(value); 
-        };
-        
-        const onCancelClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(null); 
-        };
-
-        const cleanup = () => {
-          okBtn.removeEventListener('click', onOkClick);
-          cancelBtn.removeEventListener('click', onCancelClick);
-        };
-        
-        okBtn.addEventListener('click', onOkClick, { once: true });
-        cancelBtn.addEventListener('click', onCancelClick, { once: true });
-      }, 50);
-    });
-  }
-
-  /**
-   * Shows a custom, promise-based confirm dialog.
-   */
-  function showCustomConfirm(title, message) {
+  window.showCustomConfirm = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
     document.getElementById('customModalMessage').textContent = message;
     document.getElementById('customModalInput').style.display = 'none'; 
 
-    const okBtn = document.getElementById('customModalBtnOk');
-    const cancelBtn = document.getElementById('customModalBtnCancel');
+    const okBtn = getCleanButton('customModalBtnOk');
+    const cancelBtn = getCleanButton('customModalBtnCancel');
+    
     okBtn.style.display = 'inline-block'; 
     cancelBtn.style.display = 'inline-block';
     okBtn.textContent = 'OK';
@@ -215,55 +200,36 @@
     backdrop.style.display = 'flex';
 
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(true);
-        };
+      okBtn.addEventListener('click', () => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(true);
+      });
 
-        const onCancelClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(false);
-        };
-
-        const cleanup = () => {
-          okBtn.removeEventListener('click', onOkClick);
-          cancelBtn.removeEventListener('click', onCancelClick);
-        };
-
-        okBtn.addEventListener('click', onOkClick, { once: true });
-        cancelBtn.addEventListener('click', onCancelClick, { once: true });
-      }, 50);
+      cancelBtn.addEventListener('click', () => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(false);
+      });
     });
-  }
-  
-  // --- End of Modal Functions ---
+  };
 
+  // --- DATA LOGIC ---
 
-  // Gate: bounce to login if not authenticated
-    (async function guard() {
-      const r = await authFetch('/api/auth/me');
-      if (!r.ok) { location.href = 'index.html'; return; }
-    })();
+  let allSchedules = []; 
 
-  let allSchedules = []; // Store all schedules for filtering
-
-  async function fetchSchedules() {
+  window.fetchSchedules = async function() {
     try {
       const response = await authFetch('/api/schedules');
       if (!response.ok) throw new Error('Failed to fetch schedules');
 
       allSchedules = await response.json();
-      filterSchedules(); // Apply current filter
+      filterSchedules(); 
     } catch (error) {
       console.error('Error fetching schedules:', error);
       document.getElementById('scheduleTable').innerHTML = `
         <tr>
-          <td colspan="5" class="empty-state">
+          <td colspan="4" class="empty-state">
             <div class="empty-state-icon">⚠️</div>
             <h3>Failed to Load Schedules</h3>
             <p>There was an error loading the schedules. Please try again.</p>
@@ -271,9 +237,8 @@
         </tr>
       `;
     }
-  }
+  };
 
-  // Function to format date in alphabetical format
   function formatDateAlphabetical(dateString) {
     const date = new Date(dateString);
     const options = { 
@@ -285,7 +250,6 @@
     return date.toLocaleDateString('en-US', options);
   }
 
-  // Function to format date and time
   function formatDateTime(dateString) {
     const date = new Date(dateString);
     const options = { 
@@ -298,90 +262,89 @@
     return date.toLocaleDateString('en-US', options);
   }
 
-  function filterSchedules() {
-  const filterValue = document.getElementById("filterBarangay").value;
-  const table = document.getElementById("scheduleTable");
-  table.innerHTML = '';
+  window.filterSchedules = function() {
+    const filterValue = document.getElementById("filterBarangay").value;
+    const table = document.getElementById("scheduleTable");
+    table.innerHTML = '';
 
-  // ✅ Filter out completed schedules
-  let filteredSchedules = allSchedules.filter(s => !s.completed);
+    // Filter out completed schedules
+    let filteredSchedules = allSchedules.filter(s => !s.completed);
 
-  // ✅ Filter by selected barangay
-  if (filterValue !== 'all') {
-    filteredSchedules = filteredSchedules.filter(schedule => schedule.barangay === filterValue);
-  }
-
-  if (filteredSchedules.length === 0) {
-    const message = filterValue === 'all'
-      ? 'No active (uncompleted) waste collection schedules found.'
-      : `No active schedules found for ${filterValue}.`;
-    table.innerHTML = `
-      <tr>
-        <td colspan="4" class="empty-state">
-          <div class="empty-state-icon">📅</div>
-          <h3>No Active Schedules</h3>
-          <p>${message}</p>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  // Sort by schedule date descending
-  filteredSchedules.sort((a, b) => new Date(b.schedule_date) - new Date(a.schedule_date));
-
-  // Find the latest schedule per barangay
-  const latestByBarangay = {};
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  filteredSchedules.forEach(schedule => {
-    const scheduleDate = new Date(schedule.schedule_date);
-    scheduleDate.setHours(0, 0, 0, 0);
-    if (scheduleDate >= now) {
-      if (
-        !latestByBarangay[schedule.barangay] ||
-        scheduleDate > new Date(latestByBarangay[schedule.barangay].schedule_date)
-      ) {
-        latestByBarangay[schedule.barangay] = schedule;
-      }
+    // Filter by selected barangay
+    if (filterValue !== 'all') {
+      filteredSchedules = filteredSchedules.filter(schedule => schedule.barangay === filterValue);
     }
-  });
 
-  filteredSchedules.forEach(schedule => {
-    const row = document.createElement("tr");
-    row.setAttribute("data-id", schedule.id);
-    const scheduleDate = new Date(schedule.schedule_date);
-    const isUpcoming = scheduleDate >= new Date();
-    const dateClass = isUpcoming ? 'status-less-urgent' : 'status-urgent';
-    const isLatestForBarangay = latestByBarangay[schedule.barangay]?.id === schedule.id;
+    if (filteredSchedules.length === 0) {
+      const message = filterValue === 'all'
+        ? 'No active (uncompleted) waste collection schedules found.'
+        : `No active schedules found for ${filterValue}.`;
+      table.innerHTML = `
+        <tr>
+          <td colspan="4" class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <h3>No Active Schedules</h3>
+            <p>${message}</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
 
-    row.innerHTML = `
-      <td data-label="Location"><strong><i class="bi bi-geo-alt-fill"></i> ${schedule.barangay} - Purok ${schedule.zone_number}</strong></td>
-      <td data-label="Scheduled Date"><span class="status-badge ${dateClass}"><i class="bi bi-calendar-check"></i> ${formatDateAlphabetical(schedule.schedule_date)}</span></td>
-      <td data-label="Date Created">${formatDateTime(schedule.created_at)}</td>
-      <td>
-        <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; align-items: center;">
-          ${isLatestForBarangay ? `
-            <button class="btn-enhanced btn-remind" onclick="remindCitizens(${schedule.id}, '${schedule.barangay}', '${schedule.zone_number}', '${schedule.schedule_date}')">
-              🔔 Remind Citizens
+    // Sort by schedule date descending
+    filteredSchedules.sort((a, b) => new Date(b.schedule_date) - new Date(a.schedule_date));
+
+    // Find the latest schedule per barangay (for logic logic)
+    const latestByBarangay = {};
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    filteredSchedules.forEach(schedule => {
+      const scheduleDate = new Date(schedule.schedule_date);
+      scheduleDate.setHours(0, 0, 0, 0);
+      if (scheduleDate >= now) {
+        if (
+          !latestByBarangay[schedule.barangay] ||
+          scheduleDate > new Date(latestByBarangay[schedule.barangay].schedule_date)
+        ) {
+          latestByBarangay[schedule.barangay] = schedule;
+        }
+      }
+    });
+
+    filteredSchedules.forEach(schedule => {
+      const row = document.createElement("tr");
+      row.setAttribute("data-id", schedule.id);
+      const scheduleDate = new Date(schedule.schedule_date);
+      const isUpcoming = scheduleDate >= new Date();
+      const dateClass = isUpcoming ? 'status-less-urgent' : 'status-urgent';
+      const isLatestForBarangay = latestByBarangay[schedule.barangay]?.id === schedule.id;
+
+      row.innerHTML = `
+        <td data-label="Location"><strong><i class="bi bi-geo-alt-fill"></i> ${schedule.barangay} - Purok ${schedule.zone_number}</strong></td>
+        <td data-label="Scheduled Date"><span class="status-badge ${dateClass}"><i class="bi bi-calendar-check"></i> ${formatDateAlphabetical(schedule.schedule_date)}</span></td>
+        <td data-label="Date Created">${formatDateTime(schedule.created_at)}</td>
+        <td>
+          <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; align-items: center;">
+            ${isLatestForBarangay ? `
+              <button class="btn-enhanced btn-remind" onclick="remindCitizens(${schedule.id}, '${schedule.barangay}', '${schedule.zone_number}', '${schedule.schedule_date}')">
+                🔔 Remind Citizens
+              </button>
+            ` : ''}
+            <button class="btn-enhanced btn-mark-done" onclick="markAsDone(${schedule.id})">
+              ✅ Mark as Done
             </button>
-          ` : ''}
-          <button class="btn-enhanced btn-mark-done" onclick="markAsDone(${schedule.id})">
-            ✅ Mark as Done
-          </button>
-          <button class="btn-enhanced btn-danger-enhanced" onclick="deleteSchedule(${schedule.id})">
-            🗑️ Delete
-          </button>
-        </div>
-      </td>
-    `;
-    table.appendChild(row);
-  });
-}
+            <button class="btn-enhanced btn-danger-enhanced" onclick="deleteSchedule(${schedule.id})">
+              <i class="bi bi-trash-fill"></i> Delete
+            </button>
+          </div>
+        </td>
+      `;
+      table.appendChild(row);
+    });
+  };
 
-
-  async function addSchedule() {
+  window.addSchedule = async function() {
     const barangay = document.getElementById("barangaySelect").value;
     const zoneNumber = document.getElementById("zoneNumber").value;
     const selectedDate = document.getElementById("scheduleDate").value;
@@ -416,40 +379,38 @@
       console.error('Error saving schedule:', error);
       await showCustomAlert('Error', 'Failed to save schedule.');
     }
-  }
+  };
 
-  async function markAsDone(id) {
-  const didConfirm = await showCustomConfirm(
-    "Mark as Done", 
-    "Are you sure you want to mark this schedule as completed?"
-  );
-  if (!didConfirm) return;
+  window.markAsDone = async function(id) {
+    const didConfirm = await showCustomConfirm(
+      "Mark as Done", 
+      "Are you sure you want to mark this schedule as completed?"
+    );
+    if (!didConfirm) return;
 
-  try {
+    try {
       const response = await authFetch(`/api/schedules/${id}/complete`, {
-      method: 'PATCH'
-    });
-    if (!response.ok) throw new Error('Failed to mark schedule as done');
+        method: 'PATCH'
+      });
+      if (!response.ok) throw new Error('Failed to mark schedule as done');
 
-    // ✅ Remove the schedule row instantly
-    const row = document.querySelector(`#scheduleTable tr[data-id='${id}']`);
-    if (row) {
-      row.style.transition = "opacity 0.4s ease";
-      row.style.opacity = "0";
-      setTimeout(() => row.remove(), 400);
+      // Remove the schedule row instantly for better UX
+      const row = document.querySelector(`#scheduleTable tr[data-id='${id}']`);
+      if (row) {
+        row.style.transition = "opacity 0.4s ease";
+        row.style.opacity = "0";
+        setTimeout(() => row.remove(), 400);
+      }
+
+      await showCustomAlert('Success!', 'Schedule marked as completed!');
+      fetchSchedules();
+    } catch (error) {
+      console.error('Error marking schedule as done:', error);
+      await showCustomAlert('Error', 'Failed to mark schedule as done.');
     }
+  };
 
-    await showCustomAlert('Success!', 'Schedule marked as completed!');
-    
-    // Optional: refresh in background to keep data updated
-    fetchSchedules();
-  } catch (error) {
-    console.error('Error marking schedule as done:', error);
-    await showCustomAlert('Error', 'Failed to mark schedule as done.');
-  }
-}
-
-  async function remindCitizens(id, barangay, zone, date) {
+  window.remindCitizens = async function(id, barangay, zone, date) {
     const formattedDate = formatDateAlphabetical(date);
     const didConfirm = await showCustomConfirm(
       "Send Reminder", 
@@ -464,15 +425,14 @@
       });
       if (!response.ok) throw new Error('Failed to send reminder');
 
-      const result = await response.json();
       await showCustomAlert('Success!', `Reminder sent to citizens in ${barangay}!`);
     } catch (error) {
       console.error('Error sending reminder:', error);
       await showCustomAlert('Error', 'Failed to send reminder notification.');
     }
-  }
+  };
 
-  async function deleteSchedule(id) {
+  window.deleteSchedule = async function(id) {
     const didConfirm = await showCustomConfirm(
       "Delete Schedule", 
       "Are you sure you want to delete this schedule?"
@@ -483,21 +443,29 @@
       const response = await authFetch(`/api/schedules/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete schedule');
 
+      const row = document.querySelector(`#scheduleTable tr[data-id='${id}']`);
+      if (row) {
+        row.style.transition = "opacity 0.4s ease";
+        row.style.opacity = "0";
+        setTimeout(() => row.remove(), 400);
+      }
+
       await showCustomAlert('Success!', 'Schedule deleted!');
       fetchSchedules();
     } catch (error) {
       console.error('Error deleting schedule:', error);
       await showCustomAlert('Error', 'Failed to delete schedule.');
     }
-  }
+  };
 
-  function clearFields() {
+  window.clearFields = function() {
     document.getElementById("barangaySelect").selectedIndex = 0;
     document.getElementById("zoneNumber").selectedIndex = 0;
     document.getElementById("scheduleDate").value = "";
-  }
+  };
 
-  window.onload = () => { fetchSchedules(); };
+  // Initial load is handled by the IIFE at the top
 </script>
+
 </body>
 </html>

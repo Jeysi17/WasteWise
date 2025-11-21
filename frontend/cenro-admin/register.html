@@ -10,12 +10,28 @@
   <style>
     body { display:flex; min-height:100vh; align-items:center; justify-content:center; }
     .card { width: 360px; }
+    
+    /* Added Password Toggle Styles */
+    .password-wrapper { position: relative; }
+    .toggle-btn {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #28a745;
+      font-size: 0.9rem;
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
   <div class="card p-4 shadow">
     <h4 class="mb-3 text-center">Create Admin Account</h4>
     <div id="msg" class="text-danger mb-2" style="display:none;"></div>
+    
     <form id="registerForm">
       <div class="form-group">
         <label>Username</label>
@@ -23,49 +39,80 @@
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input id="password" type="password" class="form-control" autocomplete="new-password" required/>
+        <div class="password-wrapper">
+          <input id="password" type="password" class="form-control" autocomplete="new-password" required/>
+          <button type="button" id="togglePassword" class="toggle-btn">Show</button>
+        </div>
       </div>
       <button class="btn btn-success btn-block" type="submit">Register</button>
       <button class="btn btn-link btn-block" type="button" onclick="location.href='index.html'">Back to login</button>
     </form>
   </div>
 
-  <script src="auth.js"></script>
-  <script>
-    // If already logged in, go to dashboard instead
+  <script type="module">
+    import { checkAuth } from './auth.js';
+
+    // Configuration
+    const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+
+    // Guard: If already logged in, go to analytics
     (async function() {
       if (await checkAuth()) {
         window.location.href = 'analytics.html';
       }
     })();
 
+    // Password Toggle Logic
+    document.getElementById('togglePassword').addEventListener('click', () => {
+      const pwd = document.getElementById('password');
+      const toggleBtn = document.getElementById('togglePassword');
+      
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        toggleBtn.textContent = 'Hide';
+      } else {
+        pwd.type = 'password';
+        toggleBtn.textContent = 'Show';
+      }
+    });
+
+    // Registration Logic
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
+      const msg = document.getElementById('msg');
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+
+      // Disable button to prevent double submit
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+      msg.style.display = 'none';
 
       try {
-        const res = await fetch('/api/auth/register', {
+        const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Registration failed');
 
-        // Store token if provided (auto-login after registration)
-        if (data.token) {
-          setToken(data.token);
-          window.location.href = 'analytics.html';
-        } else {
-          // Redirect to login after successful registration
-          alert('Account created successfully! Please log in.');
-          window.location.href = 'index.html';
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Registration failed');
         }
+
+        // Success! Redirect to login page
+        alert('Account created successfully! Please log in.');
+        window.location.href = 'index.html';
+
       } catch (err) {
-        const msg = document.getElementById('msg');
         msg.style.display = 'block';
         msg.textContent = err.message;
+        
+        // Re-enable button on error
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Register';
       }
     });
   </script>
