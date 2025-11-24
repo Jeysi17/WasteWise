@@ -10,8 +10,11 @@
     href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"
     crossorigin="anonymous"
   />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" 
-        crossorigin="anonymous" />
+  <link 
+    rel="stylesheet" 
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" 
+    crossorigin="anonymous" 
+  />
   <title>WasteWiseBRGYAdmin — Posts</title>
 
   <style>
@@ -61,25 +64,12 @@
     <div class="controls">
       <div class="date-filter-container" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
         <label for="fromDate" class="date-label">FILTER POSTS FROM:</label>
-        <input
-          type="date"
-          id="fromDate"
-          class="date-input"
-          onchange="applyDateFilter()"
-        />
+        <input type="date" id="fromDate" class="date-input" onchange="applyDateFilter()" />
 
         <label for="toDate" class="date-label">TO:</label>
-        <input
-          type="date"
-          id="toDate"
-          class="date-input"
-          onchange="applyDateFilter()"
-        />
+        <input type="date" id="toDate" class="date-input" onchange="applyDateFilter()" />
 
-        <button
-          class="btn btn-success clear-filter-btn"
-          onclick="clearDateFilters()"
-        >
+        <button class="btn btn-success clear-filter-btn" onclick="clearDateFilters()">
           Clear Filter
         </button>
 
@@ -184,27 +174,52 @@
 <script type="module">
   import { authFetch } from './auth.js';
   
-  // Make authFetch globally available for your existing code
   window.authFetch = authFetch;
-  
   const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
   
-  // Your existing functions
   window.formatReadableDate = function(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     const options = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      hour12: true 
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true 
     };
     return new Intl.DateTimeFormat('en-US', options).format(date);
   };
 
+  // --- HELPER: Get Clean Button (Fixes Ghost Click Issues) ---
+  function getCleanButton(buttonId) {
+    const oldBtn = document.getElementById(buttonId);
+    const newBtn = oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+    return newBtn;
+  }
+
+  // --- AUTO CLOSE ALERT (For Remarks Error) ---
+  window.showAutoCloseAlert = function(title, message) {
+    const backdrop = document.getElementById('customModalBackdrop');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    document.getElementById('customModalInput').style.display = 'none';
+
+    
+    // Hide buttons entirely
+    document.getElementById('customModalBtnCancel').style.display = 'none';
+    document.getElementById('customModalBtnOk').style.display = 'none';
+    
+    backdrop.classList.add('visible');
+    backdrop.style.display = 'flex';
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(true);
+      }, 1500); // Closes automatically after 1.5s
+    });
+  };
+
+  // --- STANDARD ALERT (Click OK) ---
   window.showCustomAlert = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
@@ -212,7 +227,8 @@
     document.getElementById('customModalInput').style.display = 'none';
     document.getElementById('customModalBtnCancel').style.display = 'none';
     
-    const okBtn = document.getElementById('customModalBtnOk');
+    
+    const okBtn = getCleanButton('customModalBtnOk'); // Clone to remove old listeners
     okBtn.style.display = 'inline-block'; 
     okBtn.textContent = 'OK';
     
@@ -220,17 +236,15 @@
     backdrop.style.display = 'flex';
 
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          resolve(true);
-        };
-        okBtn.addEventListener('click', onOkClick, { once: true });
-      }, 50); 
+      okBtn.addEventListener('click', () => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(true);
+      });
     });
   };
 
+  // --- PROMPT (Input) ---
   window.showCustomPrompt = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
@@ -240,8 +254,8 @@
     input.style.display = 'block';
     input.value = ''; 
     
-    const okBtn = document.getElementById('customModalBtnOk');
-    const cancelBtn = document.getElementById('customModalBtnCancel');
+    const okBtn = getCleanButton('customModalBtnOk');
+    const cancelBtn = getCleanButton('customModalBtnCancel');
     okBtn.style.display = 'inline-block';
     cancelBtn.style.display = 'inline-block';
     okBtn.textContent = 'OK';
@@ -251,41 +265,30 @@
     input.focus();
 
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          const value = input.value;
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 2000);
-          cleanup();
-          resolve(value); 
-        };
-        
-        const onCancelClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(null); 
-        };
-
-        const cleanup = () => {
-          okBtn.removeEventListener('click', onOkClick);
-          cancelBtn.removeEventListener('click', onCancelClick);
-        };
-        
-        okBtn.addEventListener('click', onOkClick, { once: true });
-        cancelBtn.addEventListener('click', onCancelClick, { once: true });
-      }, 50);
+      okBtn.addEventListener('click', () => {
+        const value = input.value;
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(value);
+      });
+      
+      cancelBtn.addEventListener('click', () => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(null);
+      });
     });
   };
 
+  // --- CONFIRM (Yes/No) ---
   window.showCustomConfirm = function(title, message) {
     const backdrop = document.getElementById('customModalBackdrop');
     document.getElementById('customModalTitle').textContent = title;
     document.getElementById('customModalMessage').textContent = message;
     document.getElementById('customModalInput').style.display = 'none'; 
 
-    const okBtn = document.getElementById('customModalBtnOk');
-    const cancelBtn = document.getElementById('customModalBtnCancel');
+    const okBtn = getCleanButton('customModalBtnOk');
+    const cancelBtn = getCleanButton('customModalBtnCancel');
     okBtn.style.display = 'inline-block'; 
     cancelBtn.style.display = 'inline-block';
     okBtn.textContent = 'OK';
@@ -294,66 +297,41 @@
     backdrop.style.display = 'flex';
 
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const onOkClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(true);
-        };
+      okBtn.addEventListener('click', () => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(true);
+      });
 
-        const onCancelClick = () => {
-          backdrop.classList.remove('visible');
-          setTimeout(() => backdrop.style.display = 'none', 200);
-          cleanup();
-          resolve(false);
-        };
-
-        const cleanup = () => {
-          okBtn.removeEventListener('click', onOkClick);
-          cancelBtn.removeEventListener('click', onCancelClick);
-        };
-
-        okBtn.addEventListener('click', onOkClick, { once: true });
-        cancelBtn.addEventListener('click', onCancelClick, { once: true });
-      }, 50);
+      cancelBtn.addEventListener('click', () => {
+        backdrop.classList.remove('visible');
+        setTimeout(() => backdrop.style.display = 'none', 200);
+        resolve(false);
+      });
     });
   };
 
+  // --- APP LOGIC ---
   let allPosts = [];
   let allSolvedPosts = [];
   let currentView = 'pending';
   let currentBarangay = '';
 
-  // --- DEBUG Authentication Guard (using the same logic as brgy-analytics.html) ---
   (async function() {
     const token = localStorage.getItem('wastewise_brgy_token');
     const userData = localStorage.getItem('wastewise_brgy_user');
     
-    console.log('🔄 DEBUG: Starting authentication check...');
-    console.log('🔑 Token exists:', !!token);
-    console.log('👤 User data exists:', !!userData);
-    
-    // Add a delay so we can see console messages
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Immediate redirect if no tokens
     if (!token || !userData) {
-      console.log('❌ No authentication tokens found, redirecting to login...');
       window.location.href = 'index.html';
       return;
     }
 
     try {
-      // Get barangay name from saved user data (from login response)
       const user = JSON.parse(userData);
       currentBarangay = user.barangay;
-      console.log('🏠 Barangay from user data:', currentBarangay);
       
-      // Test token with a working endpoint instead of the broken /auth/me
-      console.log('🧪 Testing token validity with posts endpoint...');
-      
-      // Use a simpler test without authFetch to isolate the issue
       const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/pendings', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -361,48 +339,27 @@
         }
       });
       
-      console.log('📡 Test response status:', testResponse.status, testResponse.statusText);
-      
-      if (!testResponse.ok) {
-        const errorText = await testResponse.text();
-        console.error('❌ Token test failed:', errorText);
-        throw new Error(`Token validation failed: ${testResponse.status} ${testResponse.statusText}`);
-      }
+      if (!testResponse.ok) throw new Error(`Token validation failed`);
 
-      console.log('✅ Token is valid, initializing app...');
       document.getElementById('hdrBrand').textContent += ` — ${currentBarangay}`;
-      
-      // Initialize the rest of the app
       initializeApp();
     } catch (err) {
-      console.error('💥 Authentication failed:', err);
-      console.error('💥 Full error details:', err.message);
-      
-      // Add delay before redirect so we can see the error
-      console.log('🔄 Redirecting to login in 3 seconds...');
-      
-      // Create overlay to show countdown
       const overlay = document.createElement('div');
       overlay.className = 'redirect-overlay';
       overlay.innerHTML = `
         <div class="redirect-countdown" id="countdown">Redirecting in 3 seconds...</div>
         <div class="redirect-message">
           <p>Authentication error: ${err.message}</p>
-          <p>Check the browser console for detailed logs.</p>
-          <p>You will be redirected to the login page shortly.</p>
         </div>
       `;
       document.body.appendChild(overlay);
       
-      // Countdown timer
       let seconds = 3;
-      const countdownElement = document.getElementById('countdown');
       const countdownInterval = setInterval(() => {
         seconds--;
-        countdownElement.textContent = `Redirecting in ${seconds} seconds...`;
+        document.getElementById('countdown').textContent = `Redirecting in ${seconds} seconds...`;
         if (seconds <= 0) {
           clearInterval(countdownInterval);
-          console.log('🔄 Redirecting to login page now...');
           localStorage.removeItem('wastewise_brgy_token');
           localStorage.removeItem('wastewise_brgy_user');
           window.location.href = 'index.html';
@@ -615,6 +572,7 @@
       "Please enter your remarks below:"
     );
     if (remarks === null) return;
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     if (remarks.trim() === "") {
       await showCustomAlert("Error", "Remarks are required to mark this post as solved.");
