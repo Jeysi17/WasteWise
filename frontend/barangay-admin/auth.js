@@ -1,64 +1,113 @@
-// auth.js - Updated version
+// auth.js - Optimized version
 const BASE_URL = 'https://admin-backend-qkfm.onrender.com';
 const TOKEN_KEY = 'wastewise_brgy_token';
 const USER_KEY = 'wastewise_brgy_user';
 
-// --- Token Validation ---
+// Cache for token validation to avoid repeated parsing
+let tokenCache = {
+    token: null,
+    validation: null,
+    timestamp: 0
+};
+
+const CACHE_DURATION = 5000; // 5 seconds cache
+
+// --- Token Validation (Optimized) ---
 export function validateToken(token) {
     if (!token || typeof token !== 'string') {
         return { valid: false, reason: 'No token or invalid format' };
     }
     
+    // Return cached validation if available and recent
+    if (tokenCache.token === token && 
+        Date.now() - tokenCache.timestamp < CACHE_DURATION) {
+        return tokenCache.validation;
+    }
+    
     try {
         const parts = token.split('.');
         if (parts.length !== 3) {
-            return { valid: false, reason: 'Invalid JWT structure' };
+            const result = { valid: false, reason: 'Invalid JWT structure' };
+            tokenCache = { token, validation: result, timestamp: Date.now() };
+            return result;
         }
         
-        const payload = JSON.parse(atob(parts[1]));
+        // Use more efficient base64 decoding
+        const payload = JSON.parse(base64UrlDecode(parts[1]));
         const now = Date.now() / 1000;
         
+        let result;
         if (payload.exp && payload.exp < now) {
-            return { valid: false, reason: 'Token expired', expiredAt: new Date(payload.exp * 1000) };
+            result = { valid: false, reason: 'Token expired', expiredAt: new Date(payload.exp * 1000) };
+        } else {
+            result = { valid: true, payload };
         }
         
-        return { valid: true, payload };
+        // Cache the result
+        tokenCache = { token, validation: result, timestamp: Date.now() };
+        return result;
     } catch (error) {
-        return { valid: false, reason: 'Failed to parse token: ' + error.message };
+        const result = { valid: false, reason: 'Failed to parse token: ' + error.message };
+        tokenCache = { token, validation: result, timestamp: Date.now() };
+        return result;
     }
 }
 
-// --- Token & User Management ---
-export function getToken() {
-    const token = localStorage.getItem(TOKEN_KEY);
-    console.log('🔐 getToken():', token ? `Found (${token.length} chars)` : 'Not found');
+// More efficient base64 URL decoding
+function base64UrlDecode(str) {
+    // Convert base64url to base64
+    let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
     
-    if (token) {
+    // Add padding if needed
+    const pad = base64.length % 4;
+    if (pad) {
+        if (pad === 1) {
+            throw new Error('Invalid base64 string');
+        }
+        base64 += new Array(5 - pad).join('=');
+    }
+    
+    return atob(base64);
+}
+
+// --- Token & User Management (Optimized) ---
+export function getToken() {
+    // Only validate token periodically to reduce overhead
+    const token = localStorage.getItem(TOKEN_KEY);
+    
+    if (!token) {
+        return null;
+    }
+    
+    // Only validate if cache is stale or different token
+    if (tokenCache.token !== token || Date.now() - tokenCache.timestamp > CACHE_DURATION) {
         const validation = validateToken(token);
-        console.log('🔐 Token validation:', validation);
+        if (!validation.valid) {
+            removeToken();
+            return null;
+        }
     }
     
     return token;
 }
 
 export function setToken(token) {
-    console.log('💾 setToken(): Saving token to localStorage');
     const validation = validateToken(token);
-    console.log('🔐 Token validation before save:', validation);
-    
     if (!validation.valid) {
         console.error('❌ Cannot save invalid token:', validation.reason);
         return false;
     }
     
     localStorage.setItem(TOKEN_KEY, token);
+    // Update cache immediately
+    tokenCache = { token, validation, timestamp: Date.now() };
     return true;
 }
 
 export function removeToken() {
-    console.log('🗑️ removeToken(): Clearing auth data');
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    tokenCache = { token: null, validation: null, timestamp: 0 };
 }
 
 export function setUser(user) {
@@ -66,27 +115,21 @@ export function setUser(user) {
 }
 
 export function getUser() {
-    const u = localStorage.getItem(USER_KEY);
-    return u ? JSON.parse(u) : null;
+    try {
+        const u = localStorage.getItem(USER_KEY);
+        return u ? JSON.parse(u) : null;
+    } catch {
+        return null;
+    }
 }
 
-// --- Authenticated Fetch ---
+// --- Authenticated Fetch (Optimized) ---
 export async function authFetch(path, options = {}) {
     const token = getToken();
     
     if (!token) {
-        console.warn('❌ No token available for authFetch');
         redirectToLogin();
         throw new Error('No authentication token');
-    }
-
-    // Validate token before using it
-    const validation = validateToken(token);
-    if (!validation.valid) {
-        console.warn('❌ Token invalid, removing:', validation.reason);
-        removeToken();
-        redirectToLogin();
-        throw new Error('Token invalid: ' + validation.reason);
     }
 
     const headers = {
@@ -94,114 +137,156 @@ export async function authFetch(path, options = {}) {
         'Authorization': `Bearer ${token}`
     };
 
-    console.log(`🌐 authFetch: ${BASE_URL}${path}`);
-    console.log(`🔐 Using token: ${token.substring(0, 50)}...`);
+    // Merge headers efficiently
+    const finalOptions = {
+        ...options,
+        headers: {
+            ...headers,
+            ...options.headers,
+        }
+    };
 
     try {
-        const res = await fetch(BASE_URL + path, { ...options, headers });
-        console.log(`📡 Response: ${res.status} ${res.statusText} for ${path}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+        
+        const res = await fetch(BASE_URL + path, {
+            ...finalOptions,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
 
         if (res.status === 401) {
-            console.warn('🔐 Token rejected (401), checking response...');
-            
-            // Try to get more info from response
-            try {
-                const errorText = await res.text();
-                console.warn('🔐 401 Response body:', errorText);
-            } catch (e) {
-                console.warn('🔐 Could not read 401 response body');
-            }
-            
             removeToken();
             redirectToLogin();
-            throw new Error('Authentication failed - token rejected by server');
+            throw new Error('Authentication failed');
         }
 
         return res;
     } catch (error) {
-        console.error('💥 Network error in authFetch:', error);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout');
+        }
         throw error;
     }
 }
 
+// Debounced redirect to prevent multiple rapid redirects
+let redirectTimeout = null;
 function redirectToLogin() {
-    console.log('🔄 Redirecting to login page...');
-    if (!window.location.pathname.includes('index.html')) {
-        window.location.href = 'index.html';
-    }
+    if (redirectTimeout) return;
+    
+    redirectTimeout = setTimeout(() => {
+        if (!window.location.pathname.includes('index.html')) {
+            window.location.href = 'index.html';
+        }
+        redirectTimeout = null;
+    }, 100);
 }
 
-// --- Check Auth ---
+// --- Check Auth (Optimized) ---
+let authCheckPromise = null;
 export async function checkAuth() {
     const token = getToken();
     if (!token) {
-        console.log('🔐 checkAuth(): No token found');
         return false;
     }
 
-    try {
-        console.log('🔐 checkAuth(): Validating token with server...');
-        const res = await authFetch('/api/brgy/auth/me');
-        const isValid = res.ok;
-        console.log(`🔐 checkAuth(): Token is ${isValid ? 'valid' : 'invalid'}`);
-        return isValid;
-    } catch (err) {
-        console.warn('🔐 checkAuth(): Token validation failed:', err);
-        return false;
+    // Prevent multiple simultaneous auth checks
+    if (authCheckPromise) {
+        return authCheckPromise;
     }
+
+    authCheckPromise = (async () => {
+        try {
+            const res = await authFetch('/api/brgy/auth/me');
+            return res.ok;
+        } catch (err) {
+            return false;
+        } finally {
+            authCheckPromise = null;
+        }
+    })();
+
+    return authCheckPromise;
 }
 
-// --- Login ---
+// --- Login (Optimized) ---
 export async function login(username, password) {
-    console.log('🔑 login(): Attempting login for user:', username);
-    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
         const res = await fetch(BASE_URL + '/api/brgy/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
+            signal: controller.signal
         });
 
-        console.log(`🔑 login(): Server response: ${res.status} ${res.statusText}`);
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
-            const text = await res.text();
-            console.error('🔑 login(): Login failed:', text);
-            throw new Error(text || `Login failed (${res.status})`);
+            const errorText = await res.text();
+            throw new Error(errorText || `Login failed (${res.status})`);
         }
 
         const data = await res.json();
-        console.log('🔑 login(): Login successful, received data');
 
         if (!data.token) {
-            console.error('🔑 login(): No token in response');
             throw new Error('No token received from server');
         }
 
-        // Validate and save token
         if (!setToken(data.token)) {
             throw new Error('Received invalid token from server');
         }
         
-        setUser(data.user);
+        if (data.user) {
+            setUser(data.user);
+        }
 
-        console.log('✅ login(): Authentication successful');
-        return data.user;
+        return data.user || { username };
     } catch (err) {
-        console.error('🔑 login(): Error:', err);
+        if (err.name === 'AbortError') {
+            throw new Error('Login request timeout');
+        }
         throw err;
     }
 }
 
-// --- Logout ---
+// --- Logout (Optimized) ---
 export async function logout() {
-    console.log('🚪 logout(): Starting logout process');
-    try {
-        await authFetch('/api/brgy/auth/logout', { method: 'POST' });
-        console.log('✅ logout(): Server logout successful');
-    } catch (err) {
-        console.warn('⚠️ logout(): Server logout failed, continuing with client cleanup:', err);
-    }
+    // Don't wait for server logout - do it in background
+    const serverLogout = authFetch('/api/brgy/auth/logout', { 
+        method: 'POST' 
+    }).catch(err => {
+        console.warn('Server logout failed:', err);
+    });
+
+    // Immediate client cleanup
     removeToken();
     redirectToLogin();
+
+    // Wait for server logout but don't block the user
+    await serverLogout;
+}
+
+// --- Additional performance helpers ---
+
+// Pre-warm the auth check when app loads
+export function preloadAuth() {
+    // This will cache the token validation
+    getToken();
+}
+
+// Batch multiple auth requests
+let pendingAuthRequests = [];
+export function batchAuthCheck() {
+    return checkAuth();
+}
+
+// Clear cache (useful for testing or force refresh)
+export function clearAuthCache() {
+    tokenCache = { token: null, validation: null, timestamp: 0 };
 }
