@@ -53,6 +53,62 @@
     }
     .export-pdf { background-color: #e74c3c; }
     .export-excel { background-color: #27ae60; }
+
+    /* Responsive styles for header */
+    @media (max-width: 1024px) {
+      .header {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+        height: auto;
+        min-height: 50px;
+      }
+      .header #hdrBrand {
+        font-size: 16px;
+      }
+      .header .form-control {
+        font-size: 14px;
+        padding: 6px;
+      }
+      .header label {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 425px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px;
+        gap: 10px;
+      }
+      .header #hdrBrand {
+        font-size: 14px;
+        text-align: center;
+      }
+      .header .d-flex {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .header .form-control {
+        width: 100%;
+        max-width: none;
+        font-size: 14px;
+      }
+      .header .ms-auto {
+        width: 100%;
+        margin: 0;
+      }
+      .header .ms-auto .btn {
+        width: 100%;
+      }
+      .modal-content, .modal-content1 {
+        width: 95%;
+        max-width: 350px;
+        padding: 16px;
+        margin: 10% auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -111,7 +167,7 @@
         <h6>Wastes by Category</h6>
         <div class="chart-row">
           <div class="donut-wrap"><canvas id="catChart"></canvas></div>
-          <div id="catLegend" class="legend legend-right"></div>
+          <div id="catLegend" class="legend legend-right1"></div>
         </div>
       </div>
 
@@ -130,7 +186,7 @@
       <div class="pill"><label>Users</label><span id="kpiUsers">0</span></div>
     </div>
 
-    <div class="grid">
+    <div class="grid1">
       <div class="card">
         <h6>Wastes Comparison By Purok</h6>
         <div class="bar-wrap"><canvas id="purokBar"></canvas></div>
@@ -164,12 +220,12 @@ const centerTextPlugin = {
     ctx.textBaseline = 'middle';
     
     // Main text (total weight)
-    ctx.font = 'bold 24px Arial';
+    ctx.font = '500 40px Arial';
     ctx.fillStyle = '#333';
     ctx.fillText(options.text || '', centerX, centerY - 10);
     
     // Subtext label
-    ctx.font = '12px Arial';
+    ctx.font = '15px Arial';
     ctx.fillStyle = '#666';
     ctx.fillText('Total Kilograms', centerX, centerY + 10);
     
@@ -349,7 +405,7 @@ function bar(el, labels, values, horizontal=false) {
       labels, 
       datasets: [{ 
         data: values,
-        backgroundColor: 'rgba(54, 162, 235, 0.5)', // The Light Blue from your image
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
       }] 
     },
     options: {

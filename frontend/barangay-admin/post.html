@@ -103,6 +103,7 @@
         <tbody id="postsTable"></tbody>
       </table>
     </div>
+    <div id="pending-pagination" class="pagination-container"></div>
   </div>
 </div>
 
@@ -123,6 +124,7 @@
         <tbody id="solvedPostsTable"></tbody> 
       </table>
     </div>
+    <div id="solved-pagination" class="pagination-container"></div>
   </div>
 </div>
 
@@ -317,6 +319,11 @@
   let currentView = 'pending';
   let currentBarangay = '';
 
+  // PAGINATION SETTINGS
+  const ITEMS_PER_PAGE = 10;
+  let currentPendingPage = 1;
+  let currentSolvedPage = 1;
+
   (async function() {
     const token = localStorage.getItem('wastewise_brgy_token');
     const userData = localStorage.getItem('wastewise_brgy_user');
@@ -374,10 +381,14 @@
     fetchSolvedPosts();
   }
 
+  // --- MODIFIED RENDER FUNCTION FOR PENDING POSTS ---
   window.renderPosts = function(posts) {
     const table = document.getElementById('postsTable');
+    const paginationContainer = document.getElementById('pending-pagination');
     table.innerHTML = '';
+    paginationContainer.innerHTML = '';
 
+    // 1. Filter by Location First
     const locationFiltered = posts.filter(post => post.location === currentBarangay);
 
     if (locationFiltered.length === 0) {
@@ -393,7 +404,18 @@
       return;
     }
 
-    locationFiltered.forEach(post => {
+    // 2. Pagination Logic
+    const totalPages = Math.ceil(locationFiltered.length / ITEMS_PER_PAGE);
+    
+    // Ensure current page is valid
+    if (currentPendingPage > totalPages) currentPendingPage = 1;
+
+    const startIndex = (currentPendingPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedPosts = locationFiltered.slice(startIndex, endIndex);
+
+    // 3. Render Rows (Using paginatedPosts)
+    paginatedPosts.forEach(post => {
       const imageUrl = post.image || 'placeholder.jpg';
       const row = document.createElement('tr');
       row.setAttribute('onclick', `showPendingPostModal('${post.id}')`);
@@ -428,11 +450,22 @@
       `;
       table.appendChild(row);
     });
+
+    // 4. Render Pagination Controls
+    renderPaginationControls(totalPages, currentPendingPage, paginationContainer, (newPage) => {
+        currentPendingPage = newPage;
+        // Re-render using the SAME filtered list passed originally
+        window.renderPosts(posts); 
+    });
   };
 
+
+  // --- MODIFIED RENDER FUNCTION FOR SOLVED POSTS ---
   window.renderSolvedPosts = function(posts) {
     const table = document.getElementById('solvedPostsTable');
+    const paginationContainer = document.getElementById('solved-pagination');
     table.innerHTML = '';
+    paginationContainer.innerHTML = '';
 
     const locationFiltered = posts.filter(post => post.location === currentBarangay);
 
@@ -449,7 +482,15 @@
       return;
     }
 
-    locationFiltered.forEach(post => {
+    // Pagination Logic
+    const totalPages = Math.ceil(locationFiltered.length / ITEMS_PER_PAGE);
+    if (currentSolvedPage > totalPages) currentSolvedPage = 1;
+
+    const startIndex = (currentSolvedPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedPosts = locationFiltered.slice(startIndex, endIndex);
+
+    paginatedPosts.forEach(post => {
       const row = document.createElement('tr');
       row.setAttribute('onclick', `showBrgySolvedPostModal('${post.id}')`);
 
@@ -474,8 +515,84 @@
       `;
       table.appendChild(row);
     });
+
+    renderPaginationControls(totalPages, currentSolvedPage, paginationContainer, (newPage) => {
+        currentSolvedPage = newPage;
+        window.renderSolvedPosts(posts);
+    });
   };
 
+  // --- HELPER: BUILD PAGINATION BUTTONS ---
+  function renderPaginationControls(totalPages, currentPage, container, onPageChange) {
+      if (totalPages <= 1) return; // No pagination needed if only 1 page
+
+      // Previous Button
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'pagination-btn';
+      prevBtn.innerHTML = '&laquo;';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => onPageChange(currentPage - 1);
+      container.appendChild(prevBtn);
+
+      // Page Numbers
+      for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement('button');
+          btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+          btn.innerText = i;
+          btn.onclick = () => onPageChange(i);
+          container.appendChild(btn);
+      }
+
+      // Next Button
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'pagination-btn';
+      nextBtn.innerHTML = '&raquo;';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => onPageChange(currentPage + 1);
+      container.appendChild(nextBtn);
+  }
+
+  // --- UPDATED APPLY FILTER (Resets Page to 1) ---
+  window.applyDateFilter = function(resetPage = true) {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+
+    // IMPORTANT: Reset page to 1 when filters change logic runs
+    // We use a flag 'resetPage' because sometimes (like internal re-renders) we might not want to reset
+    if(resetPage) {
+        currentPendingPage = 1;
+        currentSolvedPage = 1;
+    }
+
+    if (currentView === 'pending') {
+      let filtered = [...allPosts];
+      if (fromDate) {
+        const from = new Date(fromDate);
+        filtered = filtered.filter(p => new Date(p.post_date) >= from);
+      }
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setHours(23, 59, 59, 999);
+        filtered = filtered.filter(p => new Date(p.post_date) <= to);
+      }
+      renderPosts(filtered);
+    
+    } else if (currentView === 'solved') {
+      let filtered = [...allSolvedPosts];
+      if (fromDate) {
+        const from = new Date(fromDate);
+        filtered = filtered.filter(p => new Date(p.solved_at) >= from);
+      }
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setHours(23, 59, 59, 999);
+        filtered = filtered.filter(p => new Date(p.solved_at) <= to);
+      }
+      renderSolvedPosts(filtered);
+    }
+  };
+
+  
   window.fetchPosts = async function() {
     try {
       const response = await authFetch('/api/pendings');

@@ -7,12 +7,25 @@
       href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/minty/bootstrap.min.css"/>
 <title>Barangay Admin — Login</title>
 <style>
-body { display:flex; min-height:100vh; align-items:center; justify-content:center; background:#f7fff8; }
-.card { width: 360px; }
+body { display:flex; min-height:100vh; align-items:center; justify-content:center; background:#f7fff8; padding: 20px; }
+.card { width: 360px; max-width: 100%; }
 .password-wrapper { position: relative; }
 .toggle-btn {
   position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
   border: none; background: none; cursor: pointer; color: #28a745; font-size: 0.9rem;
+}
+
+@media (max-width: 425px) {
+  body { padding: 15px; }
+  .card { width: 100%; padding: 20px !important; }
+  .card h4 { font-size: 1.3rem; }
+  .form-group label { font-size: 14px; }
+  .form-control { font-size: 14px; padding: 10px; }
+  .btn { font-size: 14px; padding: 10px; }
+}
+
+@media (max-width: 1024px) {
+  .card { width: 100%; max-width: 400px; }
 }
 </style>
 </head>

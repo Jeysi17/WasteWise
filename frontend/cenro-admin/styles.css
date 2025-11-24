@@ -135,11 +135,80 @@ td {
   cursor: pointer;
 }
 
+/* Laptop Large - 1440px */
+@media (max-width: 1440px) {
+  .content-area {
+    padding: 18px;
+  }
+
+  .controls {
+    gap: 12px;
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    padding: 10px;
+  }
+}
+
+/* Laptop - 1024px */
 @media (max-width: 1024px) {
   body {
     padding-top: calc(var(--header-height) + 10px);
   }
 
+  .header {
+    font-size: 18px;
+    height: 45px;
+  }
+
+  .sidebar {
+    width: 130px;
+  }
+
+  .sidebar button {
+    width: 110px;
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+
+  .topbar-wrapper {
+    height: 85px;
+  }
+
+  .main {
+    left: 130px;
+    padding-left: 30px;
+    padding-top: 12px;
+  }
+
+  .content-area {
+    margin-left: 130px;
+    padding: 16px;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  table {
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 10px 8px;
+  }
+}
+
+/* Tablet - 768px */
+@media (max-width: 768px) {
   .sidebar {
     position: static;
     width: 100%;
@@ -161,8 +230,8 @@ td {
   .main {
     position: static;
     width: 100%;
-    padding: 12px 18px;
     left: auto;
+    padding: 12px 18px;
     margin-top: 0;
   }
 
@@ -176,22 +245,12 @@ td {
   .content-area {
     margin-left: 0;
     margin-top: 20px;
+    padding: 16px;
   }
 
   .controls {
     flex-wrap: wrap;
     justify-content: flex-start;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar button {
-    flex: 1 1 100%;
-  }
-
-  .topbar-wrapper,
-  .main {
-    padding: 10px 14px;
   }
 
   .controls select,
@@ -204,11 +263,81 @@ td {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
+    font-size: 12px;
   }
 
   th,
   td {
     min-width: 120px;
+    padding: 8px;
+  }
+}
+
+/* Mobile Large - 425px */
+@media (max-width: 425px) {
+  body {
+    padding-top: 40px;
+  }
+
+  .header {
+    font-size: 14px;
+    height: 40px;
+    padding: 0 10px;
+  }
+
+  .sidebar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .sidebar button {
+    flex: 1 1 calc(50% - 8px);
+    font-size: 0.85rem;
+    padding: 8px 6px;
+    margin: 4px;
+  }
+
+  .topbar-wrapper {
+    height: auto;
+    padding: 10px;
+  }
+
+  .main {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .content-area {
+    padding: 12px;
+    margin-top: 10px;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .controls select,
+  .controls button,
+  input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  table {
+    font-size: 11px;
+  }
+
+  th,
+  td {
+    min-width: 100px;
+    padding: 6px 4px;
+  }
+
+  .table-scroll {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

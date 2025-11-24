@@ -280,6 +280,34 @@ td {
   margin-bottom: 20px;
 }
 
+/* ... existing styles ... */
+    
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding-bottom: 20px;
+}
+.pagination-btn {
+  margin: 0 5px;
+  padding: 5px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #2c9631;
+}
+.pagination-btn.active {
+  background-color: #239c37;
+  color: white;
+  border-color: #239c37;
+}
+.pagination-btn:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+  background: #f8f9fa;
+}
+
 .date-pill {
   display: inline-block;
   padding: 5px 12px;
@@ -292,23 +320,93 @@ td {
   margin-top: 5px;
 }
 
-/* Responsive Design */
-@media screen and (max-width: 900px) {
+/* Laptop Large - 1440px */
+@media (max-width: 1440px) {
+  .content-area {
+    padding: 18px;
+  }
+
+  .controls,
+  .filter,
+  .date-filter-container {
+    gap: 12px;
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    padding: 10px;
+  }
+
   .image-detail-modal-content {
-    flex-direction: column;
-    height: auto;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  .image-detail-modal-image-container {
-    height: 50vh;
-  }
-  .image-detail-modal-details-container {
-    flex-basis: auto;
+    max-width: 1100px;
   }
 }
 
+/* Laptop - 1024px */
 @media (max-width: 1024px) {
+  body {
+    padding-top: calc(var(--header-height) + 10px);
+  }
+
+  .header {
+    font-size: 18px;
+    height: 45px;
+  }
+
+  .sidebar {
+    width: 130px;
+  }
+
+  .sidebar button {
+    width: 110px;
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+
+  .topbar-wrapper {
+    height: 85px;
+  }
+
+  .main {
+    left: 130px;
+    padding-left: 30px;
+    padding-top: 12px;
+  }
+
+  .content-area {
+    margin-left: 130px;
+    padding: 16px;
+  }
+
+  .controls,
+  .filter,
+  .date-filter-container {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  table {
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 10px 8px;
+  }
+
+  .image-detail-modal-content {
+    max-width: 95%;
+    height: 85vh;
+  }
+}
+
+/* Tablet - 768px */
+@media (max-width: 768px) {
   .sidebar {
     position: static;
     width: 100%;
@@ -345,6 +443,7 @@ td {
   .content-area {
     margin-left: 0;
     margin-top: 20px;
+    padding: 16px;
   }
 
   .controls,
@@ -352,12 +451,6 @@ td {
   .date-filter-container {
     flex-wrap: wrap;
     justify-content: flex-start;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar button {
-    flex: 1 1 100%;
   }
 
   .controls select,
@@ -372,10 +465,129 @@ td {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
+    font-size: 12px;
   }
 
   th,
   td {
     min-width: 120px;
+    padding: 8px;
+  }
+
+  .image-detail-modal-content {
+    flex-direction: column;
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .image-detail-modal-image-container {
+    height: 50vh;
+    flex-basis: auto;
+  }
+
+  .image-detail-modal-details-container {
+    flex-basis: auto;
+  }
+}
+
+/* Mobile Large - 425px */
+@media (max-width: 425px) {
+  body {
+    padding-top: 40px;
+  }
+
+  .header {
+    font-size: 14px;
+    height: 40px;
+    padding: 0 10px;
+  }
+
+  .sidebar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .sidebar button {
+    flex: 1 1 calc(50% - 8px);
+    font-size: 0.85rem;
+    padding: 8px 6px;
+    margin: 4px;
+  }
+
+  .topbar-wrapper {
+    height: auto;
+    padding: 10px;
+  }
+
+  .main {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .content-area {
+    padding: 12px;
+    margin-top: 10px;
+  }
+
+  .controls,
+  .filter,
+  .date-filter-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .controls select,
+  .controls button,
+  .filter select,
+  .clear-filter-btn,
+  .date-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .date-label {
+    font-size: 14px;
+  }
+
+  table {
+    font-size: 11px;
+  }
+
+  th,
+  td {
+    min-width: 100px;
+    padding: 6px 4px;
+  }
+
+  .approve-btn,
+  .decline-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .image-detail-modal-backdrop {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .image-detail-modal-content {
+    width: 95%;
+    max-width: 95%;
+  }
+
+  .image-detail-modal-image-container {
+    height: 40vh;
+  }
+
+  .image-detail-modal-details-container {
+    padding: 20px;
+  }
+
+  .close-detail-modal {
+    top: 10px;
+    right: 20px;
+    font-size: 32px;
   }
 }

@@ -12,6 +12,36 @@
   />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <title>WasteWiseAdmin — Posts</title>
+  <style>
+    /* ... existing styles ... */
+  
+    .pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding-bottom: 20px;
+}
+.pagination-btn {
+  margin: 0 5px;
+  padding: 5px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #2c9631;
+}
+.pagination-btn.active {
+  background-color: #239c37;
+  color: white;
+  border-color: #239c37;
+}
+.pagination-btn:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+  background: #f8f9fa;
+}
+
+  </style>
 </head>
 <body>
 
@@ -82,6 +112,7 @@
         <tbody id="postsTable"></tbody>
       </table>
     </div>
+    <div id="approved-pagination" class="pagination-container"></div>
   </div>
 </div>
 
@@ -103,6 +134,7 @@
         <tbody id="solvedPostsTable"></tbody> 
       </table>
     </div>
+    <div id="solved-pagination" class="pagination-container"></div>
   </div>
 </div>
 
@@ -297,10 +329,17 @@
   let allSolvedPosts = [];
   let currentView = 'approved';
 
-  // --- DATA FETCHING & RENDERING ---
+  // --- ADD THESE NEW VARIABLES ---
+  const ITEMS_PER_PAGE = 10;
+  let currentApprovedPage = 1;
+  let currentSolvedPage = 1;
+
   window.renderSolvedPosts = function(postsToDisplay) {
     const table = document.getElementById('solvedPostsTable');
+    const paginationContainer = document.getElementById('solved-pagination');
+
     table.innerHTML = '';
+    paginationContainer.innerHTML = '';
 
     if (postsToDisplay.length === 0) {
       table.innerHTML = `
@@ -312,7 +351,17 @@
       return;
     }
 
-    postsToDisplay.forEach(post => {
+    // 1. Calculate Pagination
+    const totalPages = Math.ceil(postsToDisplay.length / ITEMS_PER_PAGE);
+    if (currentSolvedPage > totalPages) currentSolvedPage = 1;
+
+    // 2. Slice Data
+    const startIndex = (currentSolvedPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedPosts = postsToDisplay.slice(startIndex, endIndex);
+
+    // 3. Render Rows
+    paginatedPosts.forEach(post => {
       const row = document.createElement('tr');
       row.setAttribute('onclick', `showSolvedPostModal('${post.id}')`);
       const imageUrl = post.image || 'placeholder.jpg';
@@ -321,7 +370,7 @@
         <td data-label="Name"><strong><i class="bi bi-person"></i> ${post.name || 'N/A'}</strong></td>
         <td data-label="Title"><strong>${post.title || 'N/A'}</strong></td>
         <td data-label="Image">
-          <img src="${imageUrl}" alt="Post Image" style="width: 250px; height: autopx; object-fit: cover;">
+          <img src="${imageUrl}" alt="Post Image" style="width: 250px; height: auto; object-fit: cover;">
         </td>
         <td style="color: #0a9b06; font-weight: 600;" data-label="Location"><i class="bi bi-geo-alt-fill"></i> ${post.location || 'N/A'}</td>
         <td data-label="Solved At"><span class="date-cell"><i class="bi bi-calendar-check-fill"></i> ${formatReadableDate(post.solved_at)}</span></td>
@@ -329,11 +378,20 @@
       `;
       table.appendChild(row);
     });
+
+    // 4. Render Pagination Controls
+    renderPaginationControls(totalPages, currentSolvedPage, paginationContainer, (newPage) => {
+      currentSolvedPage = newPage;
+      window.renderSolvedPosts(postsToDisplay);
+    });
   };
 
   window.renderPosts = function(postsToDisplay) {
     const table = document.getElementById('postsTable');
+    const paginationContainer = document.getElementById('approved-pagination');
+    
     table.innerHTML = '';
+    paginationContainer.innerHTML = '';
 
     if (postsToDisplay.length === 0) {
       table.innerHTML = `
@@ -345,7 +403,17 @@
       return;
     }
 
-    postsToDisplay.forEach(post => {
+    // 1. Calculate Pagination
+    const totalPages = Math.ceil(postsToDisplay.length / ITEMS_PER_PAGE);
+    if (currentApprovedPage > totalPages) currentApprovedPage = 1;
+
+    // 2. Slice Data
+    const startIndex = (currentApprovedPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedPosts = postsToDisplay.slice(startIndex, endIndex);
+
+    // 3. Render Rows
+    paginatedPosts.forEach(post => {
       const row = document.createElement('tr');
       row.setAttribute('onclick', `showForwardedPostModal('${post.id}')`);
       const imageUrl = post.image || 'placeholder.jpg';
@@ -354,7 +422,12 @@
         <td data-label="Name"><strong><i class="bi bi-person"></i> ${post.name || 'N/A'}</strong></td>
         <td data-label="Title"><strong>${post.title || 'N/A'}</strong></td>
         <td data-label="Image">
-          <img src="${imageUrl}" alt="${post.title}" style="width: 250px; height: autopx; object-fit: cover;" onerror="this.src='placeholder.jpg';"/>
+          <img 
+            src="${imageUrl}" 
+            alt="${post.title}" 
+            style="width: 250px; height: auto; object-fit: cover;" 
+            onerror="this.src='placeholder.jpg';"
+          />
         </td>
         <td style="color: #0a9b06; font-weight: 600;" data-label="Location"><i class="bi bi-geo-alt-fill"></i> ${post.location || 'N/A'}</td>
         <td>
@@ -366,6 +439,12 @@
         </td>
       `;
       table.appendChild(row);
+    });
+
+    // 4. Render Pagination Controls
+    renderPaginationControls(totalPages, currentApprovedPage, paginationContainer, (newPage) => {
+      currentApprovedPage = newPage;
+      window.renderPosts(postsToDisplay); 
     });
   };
 
@@ -426,6 +505,36 @@
     document.getElementById('toDate').value = '';
     applyFilters();
   };
+
+  function renderPaginationControls(totalPages, currentPage, container, onPageChange) {
+    if (totalPages <= 1) return; 
+
+    // Prev Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pagination-btn';
+    prevBtn.innerHTML = '&laquo;';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => onPageChange(currentPage - 1);
+    container.appendChild(prevBtn);
+
+    // Number Buttons
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+      btn.innerText = i;
+      btn.onclick = () => onPageChange(i);
+      container.appendChild(btn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pagination-btn';
+    nextBtn.innerHTML = '&raquo;';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => onPageChange(currentPage + 1);
+    container.appendChild(nextBtn);
+  }
+
 
   window.fetchPosts = async function() {
     try {

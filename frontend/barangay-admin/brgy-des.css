@@ -196,9 +196,17 @@ body {
 
 .grid {
   display: grid;
+  grid-template-columns: 42.3rem 1fr;
+  gap: 18px;
+}
+
+.grid1 {
+  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
+
+
 
 .grid-3 {
   display: grid;
@@ -284,9 +292,18 @@ body {
 .legend-item .legend-text { color: #333; font-size: large;}
 .legend-item .legend-pct  { color: #333; font-weight: 600; font-size: large;}
 
+.legend-right {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 50px;
+  align-content: flex-start;
+  max-height: 320px;
+  overflow: hidden;
+  padding-right: 0;
+}
 
 /* Keep right-side legends from stretching the card */
-.legend-right {
+.legend-right1 {
   max-height: 320px;   /* same as your donut-wrap height */
   overflow-y: auto;    /* scroll inside the legend if it overflows */
   padding-right: 4px;  /* room for scrollbar */
@@ -371,43 +388,104 @@ select.botons:focus {
 .bar-wrap,
 .donut-wrap { height: 320px; }
 
-/* Small screens: stack layout */
-@media (max-width: 900px) {
-  .sidebar { width: 150px; }
-  .content { margin-left: 140px; }
-  .grid { grid-template-columns: 1fr; }
-  .grid-3 { grid-template-columns: 1fr; }
-  .pill { width: 100%; }
+/* Laptop Large - 1440px */
+@media (max-width: 1440px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .grid1 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .chart-row .donut-wrap {
+    width: 280px;
+    height: 280px;
+    flex: 0 0 280px;
+  }
+
+  .card-month {
+    width: 100%;
+    max-width: 900px;
+  }
 }
 
-@media (max-width: 1200px) {
+/* Laptop - 1024px */
+@media (max-width: 1024px) {
+  body {
+    padding-top: calc(var(--header-height) + 10px);
+  }
+
+  .header {
+    font-size: 18px;
+    height: 45px;
+  }
+
+  .sidebar {
+    width: 130px;
+  }
+
+  .sidebar button {
+    width: 110px;
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+
+  .content {
+    margin-left: 150px;
+    padding: 12px;
+  }
+
+  .content-area {
+    margin-left: 150px;
+    padding: 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .grid1 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
   .card-month {
     width: 100%;
   }
 
-  .grid,
-  .grid-3 {
-    grid-template-columns: 1fr;
-  }
-
   .pill {
     min-width: auto;
+    font-size: 32px;
   }
 
   .chart-row {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    gap: 20px;
   }
 
   .chart-row .donut-wrap {
     width: 100%;
-    max-width: 360px;
+    max-width: 320px;
     height: auto;
     margin: 0 auto;
   }
 
-  .legend-right {
+  .legend-right,
+  .legend-right1 {
     max-height: none;
+    grid-template-columns: 1fr;
   }
 
   .period-nav,
@@ -415,9 +493,15 @@ select.botons:focus {
     flex-wrap: wrap;
     gap: 8px;
   }
+
+  .bar-wrap,
+  .donut-wrap {
+    height: 280px;
+  }
 }
 
-@media (max-width: 768px) {
+/* Tablet and below - 900px */
+@media (max-width: 900px) {
   .sidebar {
     position: static;
     width: 100%;
@@ -442,20 +526,136 @@ select.botons:focus {
     padding: 16px;
   }
 
+  .grid,
+  .grid1,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
   .pill {
+    width: 100%;
     font-size: 28px;
     padding: 14px;
+  }
+
+  .chart-row .donut-wrap {
+    max-width: 300px;
+  }
+}
+
+/* Mobile Large - 425px */
+@media (max-width: 425px) {
+  .header {
+    font-size: 16px;
+    height: 40px;
+    padding: 0 10px;
+  }
+
+  .header #hdrBrand {
+    font-size: 14px;
+  }
+
+  .sidebar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .sidebar button {
+    flex: 1 1 calc(50% - 8px);
+    font-size: 0.85rem;
+    padding: 8px 6px;
+    margin: 4px;
+  }
+
+  .content,
+  .content-area {
+    padding: 12px;
+    margin-top: 10px;
+  }
+
+  .card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .card h6 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .grid,
+  .grid1,
+  .grid-3 {
+    gap: 12px;
+  }
+
+  .pill {
+    font-size: 24px;
+    padding: 12px;
+    min-width: 100%;
+  }
+
+  .pill label {
+    font-size: 14px;
+  }
+
+  .chart-row {
+    gap: 16px;
+  }
+
+  .chart-row .donut-wrap {
+    max-width: 240px;
+    height: 240px;
+  }
+
+  .legend-right,
+  .legend-right1 {
+    gap: 6px;
+    padding-right: 0;
+  }
+
+  .legend-item {
+    font-size: 12px;
+    padding: 3px 0;
+  }
+
+  .legend-item .legend-text,
+  .legend-item .legend-pct {
+    font-size: 13px;
+  }
+
+  .bar-wrap,
+  .donut-wrap {
+    height: 240px;
   }
 
   .period-nav,
   .period-selector {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 8px;
   }
-}
 
-@media (max-width: 520px) {
-  .chart-row .donut-wrap {
-    max-width: 260px;
+  .period-label {
+    min-width: auto;
+    text-align: left;
+  }
+
+  .card-month {
+    padding: 12px;
+  }
+
+  .modal-content,
+  .modal-content1 {
+    width: 90% !important;
+    max-width: 350px;
+    padding: 16px;
+    margin: 10% auto;
+  }
+
+  .export-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
   }
 }

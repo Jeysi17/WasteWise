@@ -8,8 +8,8 @@
         crossorigin="anonymous"/>
   <title>WasteWise Admin — Login</title>
   <style>
-    body { min-height:100vh; display:flex; align-items:center; justify-content:center; }
-    .card { width:360px; }
+    body { min-height:100vh; display:flex; align-items:center; justify-content:center; padding: 20px; }
+    .card { width:360px; max-width: 100%; }
     .password-wrapper { position: relative; }
     .toggle-btn {
       position: absolute;
@@ -22,6 +22,19 @@
       color: #28a745;
       font-size: 0.9rem;
       z-index: 10;
+    }
+
+    @media (max-width: 425px) {
+      body { padding: 15px; }
+      .card { width: 100%; padding: 20px !important; }
+      .card h4 { font-size: 1.3rem; }
+      .form-group label { font-size: 14px; }
+      .form-control { font-size: 14px; padding: 10px; }
+      .btn { font-size: 14px; padding: 10px; }
+    }
+
+    @media (max-width: 1024px) {
+      .card { width: 100%; max-width: 400px; }
     }
   </style>
 </head>
