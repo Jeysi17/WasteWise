@@ -18,6 +18,7 @@
   <title>WasteWiseBRGYAdmin — Posts</title>
 
   <style>
+    /* --- Existing Post Styles --- */
     .enhanced-table tbody tr {
       cursor: pointer;
     }
@@ -48,13 +49,134 @@
       text-align: center;
       max-width: 80%;
     }
+
+    /* --- ADDED: Input Modal Styles --- */
+    /* Using a unique ID selector or class to avoid conflict with custom alerts */
+    .input-modal-overlay {
+      display: none;
+      position: fixed;
+      z-index: 2000; /* Higher than sidebar, lower than alerts */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      overflow-y: auto;
+    }
+    .input-modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 900px; /* Wide for the table */
+      position: relative;
+    }
+    .close-input-modal {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      right: 20px;
+      top: 10px;
+    }
+    .close-input-modal:hover { color: #000; }
+
+    /* Input Table Styles */
+    .sheet { width:100%; border-collapse: collapse; margin-top: 20px; }
+    .sheet th, .sheet td { border:1px solid #cfe9d5; padding:12px; font-size:14px; vertical-align: middle; }
+    .sheet th { background:#e8f7ea; font-weight: 600; }
+    .sheet td input { width:100%; border:1px solid #ddd; outline:0; padding: 8px; border-radius: 4px; }
+    .sheet td input:focus { border-color: #78C2AD; }
+    .category-label { font-weight: 600; color: #2d6a4f; background: #f1f9f5; }
+    .hint { font-size:12px; color:#6c757d; margin-top: 8px; }
+    .pill { display:inline-block; padding:4px 12px; border-radius:20px; background:#e8f7ea; font-size:13px; font-weight:500; margin-left:8px; }
+    
+    .filter-section { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px; }
+    .filter-group { display: flex; flex-direction: column; }
+    .filter-group label { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #495057; }
+
+    /* --- ADDED: Toast Styles --- */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      max-width: 350px;
+    }
+    .toast {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-left: 4px solid;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.5s ease-out; /* Fast entrance */
+      transition: transform 0.5s ease-in, opacity 0.5s ease-in; /* Smooth exit */
+      cursor: pointer;
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .toast.success { border-left-color: #78C2AD; background: #f8fffd; }
+    .toast.error { border-left-color: #e74c3c; background: #fff8f8; }
+    
+    .toast.hiding {
+      transform: translateX(120%);
+      opacity: 0;
+    }
+    
+    .toast-icon { font-size: 20px; flex-shrink: 0; }
+    .toast.success .toast-icon { color: #78C2AD; }
+    .toast.error .toast-icon { color: #e74c3c; }
+    .toast-content { flex-grow: 1; }
+    .toast-title { font-weight: bold; margin-bottom: 4px; font-size: 14px; }
+    .toast-message { font-size: 13px; color: #555; line-height: 1.4; }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* --- ADDED: Loading Spinner --- */
+    .saving-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #78C2AD;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Responsive adjustments for modal */
+    @media (max-width: 425px) {
+      .input-modal-content { width: 95%; margin: 10% auto; padding: 10px; }
+      .sheet { display: block; overflow-x: auto; }
+      .filter-section { flex-direction: column; align-items: stretch; }
+    }
   </style>
 </head>
 <body>
 
 <div id="sidebar" class="sidebar">
   <button onclick="location.href='brgy-analytics.html'">HOME</button>
-  <button onclick="location.href='input.html'">INPUT</button>
+  <button onclick="openInputModal()">INPUT</button>
   <button onclick="location.href='post.html'">POST</button>
 </div>
 
@@ -128,6 +250,73 @@
   </div>
 </div>
 
+<div id="inputModal" class="input-modal-overlay">
+  <div class="input-modal-content">
+    <span class="close-input-modal" id="closeInputModal">&times;</span>
+    <h5 class="mb-3">Waste Entry Input <span id="barangayPill" class="pill"></span></h5>
+
+    <div class="filter-section">
+      <div class="filter-group">
+        <label for="inputPurokSelect">Select Purok:</label>
+        <select id="inputPurokSelect" class="form-control form-control-sm">
+          <option value="">Select Purok</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="inputWeekSelect">Select Week:</label>
+        <select id="inputWeekSelect" class="form-control form-control-sm">
+          <option value="1">Week 1</option>
+          <option value="2">Week 2</option>
+          <option value="3">Week 3</option>
+          <option value="4">Week 4</option>
+          <option value="5">Week 5</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="hint mb-2">
+      Enter the kilogram values for each category.
+    </div>
+
+    <table class="sheet" id="wasteTable">
+      <thead>
+        <tr>
+          <th style="width: 30%;">Category</th>
+          <th style="width: 70%;">Kilograms</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="category-label">Nabubulok</td>
+          <td><input type="number" id="kg_nabubulok" step="0.01" min="0" placeholder="Enter kilograms"></td>
+        </tr>
+        <tr>
+          <td class="category-label">Panapon</td>
+          <td><input type="number" id="kg_panapon" step="0.01" min="0" placeholder="Enter kilograms"></td>
+        </tr>
+        <tr>
+          <td class="category-label">Mga Kalakal</td>
+          <td><input type="number" id="kg_kalakal" step="0.01" min="0" placeholder="Enter kilograms"></td>
+        </tr>
+        <tr>
+          <td class="category-label">Delikado</td>
+          <td><input type="number" id="kg_delikado" step="0.01" min="0" placeholder="Enter kilograms"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="text-right mt-3">
+      <button class="btn btn-outline-secondary mr-2" id="clearInputBtn">Clear</button>
+      <button class="btn btn-primary" id="saveWasteBtn">Save Waste Data</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="saving-overlay" id="savingOverlay">
+  <div class="spinner"></div>
+</div>
 <div id="customModalBackdrop" class="custom-modal-backdrop" style="display: none;">
   <div id="customModal" class="custom-modal">
     <h4 id="customModalTitle">Modal Title</h4>
@@ -178,6 +367,11 @@
   
   window.authFetch = authFetch;
   const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+
+  // --- ADDED: INPUT MODAL CONFIG ---
+  const PUROKS_BY_BRGY = { DEFAULT: 13 };
+  let PUROK_COUNT = PUROKS_BY_BRGY.DEFAULT;
+  // ---------------------------------
   
   window.formatReadableDate = function(dateString) {
     if (!dateString) return 'N/A';
@@ -204,7 +398,6 @@
     document.getElementById('customModalMessage').textContent = message;
     document.getElementById('customModalInput').style.display = 'none';
 
-    
     // Hide buttons entirely
     document.getElementById('customModalBtnCancel').style.display = 'none';
     document.getElementById('customModalBtnOk').style.display = 'none';
@@ -217,7 +410,7 @@
         backdrop.classList.remove('visible');
         setTimeout(() => backdrop.style.display = 'none', 200);
         resolve(true);
-      }, 1500); // Closes automatically after 1.5s
+      }, 1500);
     });
   };
 
@@ -229,8 +422,7 @@
     document.getElementById('customModalInput').style.display = 'none';
     document.getElementById('customModalBtnCancel').style.display = 'none';
     
-    
-    const okBtn = getCleanButton('customModalBtnOk'); // Clone to remove old listeners
+    const okBtn = getCleanButton('customModalBtnOk'); 
     okBtn.style.display = 'inline-block'; 
     okBtn.textContent = 'OK';
     
@@ -324,6 +516,7 @@
   let currentPendingPage = 1;
   let currentSolvedPage = 1;
 
+  // --- AUTH AND INITIALIZATION ---
   (async function() {
     const token = localStorage.getItem('wastewise_brgy_token');
     const userData = localStorage.getItem('wastewise_brgy_user');
@@ -349,6 +542,13 @@
       if (!testResponse.ok) throw new Error(`Token validation failed`);
 
       document.getElementById('hdrBrand').textContent += ` — ${currentBarangay}`;
+      
+      // --- ADDED: Set up Input Modal Config ---
+      PUROK_COUNT = PUROKS_BY_BRGY[currentBarangay] || PUROKS_BY_BRGY.DEFAULT;
+      if(document.getElementById('barangayPill')) {
+          document.getElementById('barangayPill').textContent = currentBarangay;
+      }
+      
       initializeApp();
     } catch (err) {
       const overlay = document.createElement('div');
@@ -379,9 +579,157 @@
     // Load posts data
     fetchPosts();
     fetchSolvedPosts();
+
+    // --- ADDED: Init Input Modal Handlers ---
+    setupInputHandlers();
   }
 
-  // --- MODIFIED RENDER FUNCTION FOR PENDING POSTS ---
+  // ==========================================
+  // ADDED: INPUT MODAL LOGIC (Start)
+  // ==========================================
+
+  function setupInputHandlers() {
+      // 1. GLOBAL Function for Sidebar Button
+      window.openInputModal = function() {
+          populatePurokDropdown();
+          document.getElementById('inputModal').style.display = 'block';
+      };
+
+      // 2. Close Handler
+      document.getElementById('closeInputModal').addEventListener('click', function() {
+          document.getElementById('inputModal').style.display = 'none';
+          resetFormFields();
+      });
+
+      document.getElementById('clearInputBtn').addEventListener('click', resetFormFields);
+      document.getElementById('saveWasteBtn').addEventListener('click', saveWasteData);
+
+      // 4. Click Outside to Close (Specific for input modal)
+      window.addEventListener('click', function(event) {
+          if (event.target === document.getElementById('inputModal')) {
+              document.getElementById('inputModal').style.display = 'none';
+          }
+      });
+  }
+
+  function populatePurokDropdown() {
+      const select = document.getElementById('inputPurokSelect');
+      while (select.children.length > 1) {
+        select.removeChild(select.lastChild);
+      }
+      for (let i = 1; i <= PUROK_COUNT; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `Purok ${i}`;
+        select.appendChild(option);
+      }
+  }
+
+  function resetFormFields() {
+      document.getElementById('kg_nabubulok').value = '';
+      document.getElementById('kg_panapon').value = '';
+      document.getElementById('kg_kalakal').value = '';
+      document.getElementById('kg_delikado').value = '';
+      document.getElementById('inputPurokSelect').selectedIndex = 0;
+      document.getElementById('inputWeekSelect').selectedIndex = 0;
+  }
+
+  async function saveWasteData() {
+      const purok = document.getElementById('inputPurokSelect').value;
+      const week = document.getElementById('inputWeekSelect').value;
+
+      if (!purok) { showToast('error', 'Error', 'Please select a Purok'); return; }
+      if (!week) { showToast('error', 'Error', 'Please select a Week'); return; }
+
+      const categories = [
+        { category: 'Nabubulok', kilograms: document.getElementById('kg_nabubulok').value },
+        { category: 'Panapon', kilograms: document.getElementById('kg_panapon').value },
+        { category: 'Mga Kalakal', kilograms: document.getElementById('kg_kalakal').value },
+        { category: 'Delikado', kilograms: document.getElementById('kg_delikado').value }
+      ];
+
+      const rows = categories
+        .filter(item => item.kilograms && parseFloat(item.kilograms) > 0)
+        .map(item => ({
+          category: item.category,
+          kilograms: parseFloat(item.kilograms),
+          purok: parseInt(purok),
+          week_of_month: parseInt(week)
+        }));
+
+      if (rows.length === 0) {
+        showToast('error', 'Error', 'Please enter at least one kilogram value');
+        return;
+      }
+
+      showLoading();
+
+      try {
+        const res = await authFetch('/api/brgy/waste-entries/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows })
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          showToast('error', 'Error', errorData.error || 'Failed to save waste entries');
+          return;
+        }
+
+        const data = await res.json();
+        const successMessage = `Successfully saved ${data.inserted} entries for Purok ${purok}, Week ${week}!`;
+        showToast('success', 'Success!', successMessage);
+        
+        resetFormFields();
+        document.getElementById('inputModal').style.display = 'none';
+
+      } catch (error) {
+        console.error('Error saving waste data:', error);
+        showToast('error', 'Error', 'An error occurred while saving.');
+      } finally {
+        hideLoading();
+      }
+  }
+
+  // --- Toast & Loader Utilities ---
+  function showToast(type, title, message) {
+      const toastContainer = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const duration = type === 'error' ? 10000 : 4000;
+      const icon = type === 'success' ? '✓' : '⚠️';
+      
+      toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          <div class="toast-message">${message}</div>
+        </div>
+      `;
+
+      toastContainer.appendChild(toast);
+      const removeTimeout = setTimeout(() => hideToast(toast), duration);
+      toast._timeoutId = removeTimeout;
+      toast.addEventListener('click', () => {
+        clearTimeout(toast._timeoutId);
+        hideToast(toast);
+      });
+  }
+
+  function hideToast(toast) {
+      toast.classList.add('hiding');
+      setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 400);
+  }
+
+  function showLoading() { document.getElementById('savingOverlay').style.display = 'flex'; }
+  function hideLoading() { document.getElementById('savingOverlay').style.display = 'none'; }
+  
+  // ==========================================
+  // END INPUT MODAL LOGIC
+  // ==========================================
+
   window.renderPosts = function(posts) {
     const table = document.getElementById('postsTable');
     const paginationContainer = document.getElementById('pending-pagination');
@@ -624,38 +972,6 @@
     }
   };
 
-  window.applyDateFilter = function() {
-    const fromDate = document.getElementById('fromDate').value;
-    const toDate = document.getElementById('toDate').value;
-
-    if (currentView === 'pending') {
-      let filtered = [...allPosts];
-      if (fromDate) {
-        const from = new Date(fromDate);
-        filtered = filtered.filter(p => new Date(p.post_date) >= from);
-      }
-      if (toDate) {
-        const to = new Date(toDate);
-        to.setHours(23, 59, 59, 999);
-        filtered = filtered.filter(p => new Date(p.post_date) <= to);
-      }
-      renderPosts(filtered);
-    
-    } else if (currentView === 'solved') {
-      let filtered = [...allSolvedPosts];
-      if (fromDate) {
-        const from = new Date(fromDate);
-        filtered = filtered.filter(p => new Date(p.solved_at) >= from);
-      }
-      if (toDate) {
-        const to = new Date(toDate);
-        to.setHours(23, 59, 59, 999);
-        filtered = filtered.filter(p => new Date(p.solved_at) <= to);
-      }
-      renderSolvedPosts(filtered);
-    }
-  };
-
   window.clearDateFilters = function() {
     document.getElementById('fromDate').value = '';
     document.getElementById('toDate').value = '';
@@ -804,10 +1120,6 @@
     }
     
     applyDateFilter();
-  };
-
-  window.onload = () => {
-    // This will be handled by the initializeApp function now
   };
 </script>
 

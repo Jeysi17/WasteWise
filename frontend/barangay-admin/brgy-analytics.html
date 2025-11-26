@@ -13,6 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <title>WasteWiseBRGYAdmin — Analytics</title>
   <style>
+    /* --- Modal Styles --- */
     .modal {
       display: none;
       position: fixed;
@@ -22,24 +23,44 @@
       width: 100%;
       height: 100%;
       background-color: rgba(0,0,0,0.5);
+      overflow-y: auto; /* Allow scrolling if modal is tall */
     }
     .modal-content, .modal-content1 {
       background-color: white;
-      margin: 15% auto;
+      margin: 5% auto; /* Reduced top margin */
       padding: 20px;
       border-radius: 8px;
       width: 90%;
       max-width: 500px;
+      position: relative;
     }
+    
+    /* Specific style for the wider Input Modal */
+    .input-modal-width {
+      max-width: 900px !important;
+      background-color: white;
+      margin: 5% auto; /* Reduced top margin */
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+    }
+
     .close {
       float: right;
       font-size: 28px;
       font-weight: bold;
       cursor: pointer;
+      position: absolute;
+      right: 20px;
+      top: 10px;
     }
     .close:hover {
       color: #000;
     }
+
+    /* --- Export Button Styles --- */
     .export-btn {
       display: block;
       width: 100%;
@@ -54,67 +75,113 @@
     .export-pdf { background-color: #e74c3c; }
     .export-excel { background-color: #27ae60; }
 
-    /* Responsive styles for header */
-    @media (max-width: 1024px) {
-      .header {
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px;
-        height: auto;
-        min-height: 50px;
-      }
-      .header #hdrBrand {
-        font-size: 16px;
-      }
-      .header .form-control {
-        font-size: 14px;
-        padding: 6px;
-      }
-      .header label {
-        font-size: 14px;
-      }
+    /* --- Input Form Specific Styles (Ported from input.html) --- */
+    .sheet { width:100%; border-collapse: collapse; margin-top: 20px; }
+    .sheet th, .sheet td { border:1px solid #cfe9d5; padding:12px; font-size:14px; vertical-align: middle; }
+    .sheet th { background:#e8f7ea; font-weight: 600; }
+    .sheet td input { width:100%; border:1px solid #ddd; outline:0; padding: 8px; border-radius: 4px; }
+    .sheet td input:focus { border-color: #78C2AD; }
+    .category-label { font-weight: 600; color: #2d6a4f; background: #f1f9f5; }
+    .hint { font-size:12px; color:#6c757d; margin-top: 8px; }
+    .filter-section { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px; }
+    .filter-group { display: flex; flex-direction: column; }
+    .filter-group label { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #495057; }
+    
+    /* --- Toast Notification Styles --- */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      max-width: 350px;
+    }
+    .toast {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-left: 4px solid;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        
+        /* 1. SPEED: Make the entrance snappy (0.5s), not 4s */
+        animation: slideIn 0.5s ease-out;
+        
+        /* 2. EXIT: This handles the "Slide Back" animation */
+        transition: transform 0.5s ease-in, opacity 0.5s ease-in;
+        
+        cursor: pointer;
+        /* Ensure opacity is 1 by default so transition works */
+        opacity: 1;
+        transform: translateX(0); 
     }
 
+    .toast.hiding {
+        /* Moves it to the right (off-screen) */
+        transform: translateX(120%); 
+        opacity: 0;
+    }
+    .toast.success { border-left-color: #78C2AD; background: #f8fffd; }
+    .toast.error { border-left-color: #e74c3c; background: #fff8f8; }
+    .toast.hiding { transform: translateX(100%); opacity: 0; }
+    .toast-icon { font-size: 20px; flex-shrink: 0; }
+    .toast.success .toast-icon { color: #78C2AD; }
+    .toast.error .toast-icon { color: #e74c3c; }
+    .toast-content { flex-grow: 1; }
+    .toast-title { font-weight: bold; margin-bottom: 4px; font-size: 14px; }
+    .toast-message { font-size: 13px; color: #555; line-height: 1.4; }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* --- Loading Spinner --- */
+    .saving-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #78C2AD;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* --- Responsive Styles --- */
+    @media (max-width: 1024px) {
+      .header { flex-wrap: wrap; gap: 8px; padding: 8px; height: auto; min-height: 50px; }
+      .header #hdrBrand { font-size: 16px; }
+    }
     @media (max-width: 425px) {
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 10px;
-        gap: 10px;
-      }
-      .header #hdrBrand {
-        font-size: 14px;
-        text-align: center;
-      }
-      .header .d-flex {
-        width: 100%;
-        justify-content: space-between;
-      }
-      .header .form-control {
-        width: 100%;
-        max-width: none;
-        font-size: 14px;
-      }
-      .header .ms-auto {
-        width: 100%;
-        margin: 0;
-      }
-      .header .ms-auto .btn {
-        width: 100%;
-      }
-      .modal-content, .modal-content1 {
-        width: 95%;
-        max-width: 350px;
-        padding: 16px;
-        margin: 10% auto;
-      }
+      .header { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
+      .header #hdrBrand { font-size: 14px; text-align: center; }
+      .header .d-flex { width: 100%; justify-content: space-between; }
+      .modal-content, .modal-content1 { width: 95%; margin: 10% auto; padding: 16px; }
+      .filter-section { flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
 <body>
   <div class="sidebar">
     <button onclick="location.href='brgy-analytics.html'">HOME</button>
-    <button onclick="location.href='input.html'">INPUT</button>
+    <button onclick="openInputModal()">INPUT</button>
     <button onclick="location.href='post.html'">POST</button>
     <button class="btn btn-danger mt-4" id="logoutBtn">Log out</button>
   </div>
@@ -157,6 +224,67 @@
         <button class="export-btn export-excel" id="exportExcelBtn">Excel</button>
       </div>
     </div>
+    
+    <div id="inputModal" class="modal">
+        <div class="input-modal-width">
+          <span class="close" id="closeInputModal">&times;</span>
+          <h5 class="mt-0">Waste Entry Input - <span id="barangayPill"></span></h5>
+          <div class="filter-section">
+            <div class="filter-group">
+              <label for="inputPurokSelect">Select Purok:</label>
+              <select id="inputPurokSelect" class="form-control form-control-sm">
+                <option value="">Select Purok</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="inputWeekSelect">Select Week:</label>
+              <select id="inputWeekSelect" class="form-control form-control-sm">
+                <option value="1">Week 1</option>
+                <option value="2">Week 2</option>
+                <option value="3">Week 3</option>
+                <option value="4">Week 4</option>
+                <option value="5">Week 5</option>
+              </select>
+            </div>
+          </div>
+    
+          <div class="hint mb-2">
+            Enter the kilogram values for each category.
+          </div>
+    
+          <table class="sheet" id="wasteTable">
+            <thead>
+              <tr>
+                <th style="width: 30%;">Category</th>
+                <th style="width: 70%;">Kilograms</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="category-label">Nabubulok</td>
+                <td><input type="number" id="kg_nabubulok" step="0.01" min="0" placeholder="Enter kilograms"></td>
+              </tr>
+              <tr>
+                <td class="category-label">Panapon</td>
+                <td><input type="number" id="kg_panapon" step="0.01" min="0" placeholder="Enter kilograms"></td>
+              </tr>
+              <tr>
+                <td class="category-label">Mga Kalakal</td>
+                <td><input type="number" id="kg_kalakal" step="0.01" min="0" placeholder="Enter kilograms"></td>
+              </tr>
+              <tr>
+                <td class="category-label">Delikado</td>
+                <td><input type="number" id="kg_delikado" step="0.01" min="0" placeholder="Enter kilograms"></td>
+              </tr>
+            </tbody>
+          </table>
+    
+          <div class="text-right mt-3">
+            <button class="btn btn-outline-secondary mr-2" id="clearInputBtn">Clear</button>
+            <button class="btn btn-primary" id="saveWasteBtn">Save Waste Data</button>
+          </div>
+        </div>
+      </div>
   </div>
 
   <div class="content" style="margin-right: 20px;">
@@ -198,6 +326,12 @@
     </div>
   </div>
 
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="saving-overlay" id="savingOverlay">
+    <div class="spinner"></div>
+  </div>
+
 <script type="module">
 import { authFetch, logout } from './auth.js';
 
@@ -205,7 +339,13 @@ let loggedInBarangay = '';
 let currentData = null;
 let exporterName = '';
 
-// Define centerTextPlugin globally so it's accessible everywhere
+// --- Configuration: Puroks per Barangay ---
+const PUROKS_BY_BRGY = {
+    DEFAULT: 13
+};
+let PUROK_COUNT = PUROKS_BY_BRGY.DEFAULT;
+
+// Define centerTextPlugin globally
 const centerTextPlugin = {
   id: 'centerText',
   afterDraw(chart, args, options) {
@@ -233,35 +373,21 @@ const centerTextPlugin = {
   }
 };
 
-// --- DEBUG Authentication Guard ---
+// --- Authentication & Initialization ---
 (async function() {
   const token = localStorage.getItem('wastewise_brgy_token');
   const userData = localStorage.getItem('wastewise_brgy_user');
   
-  console.log('🔄 DEBUG: Starting authentication check...');
-  console.log('🔑 Token exists:', !!token);
-  console.log('👤 User data exists:', !!userData);
   
-  // Add a delay so we can see console messages
-  await new Promise(resolve => setTimeout(resolve, 3000));
-
-  // Immediate redirect if no tokens
   if (!token || !userData) {
-    console.log('❌ No authentication tokens found, redirecting to login...');
     window.location.href = 'index.html';
     return;
   }
 
   try {
-    // Get barangay name from saved user data (from login response)
     const user = JSON.parse(userData);
     loggedInBarangay = user.barangay;
-    console.log('🏠 Barangay from user data:', loggedInBarangay);
     
-    // Test token with a working endpoint instead of the broken /auth/me
-    console.log('🧪 Testing token validity with data endpoint...');
-    
-    // Use a simpler test without authFetch to isolate the issue
     const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/brgy/analytics/summary?month=2024-11', {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -269,27 +395,22 @@ const centerTextPlugin = {
       }
     });
     
-    console.log('📡 Test response status:', testResponse.status, testResponse.statusText);
-    
     if (!testResponse.ok) {
-      const errorText = await testResponse.text();
-      console.error('❌ Token test failed:', errorText);
-      throw new Error(`Token validation failed: ${testResponse.status} ${testResponse.statusText}`);
+      throw new Error(`Token validation failed`);
+    }
+    
+    document.getElementById('hdrBrand').textContent += ` — ${loggedInBarangay}`;
+    if(document.getElementById('barangayPill')) {
+        document.getElementById('barangayPill').textContent = loggedInBarangay;
     }
 
-    console.log('✅ Token is valid, initializing app...');
-    document.getElementById('hdrBrand').textContent += ` — ${loggedInBarangay}`;
+
+    // Set Purok Count for Input Modal
+    PUROK_COUNT = PUROKS_BY_BRGY[loggedInBarangay] || PUROKS_BY_BRGY.DEFAULT;
     
-    // Initialize the rest of the app
     initializeApp();
   } catch (err) {
-    console.error('💥 Authentication failed:', err);
-    console.error('💥 Full error details:', err.message);
-    
-    // Add delay before redirect so we can see the error
-    console.log('🔄 Redirecting to login in 5 seconds...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
+    console.error('Authentication failed:', err);
     localStorage.removeItem('wastewise_brgy_token');
     localStorage.removeItem('wastewise_brgy_user');
     window.location.href = 'index.html';
@@ -297,42 +418,194 @@ const centerTextPlugin = {
 })();
 
 function initializeApp() {
-  // Setup logout button
+  // Setup logout
   document.getElementById('logoutBtn').addEventListener('click', async () => {
-    console.log('🚪 Logging out...');
     await logout();
   });
 
   // Setup export functionality
   setupExportHandlers();
+  
+  // Setup Input Modal functionality
+  setupInputHandlers();
 
   // Initialize charts and load data
   setupCharts();
   loadAnalytics();
   
-  // Setup event listeners
+  // Setup event listeners for filters
   document.getElementById('monthSelect').addEventListener('change', loadAnalytics);
   document.getElementById('weekSelect').addEventListener('change', loadAnalytics);
+  
 }
 
+// --- Input Modal Functions ---
+
+function setupInputHandlers() {
+    window.openInputModal = function() {
+        populatePurokDropdown();
+        document.getElementById('inputModal').style.display = 'block';
+    };
+
+    document.getElementById('closeInputModal').addEventListener('click', function() {
+        document.getElementById('inputModal').style.display = 'none';
+        resetFormFields();
+    });
+
+    document.getElementById('clearInputBtn').addEventListener('click', resetFormFields);
+    document.getElementById('saveWasteBtn').addEventListener('click', saveWasteData);
+
+    // Close when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target === document.getElementById('inputModal')) {
+            document.getElementById('inputModal').style.display = 'none';
+        }
+    });
+}
+
+function populatePurokDropdown() {
+    const select = document.getElementById('inputPurokSelect');
+    // Clear existing options except the first one
+    while (select.children.length > 1) {
+      select.removeChild(select.lastChild);
+    }
+    
+    for (let i = 1; i <= PUROK_COUNT; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `Purok ${i}`;
+      select.appendChild(option);
+    }
+}
+
+function resetFormFields() {
+    document.getElementById('kg_nabubulok').value = '';
+    document.getElementById('kg_panapon').value = '';
+    document.getElementById('kg_kalakal').value = '';
+    document.getElementById('kg_delikado').value = '';
+    document.getElementById('inputPurokSelect').selectedIndex = 0;
+    document.getElementById('inputWeekSelect').selectedIndex = 0;
+}
+
+async function saveWasteData() {
+    const purok = document.getElementById('inputPurokSelect').value;
+    const week = document.getElementById('inputWeekSelect').value;
+
+    if (!purok) {
+      showToast('error', 'Error', 'Please select a Purok');
+      return;
+    }
+
+    if (!week) {
+      showToast('error', 'Error', 'Please select a Week');
+      return;
+    }
+
+    const categories = [
+      { category: 'Nabubulok', kilograms: document.getElementById('kg_nabubulok').value },
+      { category: 'Panapon', kilograms: document.getElementById('kg_panapon').value },
+      { category: 'Mga Kalakal', kilograms: document.getElementById('kg_kalakal').value },
+      { category: 'Delikado', kilograms: document.getElementById('kg_delikado').value }
+    ];
+
+    const rows = categories
+      .filter(item => item.kilograms && parseFloat(item.kilograms) > 0)
+      .map(item => ({
+        category: item.category,
+        kilograms: parseFloat(item.kilograms),
+        purok: parseInt(purok),
+        week_of_month: parseInt(week)
+      }));
+
+    if (rows.length === 0) {
+      showToast('error', 'Error', 'Please enter at least one kilogram value');
+      return;
+    }
+
+    showLoading();
+
+    try {
+      const res = await authFetch('/api/brgy/waste-entries/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        showToast('error', 'Error', errorData.error || 'Failed to save waste entries');
+        return;
+      }
+
+      const data = await res.json();
+      
+      const successMessage = `Successfully saved ${data.inserted} entries for Purok ${purok}, Week ${week}!`;
+      showToast('success', 'Success!', successMessage, 5000);
+      
+      resetFormFields();
+      document.getElementById('inputModal').style.display = 'none';
+
+      // Refresh Analytics immediately to show new data
+      loadAnalytics();
+
+    } catch (error) {
+      console.error('Error saving waste data:', error);
+      showToast('error', 'Error', 'An error occurred while saving.');
+    } finally {
+      hideLoading();
+    }
+}
+
+// --- Toast & UI Helper Functions ---
+
+function showToast(type, title, message, duration = 5000) {
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '✓' : '⚠️';
+    
+    toast.innerHTML = `
+      <div class="toast-icon">${icon}</div>
+      <div class="toast-content">
+        <div class="toast-title">${title}</div>
+        <div class="toast-message">${message}</div>
+      </div>
+    `;
+
+    toastContainer.appendChild(toast);
+    const removeTimeout = setTimeout(() => hideToast(toast), duration);
+    toast._timeoutId = removeTimeout;
+    toast.addEventListener('click', () => {
+      clearTimeout(toast._timeoutId);
+      hideToast(toast);
+    });
+}
+
+function hideToast(toast) {
+    toast.classList.add('hiding');
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 400);
+}
+
+function showLoading() { document.getElementById('savingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('savingOverlay').style.display = 'none'; }
+
+
+// --- Analytics & Export Logic (Existing) ---
+
 function setupExportHandlers() {
-  // Export report button
   document.getElementById('exportReportBtn').addEventListener('click', showExportModal);
-  
-  // Name modal handlers
   document.getElementById('closeNameModal').addEventListener('click', closeExportModals);
   document.getElementById('submitExporterNameBtn').addEventListener('click', submitExporterName);
-  
-  // Format modal handlers
   document.getElementById('closeFormatModal').addEventListener('click', closeExportModals);
   document.getElementById('exportPdfBtn').addEventListener('click', exportToPDF);
   document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
-  
-  // Close modals when clicking outside
+
   window.addEventListener('click', function (event) {
     const nameModal = document.getElementById('exporterNameModal');
     const formatModal = document.getElementById('exportFormatModal');
-
     if (event.target === nameModal || event.target === formatModal) {
       closeExportModals();
     }
@@ -340,14 +613,11 @@ function setupExportHandlers() {
 }
 
 function setupCharts() {
-  // Register the plugin globally
   Chart.register(centerTextPlugin);
-
-  // Set default month
   const m = document.getElementById('monthSelect');
   const now = new Date();
   const ym = String(now.getFullYear()) + '-' + String(now.getMonth()+1).padStart(2,'0');
-  m.value = ym;
+  if(!m.value) m.value = ym;
 }
 
 function donut(el, labels, values, colors, centerText) {
@@ -355,25 +625,17 @@ function donut(el, labels, values, colors, centerText) {
     type: 'doughnut',
     data: { 
       labels, 
-      datasets: [{ 
-        data: values, 
-        backgroundColor: colors 
-      }] 
+      datasets: [{ data: values, backgroundColor: colors }] 
     },
     options: { 
       responsive: true, 
       cutout: '70%', 
       plugins: { 
         legend: { display: false },
-        centerText: {
-          text: centerText
-        },
+        centerText: { text: centerText },
         tooltip: {
           callbacks: {
-            label: (context) => {
-              const value = context.parsed;
-              return ` ${value} kg`;
-            }
+            label: (context) => ` ${context.parsed} kg`
           }
         }
       } 
@@ -412,16 +674,10 @@ function bar(el, labels, values, horizontal=false) {
       indexAxis: horizontal ? 'y' : 'x',
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { 
-        legend: { display: false } 
-      },
+      plugins: { legend: { display: false } },
       scales: { 
-        x: { 
-          ticks: { autoSkip: false } 
-        },
-        y: {
-          beginAtZero: true
-        }
+        x: { ticks: { autoSkip: false } },
+        y: { beginAtZero: true }
       }
     }
   });
@@ -431,24 +687,16 @@ async function loadAnalytics() {
   try {
     const m = document.getElementById('monthSelect').value;
     const w = document.getElementById('weekSelect').value;
-
     const qs = new URLSearchParams();
     if (m) qs.set('month', m);
     if (w) qs.set('week', w);
 
     const res = await authFetch(`/api/brgy/analytics/summary?${qs}`);
-    if (!res.ok) { 
-      console.error('Failed to load brgy analytics'); 
-      return; 
-    }
+    if (!res.ok) return;
     const data = await res.json();
 
     currentData = data;
-
-    // Load complaint stats
     await loadComplaintStats();
-
-    // Update charts
     updateCharts(data);
   } catch (error) {
     console.error('Error loading analytics:', error);
@@ -456,30 +704,15 @@ async function loadAnalytics() {
 }
 
 async function loadComplaintStats() {
-  let complaintStats = { 
-    total_complaints: 0, 
-    solved: 0, 
-    users_count: 0 
-  };
-  
+  let complaintStats = { total_complaints: 0, solved: 0, users_count: 0 };
   try {
     const statsRes = await authFetch('/api/brgy/stats/complaints');
-    if (statsRes.ok) {
-      const statsData = await statsRes.json();
-      complaintStats = statsData;
-    }
-  } catch (error) {
-    console.error('Error fetching complaint stats:', error);
-  }
+    if (statsRes.ok) complaintStats = await statsRes.json();
+  } catch (error) { console.error('Error fetching stats:', error); }
 
-  // Update KPI elements
-  const kpiComplaintsEl = document.getElementById('kpiComplaints');
-  const kpiSolvedEl = document.getElementById('kpiSolved');
-  const kpiUsersEl = document.getElementById('kpiUsers');
-
-  if (kpiComplaintsEl) kpiComplaintsEl.textContent = (complaintStats.total_complaints || 0).toLocaleString();
-  if (kpiSolvedEl) kpiSolvedEl.textContent = (complaintStats.solved || 0).toLocaleString();
-  if (kpiUsersEl) kpiUsersEl.textContent = (complaintStats.users_count || 0).toLocaleString();
+  document.getElementById('kpiComplaints').textContent = (complaintStats.total_complaints || 0).toLocaleString();
+  document.getElementById('kpiSolved').textContent = (complaintStats.solved || 0).toLocaleString();
+  document.getElementById('kpiUsers').textContent = (complaintStats.users_count || 0).toLocaleString();
 }
 
 function updateCharts(data) {
@@ -488,10 +721,9 @@ function updateCharts(data) {
   const catValues = data.byCategory.map(r=>r.kg);
   const catColors = ['#7fb069','#f2c14e','#e63946','#f77f00'].slice(0,catLabels.length);
   const totalFromCategories = catValues.reduce((sum, val) => sum + (Number(val) || 0), 0);
-  const totalLabel = Math.round(totalFromCategories).toLocaleString();
   
   if (window._catChart) window._catChart.destroy();
-  window._catChart = donut(document.getElementById('catChart'), catLabels, catValues, catColors, totalLabel);
+  window._catChart = donut(document.getElementById('catChart'), catLabels, catValues, catColors, Math.round(totalFromCategories).toLocaleString());
   makeLegend(document.getElementById('catLegend'), window._catChart);
 
   // Purok Chart
@@ -499,39 +731,34 @@ function updateCharts(data) {
   const pValues = data.byPurok.map(r=>r.kg);
   const pColors = ['#49A9EA','#EB6383','#6ECB63','#F3A712','#9D4EDD','#74C69D','#6C757D','#00B4D8','#B08968','#ADB5BD'];
   const totalFromPurok = pValues.reduce((sum, val) => sum + (Number(val) || 0), 0);
-  const totalPurokLabel = Math.round(totalFromPurok).toLocaleString();
   
   if (window._purokChart) window._purokChart.destroy();
-  window._purokChart = donut(document.getElementById('purokChart'), pLabels, pValues, pColors.slice(0,pLabels.length), totalPurokLabel);
+  window._purokChart = donut(document.getElementById('purokChart'), pLabels, pValues, pColors.slice(0,pLabels.length), Math.round(totalFromPurok).toLocaleString());
   makeLegend(document.getElementById('purokLegend'), window._purokChart);
 
-  // Purok Bar Chart
+  // Purok Bar
   if (window._purokBar) window._purokBar.destroy();
   window._purokBar = bar(document.getElementById('purokBar'), pLabels, pValues);
 
-  // Monthly Chart
   loadMonthlyChart();
 }
 
 async function loadMonthlyChart() {
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   let monthValues = new Array(12).fill(0);
-  
   try {
     const monthlyRes = await authFetch('/api/brgy/analytics/monthly');
     if (monthlyRes.ok) {
       const monthlyData = await monthlyRes.json();
       monthValues = monthlyData.monthlyData;
     }
-  } catch (error) {
-    console.error('Error loading monthly data:', error);
-  }
+  } catch (error) { console.error('Error loading monthly data:', error); }
   
   if (window._monthChart) window._monthChart.destroy();
   window._monthChart = bar(document.getElementById('monthChart'), monthLabels, monthValues);
 }
 
-// Export functionality
+// --- Export Helpers ---
 function showExportModal() {
   document.getElementById('exporterNameModal').style.display = 'block';
   document.getElementById('exporterNameInput').focus();
@@ -540,12 +767,7 @@ function showExportModal() {
 function submitExporterName() {
   const nameInput = document.getElementById('exporterNameInput');
   exporterName = nameInput.value.trim().toUpperCase();
-
-  if (!exporterName) {
-    alert('Please enter your name to continue.');
-    return;
-  }
-
+  if (!exporterName) { alert('Please enter your name.'); return; }
   document.getElementById('exporterNameModal').style.display = 'none';
   document.getElementById('exportFormatModal').style.display = 'block';
 }
@@ -559,193 +781,80 @@ function closeExportModals() {
 
 async function exportToPDF() {
   try {
-    if (!loggedInBarangay || !currentData) {
-      alert('Page is still loading. Please try again in a moment.');
-      return;
-    }
-
+    if (!loggedInBarangay || !currentData) { alert('Page loading. Try again.'); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const data = currentData;
+    
+    let periodText = document.getElementById('monthSelect').value;
+    if (document.getElementById('weekSelect').value) periodText += `, Week ${document.getElementById('weekSelect').value}`;
 
-    const barangayText = loggedInBarangay;
-    const monthVal = document.getElementById('monthSelect').value;
-    const weekVal = document.getElementById('weekSelect').value;
-
-    let periodText = monthVal;
-    if (weekVal) {
-      periodText = `${monthVal}, Week ${weekVal}`;
-    }
-
-    doc.setFontSize(18);
-    doc.text('WasteWise Analytics Report', 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Barangay: ${barangayText}`, 14, 28);
+    doc.setFontSize(18); doc.text('WasteWise Analytics Report', 14, 20);
+    doc.setFontSize(12); doc.text(`Barangay: ${loggedInBarangay}`, 14, 28);
     doc.text(`Period: ${periodText}`, 14, 35);
 
     let yPos = 45;
-
-    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
-    const solved = document.getElementById('kpiSolved').textContent;
-    const users = document.getElementById('kpiUsers').textContent;
-
-    doc.autoTable({
-      startY: yPos,
-      head: [['Metric', 'Value']],
-      body: [
-        ['Pending Complaints', pendingComplaints],
-        ['Solved', solved],
-        ['Users', users],
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [120, 194, 173] }
-    });
-
+    const kpiData = [
+       ['Pending Complaints', document.getElementById('kpiComplaints').textContent],
+       ['Solved', document.getElementById('kpiSolved').textContent],
+       ['Users', document.getElementById('kpiUsers').textContent]
+    ];
+    
+    doc.autoTable({ startY: yPos, head: [['Metric', 'Value']], body: kpiData, theme: 'grid', headStyles: { fillColor: [120, 194, 173] } });
     yPos = doc.lastAutoTable.finalY + 10;
 
-    if (data.byCategory && data.byCategory.length > 0) {
+    if (data.byCategory.length > 0) {
       doc.text('Wastes by Category', 14, yPos);
-      yPos += 7;
-
-      doc.autoTable({
-        startY: yPos,
-        head: [['Category', 'Kilograms']],
-        body: data.byCategory.map(r => [r.category, r.kg.toFixed(2)]),
-        theme: 'grid',
-        headStyles: { fillColor: [120, 194, 173] }
-      });
-
+      doc.autoTable({ startY: yPos + 7, head: [['Category', 'Kilograms']], body: data.byCategory.map(r => [r.category, r.kg.toFixed(2)]), theme: 'grid', headStyles: { fillColor: [120, 194, 173] } });
       yPos = doc.lastAutoTable.finalY + 10;
     }
 
-    if (yPos > 250) {
-      doc.addPage();
-      yPos = 20;
-    }
-
-    if (data.byWeek && data.byWeek.length > 0) {
-      doc.text('Wastes by Week', 14, yPos);
-      yPos += 7;
-
-      doc.autoTable({
-        startY: yPos,
-        head: [['Week', 'Kilograms']],
-        body: data.byWeek.map(r => [`Week ${r.week}`, r.kg.toFixed(2)]),
-        theme: 'grid',
-        headStyles: { fillColor: [120, 194, 173] }
-      });
-
-      yPos = doc.lastAutoTable.finalY + 10;
-    }
-
-    if (yPos > 250) {
-      doc.addPage();
-      yPos = 20;
-    }
-
-    if (data.byPurok && data.byPurok.length > 0) {
+    if (yPos > 250) { doc.addPage(); yPos = 20; }
+    
+    if (data.byPurok.length > 0) {
       doc.text('Wastes by Purok', 14, yPos);
-      yPos += 7;
-
-      doc.autoTable({
-        startY: yPos,
-        head: [['Purok', 'Kilograms']],
-        body: data.byPurok.map(r => [r.purok, r.kg.toFixed(2)]),
-        theme: 'grid',
-        headStyles: { fillColor: [120, 194, 173] }
-      });
-
-      yPos = doc.lastAutoTable.finalY;
+      doc.autoTable({ startY: yPos + 7, head: [['Purok', 'Kilograms']], body: data.byPurok.map(r => [r.purok, r.kg.toFixed(2)]), theme: 'grid', headStyles: { fillColor: [120, 194, 173] } });
+      yPos = doc.lastAutoTable.finalY + 20;
     }
 
-    if (yPos > 270) {
-      doc.addPage();
-      yPos = 20;
-    } else {
-      yPos += 20;
-    }
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10); doc.setFont('helvetica', 'italic');
     doc.text(`Exported by: ${exporterName}`, 14, yPos);
-
-    doc.save(`WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.pdf`);
+    doc.save(`WasteWise_Report_${loggedInBarangay}.pdf`);
     closeExportModals();
-  } catch (error) {
-    console.error('Error exporting to PDF:', error);
-    alert('Error exporting to PDF');
-  }
+  } catch (error) { console.error(error); alert('Error exporting PDF'); }
 }
 
 async function exportToExcel() {
   try {
-    if (!loggedInBarangay || !currentData) {
-      alert('Page is still loading. Please try again in a moment.');
-      return;
-    }
-
+    if (!loggedInBarangay || !currentData) { alert('Page loading. Try again.'); return; }
     const data = currentData;
-
-    const barangayText = loggedInBarangay;
-    const monthVal = document.getElementById('monthSelect').value;
-    const weekVal = document.getElementById('weekSelect').value;
-
-    let periodText = monthVal;
-    if (weekVal) {
-      periodText = `${monthVal}, Week ${weekVal}`;
-    }
-
-    const pendingComplaints = document.getElementById('kpiComplaints').textContent;
-    const solved = document.getElementById('kpiSolved').textContent;
-    const users = document.getElementById('kpiUsers').textContent;
+    let periodText = document.getElementById('monthSelect').value;
+    if (document.getElementById('weekSelect').value) periodText += `, Week ${document.getElementById('weekSelect').value}`;
 
     const wb = XLSX.utils.book_new();
-    let allData = [];
+    let allData = [
+      ['WasteWise Analytics Report'], ['Barangay:', loggedInBarangay], ['Period:', periodText], [],
+      ['Metric', 'Value'],
+      ['Pending Complaints', document.getElementById('kpiComplaints').textContent],
+      ['Solved', document.getElementById('kpiSolved').textContent],
+      ['Users', document.getElementById('kpiUsers').textContent], [], []
+    ];
 
-    allData.push(['WasteWise Analytics Report']);
-    allData.push(['Barangay:', barangayText]);
-    allData.push(['Period:', periodText]);
-    allData.push([]);
-    allData.push(['Metric', 'Value']);
-    allData.push(['Pending Complaints', pendingComplaints]);
-    allData.push(['Solved', solved]);
-    allData.push(['Users', users]);
-    allData.push([]);
-    allData.push([]);
-
-    if (data.byCategory && data.byCategory.length > 0) {
-      allData.push(['Wastes by Category']);
-      allData.push(['Category', 'Kilograms']);
-      data.byCategory.forEach(r => allData.push([r.category, r.kg]));
-      allData.push([]);
+    if (data.byCategory.length) {
+      allData.push(['Wastes by Category']); allData.push(['Category', 'Kilograms']);
+      data.byCategory.forEach(r => allData.push([r.category, r.kg])); allData.push([]);
     }
-
-    if (data.byPurok && data.byPurok.length > 0) {
-      allData.push(['Wastes by Purok']);
-      allData.push(['Purok', 'Kilograms']);
+    if (data.byPurok.length) {
+      allData.push(['Wastes by Purok']); allData.push(['Purok', 'Kilograms']);
       data.byPurok.forEach(r => allData.push([r.purok, r.kg]));
-      allData.push([]);
     }
-
-    if (data.byWeek && data.byWeek.length > 0) {
-      allData.push(['Wastes by Week']);
-      allData.push(['Week', 'Kilograms']);
-      data.byWeek.forEach(r => allData.push([`Week ${r.week}`, r.kg]));
-    }
-
-    allData.push([]);
-    allData.push([]);
-    allData.push([`Exported by: ${exporterName}`]);
+    allData.push([]); allData.push([`Exported by: ${exporterName}`]);
 
     const ws = XLSX.utils.aoa_to_sheet(allData);
     XLSX.utils.book_append_sheet(wb, ws, 'Analytics Report');
-
-    XLSX.writeFile(wb, `WasteWise_Report_${barangayText}_${periodText.replace(/\s/g, '_')}.xlsx`);
+    XLSX.writeFile(wb, `WasteWise_Report_${loggedInBarangay}.xlsx`);
     closeExportModals();
-  } catch (error) {
-    console.error('Error exporting to Excel:', error);
-    alert('Error exporting to Excel');
-  }
+  } catch (error) { console.error(error); alert('Error exporting Excel'); }
 }
 </script>
 </body>
