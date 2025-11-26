@@ -12,6 +12,39 @@
   />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <title>WasteWiseAdmin — Posts</title>
+
+  <style>
+    /* Pagination Styles */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      padding-bottom: 20px;
+    }
+    .pagination-btn {
+      margin: 0 5px;
+      padding: 5px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      color: #2c9631;
+      transition: all 0.2s;
+    }
+    .pagination-btn:hover:not(:disabled) {
+      background-color: #e2e6ea;
+    }
+    .pagination-btn.active {
+      background-color: #239c37;
+      color: white;
+      border-color: #239c37;
+    }
+    .pagination-btn:disabled {
+      color: #ccc;
+      cursor: not-allowed;
+      background: #f8f9fa;
+    }
+  </style>
 </head>
 <body>
 
@@ -82,6 +115,7 @@
         <tbody id="postsTable"></tbody>
       </table>
     </div>
+    <div id="approved-pagination" class="pagination-container"></div>
   </div>
 </div>
 
@@ -103,6 +137,7 @@
         <tbody id="solvedPostsTable"></tbody> 
       </table>
     </div>
+    <div id="solved-pagination" class="pagination-container"></div>
   </div>
 </div>
 
@@ -195,6 +230,16 @@
     fetchSolvedPosts();
   }
 
+  // --- GLOBAL VARIABLES & STATE ---
+  let allPosts = [];
+  let allSolvedPosts = [];
+  let currentView = 'approved';
+
+  // PAGINATION SETTINGS
+  const ITEMS_PER_PAGE = 10;
+  let currentApprovedPage = 1;
+  let currentSolvedPage = 1;
+
   // --- MODAL FUNCTIONS ---
   function getCleanButton(buttonId) {
     const oldBtn = document.getElementById(buttonId);
@@ -282,7 +327,6 @@
     });
   };
 
-  // --- HELPER FUNCTIONS ---
   window.formatReadableDate = function(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -293,47 +337,14 @@
     return new Intl.DateTimeFormat('en-US', options).format(date);
   };
 
-  let allPosts = [];
-  let allSolvedPosts = [];
-  let currentView = 'approved';
-
-  // --- DATA FETCHING & RENDERING ---
-  window.renderSolvedPosts = function(postsToDisplay) {
-    const table = document.getElementById('solvedPostsTable');
-    table.innerHTML = '';
-
-    if (postsToDisplay.length === 0) {
-      table.innerHTML = `
-        <tr><td colspan="10" class="empty-state">
-          <div class="empty-state-icon">📋</div>
-          <h3>No Solved Posts</h3>
-          <p>There are no solved posts matching the current filter.</p>
-        </td></tr>`;
-      return;
-    }
-
-    postsToDisplay.forEach(post => {
-      const row = document.createElement('tr');
-      row.setAttribute('onclick', `showSolvedPostModal('${post.id}')`);
-      const imageUrl = post.image || 'placeholder.jpg';
-
-      row.innerHTML = `
-        <td data-label="Name"><strong><i class="bi bi-person"></i> ${post.name || 'N/A'}</strong></td>
-        <td data-label="Title"><strong>${post.title || 'N/A'}</strong></td>
-        <td data-label="Image">
-          <img src="${imageUrl}" alt="Post Image" style="width: 250px; height: autopx; object-fit: cover;">
-        </td>
-        <td style="color: #0a9b06; font-weight: 600;" data-label="Location"><i class="bi bi-geo-alt-fill"></i> ${post.location || 'N/A'}</td>
-        <td data-label="Solved At"><span class="date-cell"><i class="bi bi-calendar-check-fill"></i> ${formatReadableDate(post.solved_at)}</span></td>
-        <td data-label="Status"><i class="bi bi-check-circle-fill"></i> ${post.status || 'N/A'}</td>
-      `;
-      table.appendChild(row);
-    });
-  };
+  // --- RENDERING WITH PAGINATION ---
 
   window.renderPosts = function(postsToDisplay) {
     const table = document.getElementById('postsTable');
+    const paginationContainer = document.getElementById('approved-pagination');
+    
     table.innerHTML = '';
+    paginationContainer.innerHTML = '';
 
     if (postsToDisplay.length === 0) {
       table.innerHTML = `
@@ -345,7 +356,17 @@
       return;
     }
 
-    postsToDisplay.forEach(post => {
+    // 1. Calculate Pagination
+    const totalPages = Math.ceil(postsToDisplay.length / ITEMS_PER_PAGE);
+    if (currentApprovedPage > totalPages) currentApprovedPage = 1;
+
+    // 2. Slice Data
+    const startIndex = (currentApprovedPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedPosts = postsToDisplay.slice(startIndex, endIndex);
+
+    // 3. Render Rows
+    paginatedPosts.forEach(post => {
       const row = document.createElement('tr');
       row.setAttribute('onclick', `showForwardedPostModal('${post.id}')`);
       const imageUrl = post.image || 'placeholder.jpg';
@@ -354,7 +375,12 @@
         <td data-label="Name"><strong><i class="bi bi-person"></i> ${post.name || 'N/A'}</strong></td>
         <td data-label="Title"><strong>${post.title || 'N/A'}</strong></td>
         <td data-label="Image">
-          <img src="${imageUrl}" alt="${post.title}" style="width: 250px; height: autopx; object-fit: cover;" onerror="this.src='placeholder.jpg';"/>
+          <img 
+            src="${imageUrl}" 
+            alt="${post.title}" 
+            style="width: 250px; height: auto; object-fit: cover;" 
+            onerror="this.src='placeholder.jpg';"
+          />
         </td>
         <td style="color: #0a9b06; font-weight: 600;" data-label="Location"><i class="bi bi-geo-alt-fill"></i> ${post.location || 'N/A'}</td>
         <td>
@@ -367,13 +393,108 @@
       `;
       table.appendChild(row);
     });
+
+    // 4. Render Pagination Controls
+    renderPaginationControls(totalPages, currentApprovedPage, paginationContainer, (newPage) => {
+      currentApprovedPage = newPage;
+      // Re-render using the SAME list, just different page
+      window.renderPosts(postsToDisplay); 
+    });
   };
 
-  // --- COMBINED FILTER LOGIC (Barangay + Date) ---
-  window.applyFilters = function() {
+  window.renderSolvedPosts = function(postsToDisplay) {
+    const table = document.getElementById('solvedPostsTable');
+    const paginationContainer = document.getElementById('solved-pagination');
+
+    table.innerHTML = '';
+    paginationContainer.innerHTML = '';
+
+    if (postsToDisplay.length === 0) {
+      table.innerHTML = `
+        <tr><td colspan="10" class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <h3>No Solved Posts</h3>
+          <p>There are no solved posts matching the current filter.</p>
+        </td></tr>`;
+      return;
+    }
+
+    // 1. Calculate Pagination
+    const totalPages = Math.ceil(postsToDisplay.length / ITEMS_PER_PAGE);
+    if (currentSolvedPage > totalPages) currentSolvedPage = 1;
+
+    // 2. Slice Data
+    const startIndex = (currentSolvedPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedPosts = postsToDisplay.slice(startIndex, endIndex);
+
+    // 3. Render Rows
+    paginatedPosts.forEach(post => {
+      const row = document.createElement('tr');
+      row.setAttribute('onclick', `showSolvedPostModal('${post.id}')`);
+      const imageUrl = post.image || 'placeholder.jpg';
+
+      row.innerHTML = `
+        <td data-label="Name"><strong><i class="bi bi-person"></i> ${post.name || 'N/A'}</strong></td>
+        <td data-label="Title"><strong>${post.title || 'N/A'}</strong></td>
+        <td data-label="Image">
+          <img src="${imageUrl}" alt="Post Image" style="width: 250px; height: auto; object-fit: cover;">
+        </td>
+        <td style="color: #0a9b06; font-weight: 600;" data-label="Location"><i class="bi bi-geo-alt-fill"></i> ${post.location || 'N/A'}</td>
+        <td data-label="Solved At"><span class="date-cell"><i class="bi bi-calendar-check-fill"></i> ${formatReadableDate(post.solved_at)}</span></td>
+        <td data-label="Status"><i class="bi bi-check-circle-fill"></i> ${post.status || 'N/A'}</td>
+      `;
+      table.appendChild(row);
+    });
+
+    // 4. Render Pagination Controls
+    renderPaginationControls(totalPages, currentSolvedPage, paginationContainer, (newPage) => {
+      currentSolvedPage = newPage;
+      window.renderSolvedPosts(postsToDisplay);
+    });
+  };
+
+  // --- HELPER: RENDER PAGINATION BUTTONS ---
+  function renderPaginationControls(totalPages, currentPage, container, onPageChange) {
+    if (totalPages <= 1) return; // No need for pagination if only 1 page
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pagination-btn';
+    prevBtn.innerHTML = '&laquo;';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => onPageChange(currentPage - 1);
+    container.appendChild(prevBtn);
+
+    // Number Buttons
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+      btn.innerText = i;
+      btn.onclick = () => onPageChange(i);
+      container.appendChild(btn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pagination-btn';
+    nextBtn.innerHTML = '&raquo;';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => onPageChange(currentPage + 1);
+    container.appendChild(nextBtn);
+  }
+
+  // --- FILTERING ---
+  window.applyFilters = function(resetPage = true) {
     const selectedBarangay = document.getElementById('filterBarangay').value;
     const fromDateVal = document.getElementById('fromDate').value;
     const toDateVal = document.getElementById('toDate').value;
+
+    // Reset to page 1 when filters change to avoid empty pages
+    if(resetPage) {
+      currentApprovedPage = 1;
+      currentSolvedPage = 1;
+    }
 
     let postsToFilter = (currentView === 'approved') ? allPosts : allSolvedPosts;
     
@@ -383,14 +504,10 @@
     }
 
     // 2. Filter by Date
-    // Determine which date field to check based on view
-    // Approved View -> check approved_at (Forwarded At)
-    // Solved View -> check solved_at
     const dateField = (currentView === 'approved') ? 'approved_at' : 'solved_at';
 
     if (fromDateVal) {
       const from = new Date(fromDateVal);
-      // Reset time to start of day
       from.setHours(0,0,0,0);
       postsToFilter = postsToFilter.filter(post => {
         const postDate = new Date(post[dateField]);
@@ -400,7 +517,6 @@
 
     if (toDateVal) {
       const to = new Date(toDateVal);
-      // Set time to end of day to include the selected day
       to.setHours(23,59,59,999);
       postsToFilter = postsToFilter.filter(post => {
         const postDate = new Date(post[dateField]);
@@ -408,7 +524,7 @@
       });
     }
 
-    // Render
+    // Render filtered data
     if (currentView === 'approved') {
       renderPosts(postsToFilter);
     } else {
@@ -416,7 +532,7 @@
     }
   };
 
-  // Legacy wrapper for dropdown onchange
+  // Legacy wrapper
   window.displayFilteredPosts = function() {
     applyFilters();
   };
@@ -427,13 +543,14 @@
     applyFilters();
   };
 
+  // --- API CALLS ---
   window.fetchPosts = async function() {
     try {
       const response = await authFetch('/api/approved');
       if (!response.ok) throw new Error('Failed to fetch data');
       allPosts = await response.json(); 
       allPosts.sort((a, b) => new Date(b.post_date) - new Date(a.post_date));
-      applyFilters(); // Use combined filter logic
+      applyFilters(); 
     } catch (error) {
       console.error('Error fetching approved posts:', error);
       document.getElementById('postsTable').innerHTML = `<tr><td colspan="7" class="empty-state"><h3>Failed to Load Posts</h3></td></tr>`;
@@ -446,7 +563,7 @@
       if (!response.ok) throw new Error('Failed to fetch solved posts');
       allSolvedPosts = await response.json(); 
       allSolvedPosts.sort((a, b) => new Date(b.solved_at) - new Date(a.solved_at));
-      applyFilters(); // Use combined filter logic
+      applyFilters(); 
     } catch (error) {
       console.error('Error fetching solved posts:', error);
       document.getElementById('solvedPostsTable').innerHTML = `<tr><td colspan="10" class="empty-state"><h3>Failed to Load Solved Posts</h3></td></tr>`;
@@ -483,6 +600,7 @@
     }
   };
 
+  // --- MODAL DETAILS ---
   window.showForwardedPostModal = function(postId) {
     const post = allPosts.find(p => p.id == postId);
     if (!post) return;
