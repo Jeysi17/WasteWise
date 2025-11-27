@@ -94,7 +94,7 @@ export async function authFetch(path, options = {}) {
         'Authorization': `Bearer ${token}`
     };
 
-    console.log(`🌐 authFetch: ${BASE_URL}${path}`);
+    console.log(`🌐 authFetch: ${BACKEND_URL}${path}`);
     console.log(`🔐 Using token: ${token.substring(0, 50)}...`);
 
     try {
