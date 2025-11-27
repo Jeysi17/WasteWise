@@ -366,7 +366,7 @@
   import { authFetch } from './auth.js';
   
   window.authFetch = authFetch;
-  const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+  const BACKEND_URL = 'https://wastewise-backend-760x.onrender.com';
 
   // --- ADDED: INPUT MODAL CONFIG ---
   const PUROKS_BY_BRGY = { DEFAULT: 13 };
@@ -532,7 +532,7 @@
       const user = JSON.parse(userData);
       currentBarangay = user.barangay;
       
-      const testResponse = await fetch('https://admin-backend-qkfm.onrender.com/api/pendings', {
+      const testResponse = await fetch('https://wastewise-backend-760x.onrender.com/api/pendings', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

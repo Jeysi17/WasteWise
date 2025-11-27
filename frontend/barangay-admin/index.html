@@ -75,7 +75,7 @@ async function checkExistingAuth() {
       console.log('🔐 Checking existing token validity...');
       
       // Use a working endpoint instead of the broken /auth/me
-      const testRes = await fetch('https://admin-backend-qkfm.onrender.com/api/brgy/analytics/summary?month=2024-11', {
+      const testRes = await fetch('https://wastewise-backend-760x.onrender.com/api/brgy/analytics/summary?month=2024-11', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

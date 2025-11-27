@@ -15,8 +15,8 @@ const barangayRoutes = require('./routes/barangay');
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://barangay-admin.onrender.com',
-    'https://cenro-admin.onrender.com'
+    'https://wastewise-brgy-admin.onrender.com',
+    'https://wastewise-cenro-admin.onrender.com'
   ],
   credentials: true
 }));
