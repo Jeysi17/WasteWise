@@ -1,11 +1,12 @@
 const { Pool } = require('pg');
+require('dotenv').config(); // Ensure you have installed 'dotenv' via npm install dotenv
 
 const pool = new Pool({
-  user: "01971842-d24f-7abd-ace2-a2ff5c9d83cf",
-  password: "b4a6c17e-b03a-46a1-b720-23ae0dfc8ce5",
-  host: "us-west-2.db.thenile.dev",
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
   port: 5432,
-  database: "wastewise_app",
+  database: process.env.DB_NAME,
   ssl: { rejectUnauthorized: false },
 });
 
