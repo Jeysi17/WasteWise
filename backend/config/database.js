@@ -1,5 +1,4 @@
 const { Pool } = require('pg');
-require('dotenv').config(); // Ensure you have installed 'dotenv' via npm install dotenv
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -11,3 +10,4 @@ const pool = new Pool({
 });
 
 module.exports = pool;
+
