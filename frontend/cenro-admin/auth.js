@@ -1,5 +1,5 @@
 // Backend URL configuration
-const BACKEND_URL = 'https://admin-backend-qkfm.onrender.com';
+const BACKEND_URL = 'https://wastewise-backend-760x.onrender.com';
     
 const TOKEN_KEY = 'wastewise_admin_token';
 const USER_KEY = 'wastewise_admin_user';

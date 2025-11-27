@@ -1,5 +1,5 @@
 // auth.js - Updated version
-const BASE_URL = 'https://admin-backend-qkfm.onrender.com';
+const BASE_URL = 'https://wastewise-backend-760x.onrender.com';
 const TOKEN_KEY = 'wastewise_brgy_token';
 const USER_KEY = 'wastewise_brgy_user';
 
