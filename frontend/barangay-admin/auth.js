@@ -1,5 +1,5 @@
 // auth.js - Updated version
-const BACKEND_URL = 'https://wastewise-backend-760x.onrender.com';
+const BASE_URL = 'https://admin-backend-qkfm.onrender.com';
 const TOKEN_KEY = 'wastewise_brgy_token';
 const USER_KEY = 'wastewise_brgy_user';
 
@@ -94,11 +94,11 @@ export async function authFetch(path, options = {}) {
         'Authorization': `Bearer ${token}`
     };
 
-    console.log(`🌐 authFetch: ${BACKEND_URL}${path}`);
+    console.log(`🌐 authFetch: ${BASE_URL}${path}`);
     console.log(`🔐 Using token: ${token.substring(0, 50)}...`);
 
     try {
-        const res = await fetch(BACKEND_URL + path, { ...options, headers });
+        const res = await fetch(BASE_URL + path, { ...options, headers });
         console.log(`📡 Response: ${res.status} ${res.statusText} for ${path}`);
 
         if (res.status === 401) {
@@ -156,7 +156,7 @@ export async function login(username, password) {
     console.log('🔑 login(): Attempting login for user:', username);
     
     try {
-        const res = await fetch(BACKEND_URL + '/api/brgy/auth/login', {
+        const res = await fetch(BASE_URL + '/api/brgy/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
