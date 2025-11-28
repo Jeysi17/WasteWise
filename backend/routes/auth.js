@@ -3,10 +3,10 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 
 // CENRO Admin Auth Routes
-router.post('/cenro/auth/register', authController.register);
-router.post('/cenro/auth/login', authController.login);
-router.get('/cenro/auth/me', authController.getMe);
-router.post('/cenro/auth/logout', authController.logout);
+router.post('cenro/auth/register', authController.register);
+router.post('/auth/login', authController.login);
+router.get('/auth/me', authController.getMe);
+router.post('/auth/logout', authController.logout);
 
 // Barangay Admin Auth Routes
 router.post('/brgy/auth/register', authController.brgyRegister);
