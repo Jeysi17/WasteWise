@@ -52,7 +52,7 @@ exports.login = async (req, res) => {
 
     // Generate JWT with type 'brgy' and include barangay
     const token = jwt.sign(
-      { id: user.id, username: user.username, type: 'admin', barangay: user.barangay },
+      { id: user.id, username: user.username, type: 'admin' },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
