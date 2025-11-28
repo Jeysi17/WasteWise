@@ -40,7 +40,7 @@ exports.login = async (req, res) => {
 
     // Query Barangay admin table (replace table name if different)
     const r = await pool.query(
-      'SELECT id, username, password, barangay FROM admins WHERE username = $1',
+      'SELECT id, username, password FROM admins WHERE username = $1',
       [username]
     );
 
