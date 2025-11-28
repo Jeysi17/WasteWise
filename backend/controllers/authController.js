@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { generateToken, verifyToken, extractToken } = require('../utils/jwt');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_here';
-const JWT_EXPIRES_IN = '8h'; // adjust if needed
+const JWT_EXPIRES_IN = '8h';
 
 // CENRO Admin Auth
 exports.register = async (req, res) => {
@@ -23,22 +23,22 @@ exports.register = async (req, res) => {
 
     const user = { id: out.rows[0].id, username: out.rows[0].username };
     const token = generateToken({ id: user.id, username: user.username, type: 'admin' });
-    console.log('✅ REGISTER generated token');
+    console.log('✅ CENRO REGISTER generated token');
     res.json({ message: 'Registered', user, token });
   } catch (e) {
-    console.error('Register error:', e);
+    console.error('CENRO Register error:', e);
     res.status(500).json({ error: 'Registration failed' });
   }
 };
 
 exports.login = async (req, res) => {
-    try {
+  try {
     const { username, password } = req.body || {};
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    // Query Barangay admin table (replace table name if different)
+    // Query admin table
     const r = await pool.query(
       'SELECT id, username, password FROM admins WHERE username = $1',
       [username]
@@ -50,14 +50,14 @@ exports.login = async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Generate JWT with type 'brgy' and include barangay
-    const token = jwt.sign(
-      { id: user.id, username: user.username, type: 'admin' },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+    // FIXED: Use generateToken function instead of jwt.sign directly
+    const token = generateToken({ 
+      id: user.id, 
+      username: user.username, 
+      type: 'admin' 
+    });
 
-    console.log('✅ ADMIN LOGIN generated token');
+    console.log('✅ CENRO LOGIN generated token');
     res.json({
       message: 'Logged in',
       user: { id: user.id, username: user.username },
@@ -65,7 +65,7 @@ exports.login = async (req, res) => {
     });
 
   } catch (e) {
-    console.error('BRGY login error:', e);
+    console.error('CENRO login error:', e);
     res.status(500).json({ error: 'Login failed' });
   }
 };
@@ -79,8 +79,6 @@ exports.getMe = (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  // With JWT, logout is handled client-side by removing the token
-  // No server-side action needed since tokens are stateless
   res.json({ message: 'Logged out' });
 };
 
@@ -152,7 +150,15 @@ exports.brgyLogin = async (req, res) => {
       type: 'brgy' 
     });
     console.log('✅ BRGY LOGIN generated token');
-    res.json({ message: 'Logged in', user: { id: user.id, username: user.username, barangay: user.barangay }, token });
+    res.json({ 
+      message: 'Logged in', 
+      user: { 
+        id: user.id, 
+        username: user.username, 
+        barangay: user.barangay 
+      }, 
+      token 
+    });
   } catch (e) {
     console.error('Barangay login error:', e);
     res.status(500).json({ error: 'Login failed' });
@@ -160,7 +166,6 @@ exports.brgyLogin = async (req, res) => {
 };
 
 exports.brgyGetMe = (req, res) => {
-  // Token is already verified by middleware, user info is in req.user
   if (!req.user || req.user.type !== 'brgy') {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -172,7 +177,5 @@ exports.brgyGetMe = (req, res) => {
 };
 
 exports.brgyLogout = (req, res) => {
-  // With JWT, logout is handled client-side by removing the token
-  // No server-side action needed since tokens are stateless
   res.json({ message: 'Logged out' });
 };
