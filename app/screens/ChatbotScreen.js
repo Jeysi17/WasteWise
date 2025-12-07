@@ -39,6 +39,19 @@ const ChatbotScreen = () => {
   const flatListRef = useRef(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+   const handleInputChange = (text) => {
+    console.log("Typing:", text);
+    setInput(text);
+  };
+
+  const handleSend = () => {
+    console.log("Sending:", input);
+    if (input.trim()) {
+      setMessages(prev => [...prev, input]);
+      setInput("");
+    }
+  };
+
   useEffect(() => {
   const showSub = Keyboard.addListener(
     Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -244,11 +257,14 @@ const ChatbotScreen = () => {
 
         {/* Input box at the bottom */}
         <View style={styles.inputContainer}>
-          <TextInput
+           <TextInput
             style={styles.input}
             placeholder="Type your message..."
             value={input}
+            onChangeText={handleInputChange}
+            onSubmitEditing={handleSend}
             returnKeyType="send"
+            autoFocus={true} // Add this to see if it helps
           />
           <TouchableOpacity
             style={[

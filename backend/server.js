@@ -15,6 +15,7 @@ import userRoutes from "./routes/userRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import materialRoutes from "./routes/materialsRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -27,6 +28,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/materials", materialRoutes)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () =>

@@ -171,7 +171,6 @@ const CreatePostScreen = ({ navigation }) => {
     }
   };
 
-  // ADDED — Confirmation Modal Actions
   const handleConfirmYes = () => {
     setShowConfirmModal(false);
     handleSubmit();
@@ -198,7 +197,7 @@ const CreatePostScreen = ({ navigation }) => {
               contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
               showsVerticalScrollIndicator={false}
             >
-              <View style={[styles.formContainer, {height: '95%'}]}>
+              <View style={[styles.formContainer]}>
 
                 <View style={styles.inputRow}>
                   <Text style={styles.text}>Post Title:</Text>
@@ -208,6 +207,7 @@ const CreatePostScreen = ({ navigation }) => {
                     style={styles.input}
                     value={title}
                     onChangeText={setTitle}
+
                   />
                 </View>
 
@@ -250,7 +250,7 @@ const CreatePostScreen = ({ navigation }) => {
 
                   <TouchableOpacity
                     style={[styles.submitBtn, isSubmitting && { opacity: 0.7 }]}
-                    onPress={() => setShowConfirmModal(true)} // ADDED
+                    onPress={() => setShowConfirmModal(true)} 
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -266,7 +266,6 @@ const CreatePostScreen = ({ navigation }) => {
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
 
-      {/* ADDED CONFIRMATION MODAL */}
       <Modal visible={showConfirmModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.confirmModal}>
@@ -292,10 +291,18 @@ export default CreatePostScreen;
 
 const styles = StyleSheet.create({
   header: {
+    fontSize: SCREEN_WIDTH * 0.06, 
+    textAlign: 'center', 
+    marginTop: SCREEN_HEIGHT * 0.025,  
     fontFamily: 'PSemi-Bold',
-    fontSize: SCREEN_WIDTH * 0.06,
-    marginTop: SCREEN_HEIGHT * 0.025,
-    textAlign: 'center',
+    color: colors.border_green,
+    width: SCREEN_WIDTH * 0.8,
+    alignSelf: 'center',
+    backgroundColor: colors.pale_green,
+    borderRadius: 40,
+    paddingTop: SCREEN_HEIGHT * 0.0069,
+    borderWidth: 2,
+    borderColor: colors.border_green,
   },
   formContainer: {
     backgroundColor: colors.BG_color,
@@ -304,6 +311,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 10,
     padding: SCREEN_WIDTH * 0.04,
+    paddingBottom: SCREEN_HEIGHT * 0.06,
+    borderWidth: 2,
+    borderColor: colors.border_green,
+    height: SCREEN_HEIGHT * 0.65,
   },
   text: {
     fontFamily: 'PSemi-Bold',
@@ -314,19 +325,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: SCREEN_WIDTH * 0.01,
+    borderBottomWidth: 1,
+    paddingBottom: SCREEN_HEIGHT * 0.009,
   },
   input: {
-    marginLeft: SCREEN_WIDTH * 0.025,
+    marginLeft: SCREEN_WIDTH * 0.02,
     borderWidth: 1,
     borderRadius: 10,
-    fontSize: SCREEN_WIDTH * 0.038,
+    fontSize: SCREEN_WIDTH * 0.04,
     fontFamily: 'PSemi-Bold',
-    paddingHorizontal: SCREEN_WIDTH * 0.025,
     backgroundColor: '#fff',
-    height: SCREEN_HEIGHT * 0.05,
     flex: 1,
     textAlignVertical: 'center',
-    paddingTop: 2,
+    padding: SCREEN_WIDTH * 0.025,
   },
   image: {
     height: SCREEN_WIDTH * 0.5,
@@ -335,7 +346,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   detailsInput: {
-    marginTop: SCREEN_HEIGHT * 0.018,
+    marginTop: SCREEN_HEIGHT * 0.01,
     borderWidth: 1,
     borderRadius: 10,
     fontSize: SCREEN_WIDTH * 0.038,
@@ -344,7 +355,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     padding: SCREEN_WIDTH * 0.025,
     height: SCREEN_HEIGHT * 0.12,
-    width: SCREEN_WIDTH * 0.9,
+    width: SCREEN_WIDTH * 0.83,
     alignSelf: 'center',
   },
   buttonRow: {
@@ -355,7 +366,7 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     backgroundColor: 'red',
-    padding: SCREEN_HEIGHT * 0.01,
+    padding: SCREEN_HEIGHT * 0.011,
     borderRadius: 10,
     width: SCREEN_WIDTH * 0.23,
     alignItems: 'center',

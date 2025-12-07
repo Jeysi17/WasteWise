@@ -28,7 +28,7 @@
         "GOOGLE_SERVICES_JSON": "google-services.json",
         "EXPO_PUBLIC_APPWRITE_ENDPOINT": "https://cloud.appwrite.io/v1",
         "EXPO_PUBLIC_APPWRITE_PROJECT_ID": "6825889e00093cfa4330",
-        "EXPO_PUBLIC_HOST_URL": "https://wastewise-da5j.onrender.com"
+        "EXPO_PUBLIC_HOST_URL": "https://wastewise-w7rb.onrender.com"
       },
       "android": {
         "buildType": "apk"

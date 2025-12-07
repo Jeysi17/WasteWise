@@ -123,7 +123,7 @@ const ProfileScreen = () => {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg_green }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.pale_green }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         <ImageBackground
           source={require('../../assets/images/bg-image.jpg')}
@@ -303,7 +303,7 @@ export default ProfileScreen;
 const styles = StyleSheet.create({
   profileImageContainer: {
     position: 'absolute',
-    bottom: SCREEN_HEIGHT * 0.1,
+    bottom: SCREEN_HEIGHT * 0.139,
     left: 0,
     zIndex: 10,
     backgroundColor: 'white',
@@ -318,15 +318,17 @@ const styles = StyleSheet.create({
   },
   profileDetails: {
     width: SCREEN_WIDTH * 0.92,
-    minHeight: SCREEN_HEIGHT * 0.065, // ✅ Changed from height to minHeight
+    minHeight: SCREEN_HEIGHT * 0.075, // ✅ Changed from height to minHeight
     position: 'absolute',
-    bottom: SCREEN_HEIGHT * 0.1,
+    bottom: SCREEN_HEIGHT * 0.15,
     left: SCREEN_WIDTH * 0.04,
     zIndex: 9,
-    backgroundColor: colors.pale_green,
+    backgroundColor: colors.bg_green,
     borderBottomLeftRadius: 35,
     borderBottomRightRadius: 50,
+    borderTopRightRadius: 50,
     borderBottomWidth: 3,
+    borderTopWidth: 3,
     borderRightWidth: 3,
     borderColor: colors.border_green,
     paddingVertical: SCREEN_HEIGHT * 0.005, // ✅ Added padding
@@ -335,7 +337,7 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
     paddingLeft: SCREEN_WIDTH * 0.22,
-    paddingRight: SCREEN_WIDTH * 0.02,
+    paddingRight: SCREEN_WIDTH * 0.027,
     justifyContent: 'center',
   },
   Name: {
@@ -362,12 +364,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: SCREEN_WIDTH * 0.9,
     alignSelf: 'center',
-    marginTop: SCREEN_HEIGHT * 0.1,
-    backgroundColor: colors.pale_green,
+    marginTop: SCREEN_HEIGHT * 0.06,
+    backgroundColor: colors.bg_green,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: colors.border_green,
+    zIndex: 5,
   },
   tabButton: {
     flex: 1,
@@ -375,7 +378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: colors.border_green,
+    backgroundColor: '#72fd72ff',
   },
   tabText: {
     color: 'black',
@@ -383,16 +386,22 @@ const styles = StyleSheet.create({
     fontSize: SCREEN_WIDTH * 0.04,
   },
   tabContent: {
-    marginHorizontal: SCREEN_WIDTH * 0.05,
-    backgroundColor: colors.pale_green,
+    marginHorizontal: SCREEN_WIDTH * 0.06,
+    backgroundColor: colors.bg_green,
     borderLeftWidth: 2,
     borderRightWidth: 2,
+    borderBottomWidth: 2,
     borderColor: colors.border_green,
+    top: SCREEN_HEIGHT * -0.005,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
   },
   listItemContainer: {
     paddingVertical: SCREEN_HEIGHT * 0.012,
     borderBottomWidth: 2,
-    borderBottomColor: '#ccc',
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+    borderBottomColor: colors.lime_green,
     paddingHorizontal: SCREEN_WIDTH * 0.025,
   },
   listItemTitle: {

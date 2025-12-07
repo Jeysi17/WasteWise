@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Text, 
   TouchableOpacity, 
@@ -10,111 +10,249 @@ import {
   Dimensions,
   Modal,
   Alert,
-  Image
+  Image,
+  Animated,
+  PanResponder,
+  ActivityIndicator
 } from 'react-native';
 import colors from '../../constant/colors';
 
+// Get screen dimensions
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Slogans data
-const slogans = [
-  {
-    id: 1,
-    title: "Possible ang Zero Waste kung magtutulungan tayo",
-    image: require('../../assets/images/possible-ang-zero-waste-kung-magtutulungan-tayo.jpg'),
-  },
-  {
-    id: 2,
-    title: "9 na dahilan para iwasan ang paggamit ng plastik",
-    image: require('../../assets/images/9-na-dahilan-para-iwasan-ang-paggamit-ng-plastik.jpg'),
-  },
-  {
-    id: 3,
-    title: "Bawasan natin ang basurang plastik",
-    image: require('../../assets/images/bawasan-natin-ang-basurang-plastik.jpg'),
-  },
-  {
-    id: 4,
-    title: "Tamang pagtatapon ng apat na uri ng basura",
-    image: require('../../assets/images/tamang-pagtatapon-ng-apat-na-uri-basura.jpg'),
-  },
-  {
-    id: 5,
-    title: "Pangalagaan ang ating kapaligiran at ang ating kalusugan itapon sa Special Waste Bins ang mga delikado at nakakahawang mga basura",
-    image: require('../../assets/images/slogan-3.jpg'),
-  },
-  {
-    id: 6,
-    title: "Makakatulong sa inyong pamilya ang Zero Waste!",
-    image: require('../../assets/images/zero-waste.jpg'),
-  },
-];
+// Use environment variable
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'}/api/materials`;
 
-const articles = [
-    {
-      title: "Waste Disposal",
-      link: "https://www.britannica.com/technology/waste-disposal-system",
-    },
-    {
-      title: "How Our Trash Impacts the Environment",
-      link: "https://www.earthday.org/how-our-trash-impacts-the-environment/",
-    },
-    {
-      title: "Simple Ways to Heal The Planet: A FREE Guide to Waste Management & Pollution Reduction",
-      link: "https://healtheplanet.com/waste?gad_source=1&gad_campaignid=22255977746&gbraid=0AAAAACTrHhwJwapKHfIflVCBV1nbXoDFx&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrCAxTeabneH_KYoSDemHHRwvCQ3EUX14t2VQrnp0nzQDXdEE5EqOsRoCXjwQAvD_BwE",
-    },
-    {
-      title: "Everything You Need to Know About Waste Management ",
-      link: "https://www.recyclingbristol.com/waste-management-everything-you-need-to-know-about-waste-management/",
-    },
-    {
-      title: "Solid waste management needs to improve",
-      link: "https://www.britishecologicalsociety.org/solid-waste-management-needs-to-improve/?gad_source=1&gad_campaignid=22686019361&gbraid=0AAAAABL5RNTVz-M5kJCZvmAZzlJ6VyRJ5&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrJtp9Z33HbqJiJmiGjmDRrddmEGl2EXVlUk1Nggyn7E9lP47hnzNHhoCksIQAvD_BwE",
-    },
-    {
-      title: "Bounty's Green Revolution: Leading Plastic Waste Management",
-      link: "https://bounty.com.ph/2025/05/19/bounty-plastic-waste-management/?gad_source=1&gad_campaignid=23217610034&gbraid=0AAAAAqUOxF159ety0IVb20ZQX25tE1hwy&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrMUqQaPK8di3RwGgSbeGvR66NsZAV6uODrBV_RHaVRZUYsuhe0CfRhoCHzoQAvD_BwE",
-    },
-    {
-      title: "Status of Solid Waste Management in the Philippines ",
-      link: "https://www.jstage.jst.go.jp/article/jsmcwm/24/0/24_677/_pdf",
-    },
-    {
-      title: "Ridge to Reef: The Fight Against Mismanaged Waste",
-      link: "https://climate.gov.ph/news/923",
-    },
-    {
-      title: "Zero Waste",
-      link: "https://www.no-burn.org/zero-waste/?gad_source=1&gad_campaignid=21174378386&gbraid=0AAAAAogjHBlS_-QYlc9g42mOmhOfn_2Ej&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrAoycItGJQxtzIA2074w5LSa7UzUbnHdblfSO5aABoTsnoo5_A0XPhoCj2QQAvD_BwE",
-    },
-    {
-      title: "Solid Waste Management Awareness and Practices",
-      link: " https://www.aquademia-journal.com/download/solid-waste-management-awareness-and-practices-among-senior-high-school-students-in-a-state-college-9579.pdf",
-    },
-    {
-      title: "Best Practice in Solid Waste Management in the Philippines",
-      link: "https://www.youtube.com/watch?v=-EQBG5TdTn4&pp=ygUWc29saWQgd2FzdGUgbWFuYWdlbWVudA%3D%3D",
-    },
-    {
-      title: "I-Witness: 'Plastic Republic', a documentary by Howie Severino",
-      link: "https://www.youtube.com/watch?v=qGNCK_buzNk&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
-    },
-    {
-      title: "IRONY - Environmental Short Film",
-      link: "https://www.youtube.com/watch?v=JNGUwrmvbs0&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
-    },
-    {
-      title: "Ano sa tingin mo? | Ecological Solid Waste Management",
-      link: "https://www.youtube.com/watch?v=G-JKwlb1enY&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
-    },
-  ];
+// Image Placeholder Component
+const ImagePlaceholder = ({ size = SCREEN_WIDTH * 0.7 }) => (
+  <View style={[styles.imagePlaceholder, { width: size, height: size * 0.6 }]}>
+    <Text style={styles.placeholderText}>Image Not Available</Text>
+  </View>
+);
 
-const InfoScreen = ({ navigation }) => {
+// Zoomable Image Component (if needed for slogans)
+const ZoomableImage = ({ source, onZoomChange }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  
+  const [isZoomed, setIsZoomed] = useState(false);
+  const lastTap = useRef(null);
+  const lastScale = useRef(1);
+  const lastTranslateX = useRef(0);
+  const lastTranslateY = useRef(0);
+
+  const IMAGE_WIDTH = SCREEN_WIDTH;
+  const IMAGE_HEIGHT = SCREEN_HEIGHT * 0.7;
+
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (lastTap.current && (now - lastTap.current) < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      if (isZoomed) {
+        // Zoom out
+        Animated.parallel([
+          Animated.spring(scale, {
+            toValue: 1,
+            useNativeDriver: true,
+            friction: 8,
+            tension: 40
+          }),
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            friction: 8,
+            tension: 40
+          }),
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            friction: 8,
+            tension: 40
+          }),
+        ]).start();
+        setIsZoomed(false);
+        lastScale.current = 1;
+        lastTranslateX.current = 0;
+        lastTranslateY.current = 0;
+        if (onZoomChange) onZoomChange(1);
+      } else {
+        // Zoom in to 2.5x
+        Animated.spring(scale, {
+          toValue: 2.5,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 40
+        }).start();
+        setIsZoomed(true);
+        lastScale.current = 2.5;
+        if (onZoomChange) onZoomChange(2.5);
+      }
+      lastTap.current = null;
+    } else {
+      lastTap.current = now;
+    }
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => isZoomed,
+      onMoveShouldSetPanResponder: () => isZoomed,
+      onPanResponderGrant: () => {
+        translateX.setOffset(translateX._value);
+        translateY.setOffset(translateY._value);
+        translateX.setValue(0);
+        translateY.setValue(0);
+      },
+      onPanResponderMove: Animated.event(
+        [
+          null,
+          { dx: translateX, dy: translateY }
+        ],
+        {
+          useNativeDriver: false,
+          listener: (event, gestureState) => {
+            if (!isZoomed) return;
+
+            const maxTranslateX = (IMAGE_WIDTH * (lastScale.current - 1)) / 2;
+            const maxTranslateY = (IMAGE_HEIGHT * (lastScale.current - 1)) / 2;
+            
+            const currentX = gestureState.dx;
+            const currentY = gestureState.dy;
+            
+            const boundedX = Math.min(Math.max(currentX, -maxTranslateX), maxTranslateX);
+            const boundedY = Math.min(Math.max(currentY, -maxTranslateY), maxTranslateY);
+            
+            translateX.setValue(boundedX);
+            translateY.setValue(boundedY);
+          }
+        }
+      ),
+      onPanResponderRelease: () => {
+        if (!isZoomed) return;
+
+        lastTranslateX.current = translateX._value + (translateX._offset || 0);
+        lastTranslateY.current = translateY._value + (translateY._offset || 0);
+        
+        translateX.flattenOffset();
+        translateY.flattenOffset();
+      },
+      onPanResponderTerminate: () => {
+        translateX.flattenOffset();
+        translateY.flattenOffset();
+      },
+    })
+  ).current;
+
+  return (
+    <View style={styles.zoomContainer}>
+      <Animated.Image
+        {...panResponder.panHandlers}
+        source={source}
+        style={[
+          styles.zoomableImage,
+          {
+            transform: [
+              { scale: scale },
+              { translateX: translateX },
+              { translateY: translateY },
+            ],
+          },
+        ]}
+        resizeMode="contain"
+      />
+      <TouchableOpacity 
+        activeOpacity={1}
+        onPress={handleDoubleTap}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="box-only"
+      />
+    </View>
+  );
+};
+
+export default function InfoScreen({ navigation }) {
+  const [materials, setMaterials] = useState({
+    slogans: [],
+    otherMaterials: []
+  });
+  const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSlogan, setSelectedSlogan] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  
-  const scrollViewRef = useRef(null);
+  const [currentZoom, setCurrentZoom] = useState(1);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  const fetchMaterials = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching from:', API_URL);
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      
+      // Note: Our backend returns the array directly, not {success: true, data: [...]}
+      // So we can use the data directly
+      
+      // Separate slogans (materials without link_url but with thumbnail)
+      const slogans = data.filter(material => 
+        (!material.link_url || material.link_url === '') && 
+        material.thumbnail_path
+      );
+      
+      // Other materials (articles, videos, etc.)
+      const otherMaterials = data.filter(material => 
+        material.link_url || (!material.link_url && !material.thumbnail_path)
+      );
+      
+      setMaterials({
+        slogans,
+        otherMaterials
+      });
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      Alert.alert('Error', 'Failed to load materials');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openSloganImage = (slogan) => {
+    const index = materials.slogans.findIndex(s => s.id === slogan.id);
+    setCurrentIndex(index);
+    setSelectedSlogan(slogan);
+    setModalVisible(true);
+    setCurrentZoom(1);
+  };
+
+  const closeSloganImage = () => {
+    setModalVisible(false);
+    setSelectedSlogan(null);
+    setCurrentIndex(0);
+    setCurrentZoom(1);
+  };
+
+  const goToNext = () => {
+    if (currentIndex < materials.slogans.length - 1) {
+      const newIndex = currentIndex + 1;
+      setCurrentIndex(newIndex);
+      setSelectedSlogan(materials.slogans[newIndex]);
+      setCurrentZoom(1);
+    }
+  };
+
+  const goToPrevious = () => {
+    if (currentIndex > 0) {
+      const newIndex = currentIndex - 1;
+      setCurrentIndex(newIndex);
+      setSelectedSlogan(materials.slogans[newIndex]);
+      setCurrentZoom(1);
+    }
+  };
 
   const openLink = async (url) => {
     try {
@@ -154,55 +292,43 @@ const InfoScreen = ({ navigation }) => {
     }
   };
 
-  const openSloganImage = (slogan) => {
-    const index = slogans.findIndex(s => s.id === slogan.id);
-    setCurrentIndex(index);
-    setSelectedSlogan(slogan);
-    setModalVisible(true);
+  // Function to get image URI - handles both local and remote images
+  const getImageUri = (material) => {
+    if (!material.thumbnail_path) return null;
     
-    // Reset scroll position when opening new image
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
-    }
-  };
-
-  const closeSloganImage = () => {
-    setModalVisible(false);
-    setSelectedSlogan(null);
-    setCurrentIndex(0);
-  };
-
-  const goToNext = () => {
-    if (currentIndex < slogans.length - 1) {
-      const newIndex = currentIndex + 1;
-      setCurrentIndex(newIndex);
-      setSelectedSlogan(slogans[newIndex]);
-      
-      // Reset scroll position for new image
-      if (scrollViewRef.current) {
-        scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
+    // If it's a local image path (from assets)
+    if (material.thumbnail_path.includes('assets/images/')) {
+      // Extract filename from path and require it
+      const filename = material.thumbnail_path.split('/').pop();
+      try {
+        // You might need to map filenames to actual requires
+        const imageMap = {
+          '9-na-dahilan-para-iwasan-ang-paggamit-ng-plastik.jpg': require('../../assets/images/9-na-dahilan-para-iwasan-ang-paggamit-ng-plastik.jpg'),
+          'bawasan-natin-ang-basurang-plastik.jpg': require('../../assets/images/bawasan-natin-ang-basurang-plastik.jpg'),
+          'slogan-3.jpg': require('../../assets/images/slogan-3.jpg'),
+        };
+        return imageMap[filename];
+      } catch (error) {
+        return null;
       }
     }
+    
+    // For remote images, use the full URL
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+    return { uri: `${baseUrl}/uploads/${material.thumbnail_path}` };
   };
 
-  const goToPrevious = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      setCurrentIndex(newIndex);
-      setSelectedSlogan(slogans[newIndex]);
-      
-      // Reset scroll position for new image
-      if (scrollViewRef.current) {
-        scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
-      }
-    }
-  };
-
-  const resetZoom = () => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: true });
-    }
-  };
+  // Render loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.border_green} />
+          <Text style={styles.loadingText}>Loading materials...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -212,49 +338,75 @@ const InfoScreen = ({ navigation }) => {
       >
         <Text style={styles.title}>Materials on Waste Management</Text>
 
-        {/* Slogans Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Educational Slogans & Guides</Text>
-        </View>
-
-        {/* Slogans Cards */}
-        {slogans.map((slogan, index) => (
-          <View key={slogan.id} style={[
-            styles.card,
-            index === 0 && styles.firstSloganCard
-          ]}>
-            <Text style={styles.cardTitle}>{slogan.title}</Text>
-            <TouchableOpacity 
-              style={styles.linkButton} 
-              onPress={() => openSloganImage(slogan)}
-            >
-              <Text style={styles.linkButtonText}>View Slogan →</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        {/* Articles Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Articles & Videos</Text>
-        </View>
-
-        {/* Articles List */}
-        {articles.map((item, idx) => {
-          const isVideo = item.link.includes("youtube.com") || item.link.includes("youtu.be");
+        {/* Slogans from API */}
+        {materials.slogans?.map((slogan, index) => {
+          const imageSource = getImageUri(slogan);
+          
           return (
-            <View key={idx} style={styles.card}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              <TouchableOpacity style={styles.linkButton} onPress={() => openLink(item.link)}>
+            <View key={slogan.id} style={[
+              styles.card,
+              index === 0 && styles.firstSloganCard
+            ]}>
+              <Text style={styles.cardTitle}>{slogan.title}</Text>
+              
+              <View style={styles.imageCardContainer}>
+                {imageSource ? (
+                  <Image 
+                    source={imageSource}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <ImagePlaceholder />
+                )}
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.linkButton} 
+                onPress={() => openSloganImage(slogan)}
+              >
                 <Text style={styles.linkButtonText}>
-                  {isVideo ? "Watch Video →" : "Read More →"}
+                  {slogan.button_text || 'View Slogan'} →
                 </Text>
               </TouchableOpacity>
             </View>
           );
         })}
+
+        {/* Other materials from API */}
+        {materials.otherMaterials?.map((item) => {
+          const imageSource = getImageUri(item);
+          
+          return (
+            <View key={item.id} style={styles.card}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              
+              {imageSource && (
+                <View style={styles.imageCardContainer}>
+                  <Image 
+                    source={imageSource}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
+              
+              {item.link_url && (
+                <TouchableOpacity 
+                  style={styles.linkButton} 
+                  onPress={() => openLink(item.link_url)}
+                >
+                  <Text style={styles.linkButtonText}>
+                    {item.button_text || 'Open'} →
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })}
       </ScrollView>
 
-      {/* Image Modal with Navigation Buttons */}
+      {/* Image Modal with Navigation and Zoom */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -273,7 +425,7 @@ const InfoScreen = ({ navigation }) => {
                 {selectedSlogan?.title}
               </Text>
               <Text style={styles.imageCounter}>
-                {currentIndex + 1} of {slogans.length}
+                {currentIndex + 1} of {materials.slogans?.length || 0}
               </Text>
             </View>
             
@@ -292,30 +444,21 @@ const InfoScreen = ({ navigation }) => {
               </TouchableOpacity>
             )}
 
-            {/* Zoomable Image */}
-            <ScrollView
-              ref={scrollViewRef}
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollViewContent}
-              maximumZoomScale={3.0}
-              minimumZoomScale={1.0}
-              showsHorizontalScrollIndicator={true}
-              showsVerticalScrollIndicator={true}
-              bounces={true}
-              bouncesZoom={true}
-              pinchGestureEnabled={true} // Add this
-              directionalLockEnabled={false} // Add this
-              contentOffset={{ x: 0, y: 0 }} // Add this
-            >
-              <Image
-                source={selectedSlogan?.image}
-                style={styles.zoomableImage}
-                resizeMode="contain"
+            {/* Zoomable Image or Placeholder */}
+            {selectedSlogan ? (
+              <ZoomableImage 
+                key={selectedSlogan.id}
+                source={getImageUri(selectedSlogan)}
+                onZoomChange={setCurrentZoom}
               />
-            </ScrollView>
+            ) : (
+              <View style={styles.modalPlaceholderContainer}>
+                <ImagePlaceholder size={SCREEN_WIDTH * 0.8} />
+              </View>
+            )}
 
             {/* Next Button */}
-            {currentIndex < slogans.length - 1 && (
+            {currentIndex < (materials.slogans?.length || 0) - 1 && (
               <TouchableOpacity 
                 style={[styles.navButton, styles.nextButton]} 
                 onPress={goToNext}
@@ -328,7 +471,7 @@ const InfoScreen = ({ navigation }) => {
       </Modal>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -339,6 +482,16 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingBottom: SCREEN_HEIGHT * 0.12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: SCREEN_HEIGHT * 0.02,
+    fontSize: SCREEN_WIDTH * 0.04,
+    color: colors.border_green,
   },
   title: { 
     fontSize: SCREEN_WIDTH * 0.06, 
@@ -354,21 +507,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: SCREEN_HEIGHT * 0.02,
   },
-  sectionHeader: {
-    backgroundColor: colors.border_green,
-    marginHorizontal: SCREEN_WIDTH * 0.05,
-    marginVertical: SCREEN_HEIGHT * 0.02,
-    paddingVertical: SCREEN_HEIGHT * 0.015,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.dark_green,
-  },
-  sectionTitle: {
-    fontSize: SCREEN_WIDTH * 0.05,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
   card: {
     backgroundColor: colors.bg_green,
     marginHorizontal: SCREEN_WIDTH * 0.05,
@@ -382,10 +520,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 4,
   },
-  sloganCard: {
-    backgroundColor: colors.pale_green,
-    borderColor: colors.orange,
-  },
   firstSloganCard: {
     marginTop: SCREEN_HEIGHT * 0.01,
   },
@@ -393,7 +527,37 @@ const styles = StyleSheet.create({
     fontSize: SCREEN_WIDTH * 0.045,
     fontWeight: '600',
     color: colors.border_green,
-    textAlign: 'center'
+    textAlign: 'center',
+    marginBottom: SCREEN_HEIGHT * 0.015,
+  },
+  // Image in Card Styles
+  imageCardContainer: {
+    alignItems: 'center',
+    marginBottom: SCREEN_HEIGHT * 0.015,
+  },
+  cardImage: {
+    width: SCREEN_WIDTH * 0.7,
+    height: SCREEN_HEIGHT * 0.2,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.border_green,
+  },
+  // Image Placeholder Styles
+  imagePlaceholder: {
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    borderStyle: 'dashed',
+  },
+  placeholderText: {
+    color: '#666',
+    fontSize: SCREEN_WIDTH * 0.03,
+    fontWeight: '500',
+    textAlign: 'center',
+    padding: 5,
   },
   linkButton: {
     marginTop: SCREEN_HEIGHT * 0.012,
@@ -408,19 +572,6 @@ const styles = StyleSheet.create({
     fontSize: SCREEN_WIDTH * 0.035,
     fontWeight: 'bold',
   },
-  imageButton: {
-    marginTop: SCREEN_HEIGHT * 0.012,
-    alignSelf: 'center',
-    backgroundColor: colors.orange,
-    paddingVertical: SCREEN_HEIGHT * 0.007,
-    paddingHorizontal: SCREEN_WIDTH * 0.03,
-    borderRadius: 6,
-  },
-  imageButtonText: {
-    color: '#fff',
-    fontSize: SCREEN_WIDTH * 0.035,
-    fontWeight: 'bold',
-  },
   // Modal Styles
   modalContainer: {
     flex: 1,
@@ -430,9 +581,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 15,
+    paddingHorizontal: 15,
+    paddingTop: SCREEN_HEIGHT * 0.06,
+    paddingBottom: SCREEN_HEIGHT * 0.015,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
   },
   modalTitleContainer: {
@@ -442,13 +593,14 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: '#fff',
-    fontSize: SCREEN_WIDTH * 0.045,
+    fontSize: SCREEN_WIDTH * 0.04,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 5,
   },
   closeButton: {
-    padding: 10,
+    padding: 8,
+    width: 50,
   },
   closeButtonText: {
     color: '#fff',
@@ -456,7 +608,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   placeholder: {
-    width: 40,
+    width: 50,
   },
   imageContainer: {
     flex: 1,
@@ -465,16 +617,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  scrollView: {
+  modalPlaceholderContainer: {
     flex: 1,
-    marginHorizontal: 10,
-  },
-  scrollViewContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
+  zoomContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
   zoomableImage: {
-    width: SCREEN_WIDTH * 0.9,
+    width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT * 0.7,
   },
   // Navigation Buttons
@@ -482,51 +637,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: SCREEN_WIDTH * 0.12,
+    height: SCREEN_WIDTH * 0.12,
+    borderRadius: SCREEN_WIDTH * 0.06,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   prevButton: {
-    left: 20,
+    left: SCREEN_WIDTH * 0.05,
   },
   nextButton: {
-    right: 20,
+    right: SCREEN_WIDTH * 0.05,
   },
   navButtonText: {
     color: '#fff',
     fontSize: SCREEN_WIDTH * 0.08,
     fontWeight: 'bold',
   },
-  modalFooter: {
-    padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    alignItems: 'center',
-  },
   imageCounter: {
     color: '#ccc',
     fontSize: SCREEN_WIDTH * 0.035,
     fontWeight: 'bold',
   },
-  zoomHint: {
-    color: '#fff',
-    fontSize: SCREEN_WIDTH * 0.035,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  resetButton: {
-    backgroundColor: colors.border_green,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 6,
-  },
-  resetButtonText: {
-    color: '#fff',
-    fontSize: SCREEN_WIDTH * 0.035,
-    fontWeight: 'bold',
-  },
 });
-
-export default InfoScreen;
