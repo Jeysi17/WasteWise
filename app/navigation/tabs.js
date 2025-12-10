@@ -87,7 +87,7 @@ const Tabs = () => {
                     </View>
                 ),
             }}/>
-            <Tab.Screen name="Event" component={InfoScreen} options={{
+            <Tab.Screen name="Info" component={InfoScreen} options={{
                 tabBarIcon: ({focused}) => (
                     <View style={styles.tabIconContainer}> 
                         <Image source={require('../../assets/icons/info.png')}

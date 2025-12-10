@@ -174,49 +174,81 @@ const fetchRandomArticle = async () => {
   }, [user, userLocation]);
 
   // 🔗 IMPROVED: Open link with fallback options
-  const openLink = async (url) => {
-    try {
-      // For YouTube links, try multiple approaches
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        // Extract video ID
-        let videoId = null;
-        
-        if (url.includes('youtube.com/watch?v=')) {
-          videoId = url.split('watch?v=')[1]?.split('&')[0];
-        } else if (url.includes('youtu.be/')) {
-          videoId = url.split('youtu.be/')[1]?.split('?')[0];
-        }
+const openLink = async (url) => {
+  try {
+    // Check if URL is valid
+    if (!url) {
+      Alert.alert(
+        'No Link Available',
+        'This article does not have an external link.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    console.log('🔗 Opening link:', url);
 
-        if (videoId) {
-          // Try YouTube app first (vnd.youtube://)
-          const youtubeAppUrl = `vnd.youtube://watch?v=${videoId}`;
+    // For YouTube links, try multiple approaches
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      // Extract video ID
+      let videoId = null;
+      
+      if (url.includes('youtube.com/watch?v=')) {
+        videoId = url.split('watch?v=')[1]?.split('&')[0];
+      } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      }
+
+      if (videoId) {
+        // Try YouTube app first (vnd.youtube://)
+        const youtubeAppUrl = `vnd.youtube://watch?v=${videoId}`;
+        console.log('🎬 Trying YouTube app URL:', youtubeAppUrl);
+        
+        try {
           const canOpenYoutubeApp = await Linking.canOpenURL(youtubeAppUrl);
           
           if (canOpenYoutubeApp) {
             await Linking.openURL(youtubeAppUrl);
+            console.log('✅ Opened in YouTube app');
             return;
           }
+        } catch (youtubeError) {
+          console.log('❌ Could not open YouTube app, falling back to browser');
         }
       }
-
-      // Fallback: Try opening the original URL in browser
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-      } else {
-        // Last resort: Try opening without checking
-        await Linking.openURL(url);
-      }
-    } catch (error) {
-      console.error('Error opening link:', error);
-      Alert.alert(
-        'Unable to Open Link',
-        'Could not open this link. Please check your internet connection or try again later.',
-        [{ text: 'OK' }]
-      );
     }
-  };
 
+    // Check if we can open the URL
+    const canOpen = await Linking.canOpenURL(url);
+    
+    if (canOpen) {
+      await Linking.openURL(url);
+      console.log('✅ Opened in browser');
+    } else {
+      console.log('⚠️ URL might not be valid, trying anyway...');
+      // Last resort: Try opening without checking
+      await Linking.openURL(url);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error opening link:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Could not open this link. Please check your internet connection or try again later.';
+    
+    if (error.message.includes('No Activity found')) {
+      errorMessage = 'No app available to open this type of link.';
+    } else if (error.message.includes('invalid URL')) {
+      errorMessage = 'The link appears to be invalid.';
+    }
+    
+    Alert.alert(
+      'Unable to Open Link',
+      errorMessage,
+      [{ text: 'OK' }]
+    );
+  }
+};
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg_green }}>
       <ScrollView 
@@ -309,9 +341,6 @@ const fetchRandomArticle = async () => {
         <View style={styles.card}>
           <View style={styles.articleHeader}>
             <Text style={styles.cardTitle}>Featured Article/Video For You</Text>
-            <TouchableOpacity onPress={refreshArticle} style={styles.refreshButton}>
-              <Text style={styles.refreshButtonText}>↻</Text>
-            </TouchableOpacity>
           </View>
           
           {loadingArticle ? (
@@ -319,28 +348,43 @@ const fetchRandomArticle = async () => {
           ) : article ? (
             <>
               <Text style={styles.articleTitle}>{article.title}</Text>
-              
-              {/* Optional: Display thumbnail if available */}
-              {article.thumbnail_path && (
-                <Image 
-                  source={{ uri: `${apiUrl}${article.thumbnail_path}` }} 
-                  style={styles.articleThumbnail}
-                  resizeMode="cover"
-                />
-              )}
-              
-              {/* Optional: Display date */}
-              {article.created_at && (
-                <Text style={styles.articleDate}>
-                  Added: {formatDateInWords(article.created_at)}
-                </Text>
-              )}
-              
-              <TouchableOpacity onPress={() => openLink(article.link_url)}>
+              {/* In your JSX - Update the TouchableOpacity */}
+              <TouchableOpacity 
+                onPress={() => {
+                  if (article.link_url) {
+                    openLink(article.link_url);
+                  } else if (article.thumbnail_path) {
+                    // Handle image-only articles (slogans)
+                    // You could navigate to an image viewer or show an alert
+                    Alert.alert(
+                      'Image Available',
+                      'This article has an image. You can view it in the Materials section.',
+                      [
+                        { text: 'OK', style: 'default' },
+                        { 
+                          text: 'Go to Materials', 
+                          onPress: () => navigation.navigate('Info') 
+                        }
+                      ]
+                    );
+                  } else {
+                    Alert.alert(
+                      'No External Content',
+                      'This is a text-only article or slogan.',
+                      [{ text: 'OK' }]
+                    );
+                  }
+                }}
+              >
                 <Text style={styles.articleLink}>
-                  {article.link_url.includes("youtube.com") || article.link_url.includes("youtu.be")
-                    ? "Watch Video →"
-                    : "Read More →"}
+                  {article.button_text || 
+                    (article.link_url 
+                      ? (article.link_url.includes("youtube.com") || article.link_url.includes("youtu.be")
+                          ? "Watch Video →"
+                          : "Read More →")
+                      : article.thumbnail_path
+                        ? "View Image →"
+                        : "View Details →")}
                 </Text>
               </TouchableOpacity>
             </>

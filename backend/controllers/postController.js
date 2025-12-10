@@ -52,10 +52,22 @@ export const getUserSummary = async (req, res) => {
         pool.query(solvedQuery, [name]),
       ]);
   
+      const pendingCount = parseInt(pendingResult.rows[0].count) || 0;
+      const approvedCount = parseInt(approvedResult.rows[0].count) || 0;
+      const solvedCount = parseInt(solvedResult.rows[0].count) || 0;
+      
+      // Calculate total pending (pending + approved)
+      const totalPending = pendingCount + approvedCount;
+  
       res.json({
-        pending: parseInt(pendingResult.rows[0].count) || 0,
-        approved: parseInt(approvedResult.rows[0].count) || 0,
-        solved: parseInt(solvedResult.rows[0].count) || 0,
+        pending: totalPending, // This now includes both pending and approved
+        solved: solvedCount,
+        // You can still include the breakdown if needed
+        breakdown: {
+          pending_only: pendingCount,
+          approved: approvedCount,
+          solved: solvedCount
+        }
       });
     } catch (err) {
       console.error("Error fetching summary:", err);
