@@ -11,6 +11,7 @@ const HomeScreen = ({ navigation }) => {
   const [summary, setSummary] = useState({ pending: 0, solved: 0 });
   const [schedule, setSchedule] = useState(null);
   const [article, setArticle] = useState(null);
+  const [loadingArticle, setLoadingArticle] = useState(true);
 
   const apiUrl = process.env.EXPO_PUBLIC_HOST_URL;
 
@@ -32,71 +33,87 @@ const HomeScreen = ({ navigation }) => {
     return date.toLocaleDateString('en-US', options);
   };
 
-  // 📰 Local list of articles (no DB)
-  const articles = [
-    {
-      title: "Waste Disposal",
-      link: "https://www.britannica.com/technology/waste-disposal-system",
-    },
-    {
-      title: "How Our Trash Impacts the Environment",
-      link: "https://www.earthday.org/how-our-trash-impacts-the-environment/",
-    },
-    {
-      title: "Simple Ways to Heal The Planet: A FREE Guide to Waste Management & Pollution Reduction",
-      link: "https://healtheplanet.com/waste?gad_source=1&gad_campaignid=22255977746&gbraid=0AAAAACTrHhwJwapKHfIflVCBV1nbXoDFx&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrCAxTeabneH_KYoSDemHHRwvCQ3EUX14t2VQrnp0nzQDXdEE5EqOsRoCXjwQAvD_BwE",
-    },
-    {
-      title: "Everything You Need to Know About Waste Management ",
-      link: "https://www.recyclingbristol.com/waste-management-everything-you-need-to-know-about-waste-management/",
-    },
-    {
-      title: "Solid waste management needs to improve",
-      link: "https://www.britishecologicalsociety.org/solid-waste-management-needs-to-improve/?gad_source=1&gad_campaignid=22686019361&gbraid=0AAAAABL5RNTVz-M5kJCZvmAZzlJ6VyRJ5&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrJtp9Z33HbqJiJmiGjmDRrddmEGl2EXVlUk1Nggyn7E9lP47hnzNHhoCksIQAvD_BwE",
-    },
-    {
-      title: "Bounty's Green Revolution: Leading Plastic Waste Management",
-      link: "https://bounty.com.ph/2025/05/19/bounty-plastic-waste-management/?gad_source=1&gad_campaignid=23217610034&gbraid=0AAAAAqUOxF159ety0IVb20ZQX25tE1hwy&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrMUqQaPK8di3RwGgSbeGvR66NsZAV6uODrBV_RHaVRZUYsuhe0CfRhoCHzoQAvD_BwE",
-    },
-    {
-      title: "Status of Solid Waste Management in the Philippines ",
-      link: "https://www.jstage.jst.go.jp/article/jsmcwm/24/0/24_677/_pdf",
-    },
-    {
-      title: "Ridge to Reef: The Fight Against Mismanaged Waste",
-      link: "https://climate.gov.ph/news/923",
-    },
-    {
-      title: "Zero Waste",
-      link: "https://www.no-burn.org/zero-waste/?gad_source=1&gad_campaignid=21174378386&gbraid=0AAAAAogjHBlS_-QYlc9g42mOmhOfn_2Ej&gclid=CjwKCAiA8bvIBhBJEiwAu5ayrAoycItGJQxtzIA2074w5LSa7UzUbnHdblfSO5aABoTsnoo5_A0XPhoCj2QQAvD_BwE",
-    },
-    {
-      title: "Solid Waste Management Awareness and Practices",
-      link: " https://www.aquademia-journal.com/download/solid-waste-management-awareness-and-practices-among-senior-high-school-students-in-a-state-college-9579.pdf",
-    },
-    {
-      title: "Best Practice in Solid Waste Management in the Philippines",
-      link: "https://www.youtube.com/watch?v=-EQBG5TdTn4&pp=ygUWc29saWQgd2FzdGUgbWFuYWdlbWVudA%3D%3D",
-    },
-    {
-      title: "I-Witness: 'Plastic Republic', a documentary by Howie Severino",
-      link: "https://www.youtube.com/watch?v=qGNCK_buzNk&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
-    },
-    {
-      title: "IRONY - Environmental Short Film",
-      link: "https://www.youtube.com/watch?v=JNGUwrmvbs0&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
-    },
-    {
-      title: "Ano sa tingin mo? | Ecological Solid Waste Management",
-      link: "https://www.youtube.com/watch?v=G-JKwlb1enY&pp=ygUuc29saWQgd2FzdGUgbWFuYWdlbWVudCBkb2N1bWVudGFyeSBwaGlsaXBwaW5lcw%3D%3D",
-    },
-  ];
-
-  // 🧠 Pick a random article each login
+  // 🆕 Fetch random article from database
+const fetchRandomArticle = async () => {
+  try {
+    setLoadingArticle(true);
+    console.log('📰 Fetching random article from:', `${apiUrl}/api/materials/random`);
+    
+    const response = await fetch(`${apiUrl}/api/materials/random`);
+    
+    console.log('📊 Response status:', response.status);
+    console.log('📊 Response ok:', response.ok);
+    
+    if (!response.ok) {
+      console.error('❌ Failed to fetch random article:', response.status, response.statusText);
+      
+      // Try to get error details
+      try {
+        const errorData = await response.text();
+        console.error('❌ Error response:', errorData);
+      } catch (e) {
+        console.error('❌ Could not read error response');
+      }
+      
+      // Fallback: Use local articles if API fails
+      const fallbackArticles = [
+        {
+          title: "Waste Disposal",
+          link_url: "https://www.britannica.com/technology/waste-disposal-system",
+          thumbnail_path: null,
+          created_at: new Date().toISOString()
+        },
+        {
+          title: "How Our Trash Impacts the Environment",
+          link_url: "https://www.earthday.org/how-our-trash-impacts-the-environment/",
+          thumbnail_path: null,
+          created_at: new Date().toISOString()
+        }
+      ];
+      
+      const randomFallback = fallbackArticles[Math.floor(Math.random() * fallbackArticles.length)];
+      setArticle(randomFallback);
+      return;
+    }
+    
+    const articleData = await response.json();
+    console.log('✅ Random article received:', articleData);
+    setArticle(articleData);
+  } catch (error) {
+    console.error('❌ Error fetching random article:', error.message);
+    console.error('❌ Full error:', error);
+    
+    // Fallback to local articles
+    const fallbackArticles = [
+      {
+        title: "Waste Disposal",
+        link_url: "https://www.britannica.com/technology/waste-disposal-system",
+        thumbnail_path: null,
+        created_at: new Date().toISOString()
+      },
+      {
+        title: "How Our Trash Impacts the Environment",
+        link_url: "https://www.earthday.org/how-our-trash-impacts-the-environment/",
+        thumbnail_path: null,
+        created_at: new Date().toISOString()
+      }
+    ];
+    
+    const randomFallback = fallbackArticles[Math.floor(Math.random() * fallbackArticles.length)];
+    setArticle(randomFallback);
+  } finally {
+    setLoadingArticle(false);
+  }
+};
+  // 🆕 Load random article when component mounts
   useEffect(() => {
-    const random = articles[Math.floor(Math.random() * articles.length)];
-    setArticle(random);
-  }, []); // only once, on mount (like on login)
+    fetchRandomArticle();
+  }, []); // Only runs once on mount
+
+  // 🆕 Function to refresh article (optional - you could add a refresh button)
+  const refreshArticle = () => {
+    fetchRandomArticle();
+  };
 
   const fetchAllData = async () => {
     try {
@@ -288,21 +305,49 @@ const HomeScreen = ({ navigation }) => {
           )}
         </View>
 
-        {/* 📰 Featured Article (Random) */}
-        {article && (
-          <View style={styles.card}>
+        {/* 📰 Featured Article (Random from Database) */}
+        <View style={styles.card}>
+          <View style={styles.articleHeader}>
             <Text style={styles.cardTitle}>Featured Article/Video For You</Text>
-            <Text style={styles.articleTitle}>{article.title}</Text>
-
-            <TouchableOpacity onPress={() => openLink(article.link)}>
-              <Text style={styles.articleLink}>
-                {article.link.includes("youtube.com") || article.link.includes("youtu.be")
-                  ? "Watch Video →"
-                  : "Read More →"}
-              </Text>
+            <TouchableOpacity onPress={refreshArticle} style={styles.refreshButton}>
+              <Text style={styles.refreshButtonText}>↻</Text>
             </TouchableOpacity>
           </View>
-        )}
+          
+          {loadingArticle ? (
+            <Text style={styles.loadingText}>Loading featured content...</Text>
+          ) : article ? (
+            <>
+              <Text style={styles.articleTitle}>{article.title}</Text>
+              
+              {/* Optional: Display thumbnail if available */}
+              {article.thumbnail_path && (
+                <Image 
+                  source={{ uri: `${apiUrl}${article.thumbnail_path}` }} 
+                  style={styles.articleThumbnail}
+                  resizeMode="cover"
+                />
+              )}
+              
+              {/* Optional: Display date */}
+              {article.created_at && (
+                <Text style={styles.articleDate}>
+                  Added: {formatDateInWords(article.created_at)}
+                </Text>
+              )}
+              
+              <TouchableOpacity onPress={() => openLink(article.link_url)}>
+                <Text style={styles.articleLink}>
+                  {article.link_url.includes("youtube.com") || article.link_url.includes("youtu.be")
+                    ? "Watch Video →"
+                    : "Read More →"}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <Text>No articles available at the moment.</Text>
+          )}
+        </View>
       </ScrollView>
     </GestureHandlerRootView>
   );
@@ -329,26 +374,25 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH * 0.18, 
     borderRadius: SCREEN_WIDTH * 0.09,
   },
-  // ✅ NEW: Container for profile text with flex
   profileTextContainer: {
-    flex: 1, // Takes remaining space after image
+    flex: 1,
     marginLeft: SCREEN_WIDTH * 0.03,
     justifyContent: 'center',
-    maxWidth: SCREEN_WIDTH * 0.62, // ✅ Prevents overflow
+    maxWidth: SCREEN_WIDTH * 0.62,
   },
   cardTitle: { 
     fontSize: SCREEN_WIDTH * 0.045, 
     fontWeight: 'bold', 
     color: colors.border_green,
     fontFamily: 'PSemi-Bold',
-    flexShrink: 1, // Allow text to shrink if needed
+    flexShrink: 1,
   },
   cardSubtitle: { 
-    fontSize: SCREEN_WIDTH * 0.035, // Slightly smaller for better fit
+    fontSize: SCREEN_WIDTH * 0.035,
     color: '#333', 
     marginTop: 4,
     fontFamily: 'PSemi-Bold',
-    flexShrink: 1, // Allow text to shrink if needed
+    flexShrink: 1,
   },
   cardDate: { 
     fontSize: SCREEN_WIDTH * 0.04, 
@@ -435,15 +479,51 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border_green,
     paddingBottom: 6,
   },
-  articleSummary: { 
-    fontSize: SCREEN_WIDTH * 0.035, 
-    color: '#555', 
-    marginTop: 6, 
-    marginBottom: 8 
-  },
   articleLink: { 
     color: colors.border_green, 
     fontWeight: 'bold', 
-    marginTop: 5 
+    marginTop: 10,
+    fontSize: SCREEN_WIDTH * 0.035,
+  },
+  articleDate: {
+    fontSize: SCREEN_WIDTH * 0.03,
+    color: '#666',
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
+  articleThumbnail: {
+    width: '100%',
+    height: SCREEN_HEIGHT * 0.15,
+    borderRadius: 8,
+    marginTop: SCREEN_HEIGHT * 0.01,
+    marginBottom: SCREEN_HEIGHT * 0.01,
+  },
+  articleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  refreshButton: {
+    padding: 5,
+    borderRadius: 20,
+    backgroundColor: colors.pale_green,
+    width: SCREEN_WIDTH * 0.08,
+    height: SCREEN_WIDTH * 0.08,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border_green,
+  },
+  refreshButtonText: {
+    fontSize: SCREEN_WIDTH * 0.04,
+    fontWeight: 'bold',
+    color: colors.border_green,
+  },
+  loadingText: {
+    fontSize: SCREEN_WIDTH * 0.035,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: SCREEN_HEIGHT * 0.02,
+    fontStyle: 'italic',
   },
 });
